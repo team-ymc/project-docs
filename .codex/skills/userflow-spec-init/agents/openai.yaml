@@ -1,0 +1,4 @@
+interface:
+  display_name: "Userflow Spec Init"
+  short_description: "Initialize userflow specs from a product brief."
+  default_prompt: "Initialize docs/central/userflows/userflow-spec.md from the product brief."
