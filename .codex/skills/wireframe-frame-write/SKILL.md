@@ -1,6 +1,6 @@
 ---
 name: wireframe-frame-write
-description: Use when a user wants to write, create, continue, or revise an individual docs/central/wireframes/frames/WF-XXX-frame-name.md wireframe frame spec from a row in docs/central/wireframes/wireframe-spec.md. Shows the Frame Registry, lets the user choose a frame, creates the frame file from bundled assets/wireframe-frame.template.md when status is Not Started, updates the registry status/path to In Progress, and interactively fills Visual Purpose, Layout Regions, Component Inventory, and a Markdown Sketch using bundled references/wireframe-frame.guidance.md.
+description: Use when a user wants to write, create, continue, or revise an individual docs//wireframes/frames/WF-XXX-frame-name.md wireframe frame spec from a row in docs//wireframes/wireframe-spec.md. Shows the Frame Registry, lets the user choose a frame, creates the frame file from bundled assets/wireframe-frame.template.md when status is Not Started, updates the registry status/path to In Progress, and interactively fills Visual Purpose, Layout Regions, Component Inventory, and a Markdown Sketch using bundled references/wireframe-frame.guidance.md.
 ---
 
 # Wireframe Frame Write
@@ -10,13 +10,13 @@ Use this skill to create or continue one individual wireframe frame spec file.
 Default registry file:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 Default frame directory:
 
 ```text
-docs/central/wireframes/frames
+docs//wireframes/frames
 ```
 
 Bundled frame template:
@@ -49,13 +49,13 @@ or drawing the frame.
 Before doing anything else, check whether this file exists:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 If it does not exist, stop immediately and tell the user:
 
 ```text
-I cannot author a frame file yet because docs/central/wireframes/wireframe-spec.md does not exist.
+I cannot author a frame file yet because docs//wireframes/wireframe-spec.md does not exist.
 Initialize the wireframe spec and register a frame first, then I can write the frame file.
 ```
 
@@ -66,7 +66,7 @@ Do not create `wireframe-spec.md` in this skill.
 Always read these files before creating or editing a frame file:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 assets/wireframe-frame.template.md
 references/wireframe-frame.guidance.md
 references/wireframe-spec.guidance.md
@@ -83,7 +83,7 @@ Use `references/wireframe-spec.guidance.md` only for registry status/path rules.
 Read the `## 3. Frame Registry` table from:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 Show the registry rows to the user in a compact table with:
@@ -149,7 +149,7 @@ If `Frame Spec File` already contains a real path, use that path.
 If `Frame Spec File` is `TBD`, generate the path from the selected frame row:
 
 ```text
-docs/central/wireframes/frames/WF-XXX-frame-name.md
+docs//wireframes/frames/WF-XXX-frame-name.md
 ```
 
 Rules:

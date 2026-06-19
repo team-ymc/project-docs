@@ -1,6 +1,6 @@
 ---
 name: wireframe-relation-register
-description: Use when a user wants to add rows to the Frame Relation Map table in docs/central/wireframes/wireframe-spec.md, either manually or from AI suggestions. Shows the Frame Registry first, asks whether to add manually or get suggestions, inspects existing relation rows and frame markdown files when useful, validates that From Frame and To Frame exist and that the relation makes visual/product sense, then writes approved rows using bundled references/wireframe-spec.guidance.md.
+description: Use when a user wants to add rows to the Frame Relation Map table in docs//wireframes/wireframe-spec.md, either manually or from AI suggestions. Shows the Frame Registry first, asks whether to add manually or get suggestions, inspects existing relation rows and frame markdown files when useful, validates that From Frame and To Frame exist and that the relation makes visual/product sense, then writes approved rows using bundled references/wireframe-spec.guidance.md.
 ---
 
 # Wireframe Relation Register
@@ -11,7 +11,7 @@ in the central wireframe spec.
 Default target file:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 Bundled spec guidance:
@@ -34,13 +34,13 @@ installed at a specific project path.
 Before doing anything else, check whether this file exists:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 If it does not exist, stop immediately and tell the user:
 
 ```text
-I cannot register frame relations yet because docs/central/wireframes/wireframe-spec.md does not exist.
+I cannot register frame relations yet because docs//wireframes/wireframe-spec.md does not exist.
 Initialize the wireframe spec and register frames first, then I can add relation rows.
 ```
 
@@ -51,7 +51,7 @@ Do not create `wireframe-spec.md` in this skill.
 Always read these files before adding relation rows:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 references/wireframe-spec.guidance.md
 ```
 

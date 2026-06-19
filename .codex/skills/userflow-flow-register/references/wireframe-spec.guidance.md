@@ -143,7 +143,7 @@ Use this column to link the detailed frame spec file.
 Use this filename format:
 
 ```text
-docs/central/wireframes/frames/WF-XXX-frame-name.md
+docs//wireframes/frames/WF-XXX-frame-name.md
 ```
 
 Rules:
@@ -157,17 +157,17 @@ Rules:
 Example:
 
 ```text
-docs/central/wireframes/frames/WF-001-landing-public-chat-entry.md
+docs//wireframes/frames/WF-001-landing-public-chat-entry.md
 ```
 
 ### Row Examples
 
 | Frame ID | Frame Name | Frame Category | Base Frame | Frame Status | Frame Spec File |
 |---|---|---|---|---|---|
-| WF-001 | Landing / Public Chat Entry | Base | none | Not Started | docs/central/wireframes/frames/WF-001-landing-public-chat-entry.md |
-| WF-002 | Signup Modal | Overlay | WF-001 | Not Started | docs/central/wireframes/frames/WF-002-signup-modal.md |
-| WF-003 | Chat App - Sidebar Open | State | WF-004 | Not Started | docs/central/wireframes/frames/WF-003-chat-app-sidebar-open.md |
-| WF-004 | Authenticated Chat App | Base | none | Not Started | docs/central/wireframes/frames/WF-004-authenticated-chat-app.md |
+| WF-001 | Landing / Public Chat Entry | Base | none | Not Started | docs//wireframes/frames/WF-001-landing-public-chat-entry.md |
+| WF-002 | Signup Modal | Overlay | WF-001 | Not Started | docs//wireframes/frames/WF-002-signup-modal.md |
+| WF-003 | Chat App - Sidebar Open | State | WF-004 | Not Started | docs//wireframes/frames/WF-003-chat-app-sidebar-open.md |
+| WF-004 | Authenticated Chat App | Base | none | Not Started | docs//wireframes/frames/WF-004-authenticated-chat-app.md |
 
 ---
 

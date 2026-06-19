@@ -1,6 +1,6 @@
 ---
 name: wireframe-spec-init
-description: Use when a user wants to initialize docs/central/wireframes/wireframe-spec.md from the product brief and fill only sections 1 and 2. Checks for docs/central/product-brief.md first, creates the wireframe directories and spec file from the bundled assets/wireframe-spec.template.md, copies Product Name and Product Definition from the product brief, then guides the user step by step through Platform, Wireframe Goal, Fidelity, and Drawing Tool using the bundled references/wireframe-spec.guidance.md.
+description: Use when a user wants to initialize docs//wireframes/wireframe-spec.md from the product brief and fill only sections 1 and 2. Checks for project-brief/project-brief.md first, creates the wireframe directories and spec file from the bundled assets/wireframe-spec.template.md, copies Product Name and Product Definition from the product brief, then guides the user step by step through Platform, Wireframe Goal, Fidelity, and Drawing Tool using the bundled references/wireframe-spec.guidance.md.
 ---
 
 # Wireframe Spec Init
@@ -10,7 +10,7 @@ Use this skill to initialize the central wireframe spec for a project.
 Default required input file:
 
 ```text
-docs/central/product-brief.md
+project-brief/project-brief.md
 ```
 
 Bundled template:
@@ -31,11 +31,11 @@ installed at a specific project path.
 Default output file:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 The skill is complete when sections 1 and 2 are filled in
-`docs/central/wireframes/wireframe-spec.md`.
+`docs//wireframes/wireframe-spec.md`.
 
 Do not fill the Frame Registry or Frame Relation Map during this skill unless
 the user explicitly changes the task.
@@ -45,13 +45,13 @@ the user explicitly changes the task.
 Before doing anything else, check whether this file exists:
 
 ```text
-docs/central/product-brief.md
+project-brief/project-brief.md
 ```
 
 If it does not exist, stop immediately and tell the user:
 
 ```text
-I cannot initialize the wireframe spec yet because docs/central/product-brief.md does not exist.
+I cannot initialize the wireframe spec yet because project-brief/project-brief.md does not exist.
 Create the product brief first, then I can initialize the wireframe spec from it.
 ```
 
@@ -62,7 +62,7 @@ Do not create `wireframe-spec.md` without the product brief.
 Always read these files before drafting or writing the wireframe spec:
 
 ```text
-docs/central/product-brief.md
+project-brief/project-brief.md
 assets/wireframe-spec.template.md
 references/wireframe-spec.guidance.md
 ```
@@ -73,7 +73,7 @@ Use the guidance file for how each section should be filled.
 
 ## Existing File Behavior
 
-If `docs/central/wireframes/wireframe-spec.md` already exists:
+If `docs//wireframes/wireframe-spec.md` already exists:
 
 1. Read it.
 2. Tell the user it already exists.
@@ -97,19 +97,19 @@ Placeholder values include text wrapped in angle brackets, such as:
 When initialization is allowed, ensure these directories exist:
 
 ```text
-docs/central/wireframes
-docs/central/wireframes/frames
+docs//wireframes
+docs//wireframes/frames
 ```
 
 Then create or update:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 ## Section 1 Filling Rule
 
-Fill section 1 by copying from `docs/central/product-brief.md`.
+Fill section 1 by copying from `project-brief/project-brief.md`.
 
 Required source fields:
 
@@ -183,8 +183,8 @@ Be clear about what the user and AI are doing together.
 Good opening after the product brief exists:
 
 ```text
-I will initialize docs/central/wireframes/wireframe-spec.md from the product brief.
-Section 1 will be copied from docs/central/product-brief.md.
+I will initialize docs//wireframes/wireframe-spec.md from the product brief.
+Section 1 will be copied from project-brief/project-brief.md.
 For section 2, I will ask you one field at a time and use the wireframe spec guidance to keep the answers consistent.
 ```
 
@@ -214,8 +214,8 @@ When writing:
 
 The task is complete only when:
 
-- `docs/central/wireframes/wireframe-spec.md` exists.
-- Section 1 is filled from `docs/central/product-brief.md`.
+- `docs//wireframes/wireframe-spec.md` exists.
+- Section 1 is filled from `project-brief/project-brief.md`.
 - Section 2 has accepted values for Platform, Wireframe Goal, Fidelity, and
   Drawing Tool.
 - Section 3 and section 4 remain unfilled template sections.

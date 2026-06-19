@@ -1,6 +1,6 @@
 ---
 name: product-brief-builder
-description: Use when a user wants to create, fill, draft, revise, or update a root product brief for a project. Guides the user interactively through a concise product brief template with flexible unordered input, create/update mode detection, section-by-section confirmation, file path confirmation, and final approval before writing docs/central/product-brief.md.
+description: Use when a user wants to create, fill, draft, revise, or update a root product brief for a project. Guides the user interactively through a concise product brief template with flexible unordered input, create/update mode detection, section-by-section confirmation, file path confirmation, and final approval before writing project-brief/project-brief.md.
 ---
 
 # Product Brief Builder
@@ -12,7 +12,7 @@ architecture doc, or roadmap.
 Default project file:
 
 ```text
-docs/central/product-brief.md
+project-brief/project-brief.md
 ```
 
 Default template asset:
@@ -66,7 +66,7 @@ Use update mode when:
 Always confirm ambiguous mode:
 
 ```text
-I found an existing product brief at docs/central/product-brief.md.
+I found an existing product brief at project-brief/project-brief.md.
 Should I update that file, or start a new draft?
 ```
 
@@ -132,7 +132,7 @@ Good opening:
 ```text
 I will help fill the root product brief slowly. I will collect the idea, map it
 into the seven sections, show a draft, and only write the file after you confirm.
-I recommend docs/central/01-product-brief.md. Should I use that path?
+I recommend docs//01-project-brief.md. Should I use that path?
 ```
 
 ## Update Mode Workflow
@@ -225,7 +225,7 @@ Before any edit, show:
 
 ```text
 Target file:
-docs/central/product-brief.md
+project-brief/project-brief.md
 
 Draft:
 <markdown draft>

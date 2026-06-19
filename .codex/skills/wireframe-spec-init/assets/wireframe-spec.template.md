@@ -32,7 +32,7 @@
 
 | Frame ID | Frame Name | Frame Category | Base Frame | Frame Status | Frame Spec File |
 |---|---|---|---|---|---|
-| WF-001 | <Frame name> | <Base / Overlay / State / Detail> | <none or WF-XXX> | Not Started | docs/central/wireframes/frames/WF-001-frame-name.md |
+| WF-001 | <Frame name> | <Base / Overlay / State / Detail> | <none or WF-XXX> | Not Started | docs//wireframes/frames/WF-001-frame-name.md |
 
 ## 4. Frame Relation Map
 

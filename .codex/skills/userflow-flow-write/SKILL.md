@@ -1,6 +1,6 @@
 ---
 name: userflow-flow-write
-description: Use when a user wants to create, write, continue, or revise an individual docs/central/userflows/flows/UF-XXX-flow-name.md userflow file from a row in docs/central/userflows/userflow-spec.md. Selects a registered flow, creates the flow file from assets/userflow-flow.template.md when needed, updates the registry status/path, inspects related wireframes when available, identifies missing wireframe needs, and interactively fills Flow Boundary, Flow Story, Flow Steps, Wireframe References, and Separate Flow Candidates using bundled guidance with frequent user review.
+description: Use when a user wants to create, write, continue, or revise an individual docs//userflows/flows/UF-XXX-flow-name.md userflow file from a row in docs//userflows/userflow-spec.md. Selects a registered flow, creates the flow file from assets/userflow-flow.template.md when needed, updates the registry status/path, inspects related wireframes when available, identifies missing wireframe needs, and interactively fills Flow Boundary, Flow Story, Flow Steps, Wireframe References, and Separate Flow Candidates using bundled guidance with frequent user review.
 ---
 
 # Userflow Flow Write
@@ -10,19 +10,19 @@ Use this skill to create or continue one individual userflow file.
 Default registry file:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 ```
 
 Default flow directory:
 
 ```text
-docs/central/userflows/flows
+docs//userflows/flows
 ```
 
 Default wireframe spec:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 Bundled flow template:
@@ -62,13 +62,13 @@ wireframes, and see which separate flows or missing wireframes may need follow-u
 Before doing anything else, check whether this file exists:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 ```
 
 If it does not exist, stop immediately and tell the user:
 
 ```text
-I cannot author a userflow file yet because docs/central/userflows/userflow-spec.md does not exist.
+I cannot author a userflow file yet because docs//userflows/userflow-spec.md does not exist.
 Initialize the userflow spec and register a flow first, then I can write the flow file.
 ```
 
@@ -79,7 +79,7 @@ Do not create `userflow-spec.md` in this skill.
 Always read these files before creating or editing a userflow file:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 assets/userflow-flow.template.md
 references/userflow-flow.guidance.md
 references/userflow-spec.guidance.md
@@ -100,7 +100,7 @@ and Flow Registry column meanings.
 When wireframes exist, also read:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 references/wireframe-spec.guidance.md
 references/wireframe-frame.guidance.md
 ```
@@ -113,7 +113,7 @@ wireframe sections `TBD` where appropriate.
 Read the `## 3. Flow Registry` table from:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 ```
 
 Show the registry rows to the user in a compact table with:
@@ -181,7 +181,7 @@ If `Flow Spec File` already contains a real path, use that path.
 If `Flow Spec File` is `TBD`, generate the path from the selected flow row:
 
 ```text
-docs/central/userflows/flows/UF-XXX-flow-name.md
+docs//userflows/flows/UF-XXX-flow-name.md
 ```
 
 Rules:
@@ -211,7 +211,7 @@ base-flow comparison is unavailable.
 Wireframes are important context for this skill, but they are not always
 complete before a userflow is written.
 
-When `docs/central/wireframes/wireframe-spec.md` exists:
+When `docs//wireframes/wireframe-spec.md` exists:
 
 1. Read the Frame Registry and Frame Relation Map.
 2. Identify likely relevant `WF-XXX` frames for the selected flow.

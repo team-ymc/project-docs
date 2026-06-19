@@ -17,7 +17,7 @@ Use these skills in this general order:
 
 | Order | Skill | Purpose |
 |---|---|---|
-| 1 | `wireframe-spec-init` | Create `docs/central/wireframes/wireframe-spec.md` and fill sections 1-2 from product brief plus user answers. |
+| 1 | `wireframe-spec-init` | Create `docs//wireframes/wireframe-spec.md` and fill sections 1-2 from product brief plus user answers. |
 | 2 | `wireframe-frame-register` | Add a new row to the `Frame Registry` table. |
 | 3 | `wireframe-frame-write` | Create or continue one frame markdown file from a registered frame row. |
 | 4 | `wireframe-relation-register` | Add rows to the `Frame Relation Map` manually or from suggestions. |
@@ -32,7 +32,7 @@ Wireframe workflow options:
 
 1. Initialize wireframe spec
    Use: wireframe-spec-init
-   Creates docs/central/wireframes/wireframe-spec.md and fills sections 1-2.
+   Creates docs//wireframes/wireframe-spec.md and fills sections 1-2.
 
 2. Register a frame
    Use: wireframe-frame-register
@@ -76,9 +76,9 @@ skill and ask for confirmation before doing anything destructive or file-writing
 When the user is unsure what to do next, inspect the current file state:
 
 ```text
-docs/central/product-brief.md
-docs/central/wireframes/wireframe-spec.md
-docs/central/wireframes/frames/
+project-brief/project-brief.md
+docs//wireframes/wireframe-spec.md
+docs//wireframes/frames/
 ```
 
 Use this decision guide:

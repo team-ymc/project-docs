@@ -159,7 +159,7 @@ Use this column to link the detailed flow file.
 Use this filename format:
 
 ```text
-docs/central/userflows/flows/UF-XXX-flow-name.md
+docs//userflows/flows/UF-XXX-flow-name.md
 ```
 
 Rules:
@@ -173,16 +173,16 @@ Rules:
 Example:
 
 ```text
-docs/central/userflows/flows/UF-001-guest-starts-first-chat.md
+docs//userflows/flows/UF-001-guest-starts-first-chat.md
 ```
 
 ### Row Examples
 
 | Flow ID | Flow Name | User Type | Flow Type | Base Flow | Flow Status | Flow Spec File |
 |---|---|---|---|---|---|---|
-| UF-001 | Email Signup | Guest | Main Flow | none | Not Started | docs/central/userflows/flows/UF-001-email-signup.md |
-| UF-002 | Google Signup | Guest | Alternate Flow | UF-001 | Not Started | docs/central/userflows/flows/UF-002-google-signup.md |
-| UF-003 | Login Recovery | Guest | Exception Flow | UF-004 | Not Started | docs/central/userflows/flows/UF-003-login-recovery.md |
-| UF-004 | Email Login | Guest | Main Flow | none | Not Started | docs/central/userflows/flows/UF-004-email-login.md |
-| UF-005 | Authenticated Conversation | Authenticated User | Main Flow | none | Not Started | docs/central/userflows/flows/UF-005-authenticated-conversation.md |
-| UF-006 | Previous Conversation Continuation | Authenticated User | Subflow | UF-005 | Not Started | docs/central/userflows/flows/UF-006-previous-conversation-continuation.md |
+| UF-001 | Email Signup | Guest | Main Flow | none | Not Started | docs//userflows/flows/UF-001-email-signup.md |
+| UF-002 | Google Signup | Guest | Alternate Flow | UF-001 | Not Started | docs//userflows/flows/UF-002-google-signup.md |
+| UF-003 | Login Recovery | Guest | Exception Flow | UF-004 | Not Started | docs//userflows/flows/UF-003-login-recovery.md |
+| UF-004 | Email Login | Guest | Main Flow | none | Not Started | docs//userflows/flows/UF-004-email-login.md |
+| UF-005 | Authenticated Conversation | Authenticated User | Main Flow | none | Not Started | docs//userflows/flows/UF-005-authenticated-conversation.md |
+| UF-006 | Previous Conversation Continuation | Authenticated User | Subflow | UF-005 | Not Started | docs//userflows/flows/UF-006-previous-conversation-continuation.md |

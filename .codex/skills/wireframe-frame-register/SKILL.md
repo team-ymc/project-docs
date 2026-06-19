@@ -1,6 +1,6 @@
 ---
 name: wireframe-frame-register
-description: Use when a user wants to add a new frame row to the Frame Registry table in docs/central/wireframes/wireframe-spec.md. Guides the user one column at a time using bundled references/wireframe-spec.guidance.md, assigns the next WF-XXX Frame ID, sets Frame Status to Not Started, and sets Frame Spec File to TBD.
+description: Use when a user wants to add a new frame row to the Frame Registry table in docs//wireframes/wireframe-spec.md. Guides the user one column at a time using bundled references/wireframe-spec.guidance.md, assigns the next WF-XXX Frame ID, sets Frame Status to Not Started, and sets Frame Spec File to TBD.
 ---
 
 # Wireframe Frame Register
@@ -11,7 +11,7 @@ central wireframe spec.
 Default target file:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 Bundled guidance:
@@ -31,13 +31,13 @@ Frame Registry table.
 Before doing anything else, check whether this file exists:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 If it does not exist, stop immediately and tell the user:
 
 ```text
-I cannot register a new wireframe frame yet because docs/central/wireframes/wireframe-spec.md does not exist.
+I cannot register a new wireframe frame yet because docs//wireframes/wireframe-spec.md does not exist.
 Initialize the wireframe spec first, then I can add a new frame row.
 ```
 
@@ -48,7 +48,7 @@ Do not create `wireframe-spec.md` in this skill.
 Always read these files before adding a frame row:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 references/wireframe-spec.guidance.md
 ```
 
@@ -192,7 +192,7 @@ Before editing the file, show the exact row to be added:
 
 Ask for approval before writing.
 
-Only edit `docs/central/wireframes/wireframe-spec.md` after approval.
+Only edit `docs//wireframes/wireframe-spec.md` after approval.
 
 ## Write Rule
 

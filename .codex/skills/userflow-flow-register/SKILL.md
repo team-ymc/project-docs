@@ -1,6 +1,6 @@
 ---
 name: userflow-flow-register
-description: Use when a user wants to add one or more rows to the Flow Registry table in docs/central/userflows/userflow-spec.md, either manually or from AI suggestions based on docs/central/wireframes/wireframe-spec.md and relevant WF-XXX frame files. Starts by asking whether to register manually or generate suggestions, validates flow names, user types, flow types, base flows, IDs, statuses, and file paths, then writes only approved rows.
+description: Use when a user wants to add one or more rows to the Flow Registry table in docs//userflows/userflow-spec.md, either manually or from AI suggestions based on docs//wireframes/wireframe-spec.md and relevant WF-XXX frame files. Starts by asking whether to register manually or generate suggestions, validates flow names, user types, flow types, base flows, IDs, statuses, and file paths, then writes only approved rows.
 ---
 
 # Userflow Flow Register
@@ -11,7 +11,7 @@ userflow spec.
 Default target file:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 ```
 
 Bundled userflow guidance:
@@ -37,13 +37,13 @@ the user chooses not to add any rows.
 Before doing anything else, check whether this file exists:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 ```
 
 If it does not exist, stop immediately and tell the user:
 
 ```text
-I cannot register userflows yet because docs/central/userflows/userflow-spec.md does not exist.
+I cannot register userflows yet because docs//userflows/userflow-spec.md does not exist.
 Initialize the userflow spec first, then I can add flow rows.
 ```
 
@@ -54,7 +54,7 @@ Do not create `userflow-spec.md` in this skill.
 Always read these files before adding flow rows:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 references/userflow-spec.guidance.md
 ```
 
@@ -64,11 +64,11 @@ Registry columns.
 For suggestion mode, also read:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 references/wireframe-spec.guidance.md
 ```
 
-Read individual `docs/central/wireframes/frames/WF-XXX-frame-name.md` files only
+Read individual `docs//wireframes/frames/WF-XXX-frame-name.md` files only
 when their visual purpose, components, or sketch are needed to make a good
 suggestion.
 
@@ -288,7 +288,7 @@ work.
 Suggestion mode must inspect:
 
 1. Existing Flow Registry rows.
-2. `docs/central/wireframes/wireframe-spec.md`.
+2. `docs//wireframes/wireframe-spec.md`.
 3. The wireframe Frame Registry.
 4. The wireframe Frame Relation Map.
 5. Relevant wireframe frame files when registry and relation rows are not enough.
@@ -376,7 +376,7 @@ Before editing the file, show the exact row or rows to be added:
 
 Ask for approval before writing.
 
-Only edit `docs/central/userflows/userflow-spec.md` after approval.
+Only edit `docs//userflows/userflow-spec.md` after approval.
 
 ## Write Rule
 

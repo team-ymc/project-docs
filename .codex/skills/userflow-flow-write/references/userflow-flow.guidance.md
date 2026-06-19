@@ -16,13 +16,13 @@ details, or hidden implementation behavior here.
 Userflow files should usually live at:
 
 ```text
-docs/central/userflows/flows/UF-XXX-flow-name.md
+docs//userflows/flows/UF-XXX-flow-name.md
 ```
 
 Each userflow file should correspond to one row in:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 ```
 
 Use nearby product documents intentionally. The userflow spec tells you what
@@ -33,7 +33,7 @@ support the flow.
 
 Before filling a userflow file, read the userflow spec when it exists:
 
-- `docs/central/userflows/userflow-spec.md`
+- `docs//userflows/userflow-spec.md`
 
 Use it to find:
 
@@ -57,7 +57,7 @@ Read the base flow file when:
 
 Read the wireframe spec when filling `Wireframe References`:
 
-- `docs/central/wireframes/wireframe-spec.md`
+- `docs//wireframes/wireframe-spec.md`
 
 Use it to identify useful `WF-XXX` frames and relation-map transitions.
 
@@ -230,7 +230,7 @@ Use the reference table to explain why each wireframe matters.
 
 Rules:
 
-- Use exact `WF-XXX` IDs from `docs/central/wireframes/wireframe-spec.md`.
+- Use exact `WF-XXX` IDs from `docs//wireframes/wireframe-spec.md`.
 - Include the frame name for readability.
 - Keep relevance statements short.
 - Explain the frame's role in the flow, not its full visual structure.

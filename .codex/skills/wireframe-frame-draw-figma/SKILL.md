@@ -1,6 +1,6 @@
 ---
 name: wireframe-frame-draw-figma
-description: Use when a user wants to draw, create, update, or sync a Figma wireframe frame from an existing docs/central/wireframes/frames/WF-XXX-frame-name.md markdown frame spec. Always asks for and inspects the Figma file link first, shows the Frame Registry, only draws frames with In Progress status and sufficiently filled frame markdown, creates missing Figma frames or updates existing ones, syncs interactive Figma changes back to the markdown frame spec, and marks the registry frame status as Finished after the Figma frame and markdown spec are aligned.
+description: Use when a user wants to draw, create, update, or sync a Figma wireframe frame from an existing docs//wireframes/frames/WF-XXX-frame-name.md markdown frame spec. Always asks for and inspects the Figma file link first, shows the Frame Registry, only draws frames with In Progress status and sufficiently filled frame markdown, creates missing Figma frames or updates existing ones, syncs interactive Figma changes back to the markdown frame spec, and marks the registry frame status as Finished after the Figma frame and markdown spec are aligned.
 ---
 
 # Wireframe Frame Draw Figma
@@ -11,13 +11,13 @@ markdown frame spec.
 Default registry file:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 Default frame directory:
 
 ```text
-docs/central/wireframes/frames
+docs//wireframes/frames
 ```
 
 Bundled frame template:
@@ -70,13 +70,13 @@ Do not draw before this inspection is complete.
 After checking the Figma file, check whether this file exists:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 If it does not exist, stop immediately and tell the user:
 
 ```text
-I cannot draw a wireframe frame yet because docs/central/wireframes/wireframe-spec.md does not exist.
+I cannot draw a wireframe frame yet because docs//wireframes/wireframe-spec.md does not exist.
 Initialize the wireframe spec and register/write a frame first, then I can draw it in Figma.
 ```
 
@@ -87,7 +87,7 @@ Do not create `wireframe-spec.md` in this skill.
 Always read these files before drawing or syncing:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 assets/wireframe-frame.template.md
 references/wireframe-frame.guidance.md
 references/wireframe-spec.guidance.md
@@ -101,7 +101,7 @@ the `Frame Spec File` path in the registry.
 Read the `## 3. Frame Registry` table from:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 Show the registry rows to the user in a compact table with:

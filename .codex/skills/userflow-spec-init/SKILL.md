@@ -1,6 +1,6 @@
 ---
 name: userflow-spec-init
-description: Use when a user wants to initialize docs/central/userflows/userflow-spec.md from the product brief and fill only sections 1 and 2. Checks for docs/central/product-brief.md first, creates the userflow directories and spec file from the bundled assets/userflow-spec.template.md, copies Product Name and Product Definition from the product brief, then guides the user through Userflow Goal using bundled references/userflow-spec.guidance.md.
+description: Use when a user wants to initialize docs//userflows/userflow-spec.md from the product brief and fill only sections 1 and 2. Checks for project-brief/project-brief.md first, creates the userflow directories and spec file from the bundled assets/userflow-spec.template.md, copies Product Name and Product Definition from the product brief, then guides the user through Userflow Goal using bundled references/userflow-spec.guidance.md.
 ---
 
 # Userflow Spec Init
@@ -10,7 +10,7 @@ Use this skill to initialize the central userflow spec for a project.
 Default required input file:
 
 ```text
-docs/central/product-brief.md
+project-brief/project-brief.md
 ```
 
 Bundled template:
@@ -31,11 +31,11 @@ installed at a specific project path.
 Default output file:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 ```
 
 The skill is complete when sections 1 and 2 are filled in
-`docs/central/userflows/userflow-spec.md`.
+`docs//userflows/userflow-spec.md`.
 
 Do not fill the Flow Registry during this skill unless the user explicitly
 changes the task.
@@ -45,13 +45,13 @@ changes the task.
 Before doing anything else, check whether this file exists:
 
 ```text
-docs/central/product-brief.md
+project-brief/project-brief.md
 ```
 
 If it does not exist, stop immediately and tell the user:
 
 ```text
-I cannot initialize the userflow spec yet because docs/central/product-brief.md does not exist.
+I cannot initialize the userflow spec yet because project-brief/project-brief.md does not exist.
 Create the product brief first, then I can initialize the userflow spec from it.
 ```
 
@@ -62,7 +62,7 @@ Do not create `userflow-spec.md` without the product brief.
 Always read these files before drafting or writing the userflow spec:
 
 ```text
-docs/central/product-brief.md
+project-brief/project-brief.md
 assets/userflow-spec.template.md
 references/userflow-spec.guidance.md
 ```
@@ -73,7 +73,7 @@ Use the guidance file for how each section should be filled.
 
 ## Existing File Behavior
 
-If `docs/central/userflows/userflow-spec.md` already exists:
+If `docs//userflows/userflow-spec.md` already exists:
 
 1. Read it.
 2. Tell the user it already exists.
@@ -97,19 +97,19 @@ Placeholder values include text wrapped in angle brackets, such as:
 When initialization is allowed, ensure these directories exist:
 
 ```text
-docs/central/userflows
-docs/central/userflows/flows
+docs//userflows
+docs//userflows/flows
 ```
 
 Then create or update:
 
 ```text
-docs/central/userflows/userflow-spec.md
+docs//userflows/userflow-spec.md
 ```
 
 ## Section 1 Filling Rule
 
-Fill section 1 by copying from `docs/central/product-brief.md`.
+Fill section 1 by copying from `project-brief/project-brief.md`.
 
 Required source fields:
 
@@ -172,8 +172,8 @@ Be clear about what the user and AI are doing together.
 Good opening after the product brief exists:
 
 ```text
-I will initialize docs/central/userflows/userflow-spec.md from the product brief.
-Section 1 will be copied from docs/central/product-brief.md.
+I will initialize docs//userflows/userflow-spec.md from the product brief.
+Section 1 will be copied from project-brief/project-brief.md.
 For section 2, I will ask for the Userflow Goal and use the userflow spec guidance to keep it consistent.
 ```
 
@@ -204,8 +204,8 @@ When writing:
 
 The task is complete only when:
 
-- `docs/central/userflows/userflow-spec.md` exists.
-- Section 1 is filled from `docs/central/product-brief.md`.
+- `docs//userflows/userflow-spec.md` exists.
+- Section 1 is filled from `project-brief/project-brief.md`.
 - Section 2 has an accepted value for Userflow Goal.
 - Section 3 remains the unfilled template Flow Registry.
 

@@ -20,4 +20,4 @@
 
 | Flow ID | Flow Name | User Type | Flow Type | Base Flow | Flow Status | Flow Spec File |
 |---|---|---|---|---|---|---|
-| UF-001 | <Flow name> | <User type> | <Main Flow / Alternate Flow / Exception Flow / Subflow> | <none or UF-XXX> | Not Started | docs/central/userflows/flows/UF-001-flow-name.md |
+| UF-001 | <Flow name> | <User type> | <Main Flow / Alternate Flow / Exception Flow / Subflow> | <none or UF-XXX> | Not Started | docs//userflows/flows/UF-001-flow-name.md |

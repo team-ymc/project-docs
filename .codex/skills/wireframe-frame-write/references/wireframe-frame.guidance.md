@@ -15,13 +15,13 @@ AI implementation details here.
 Frame spec files should usually live at:
 
 ```text
-docs/central/wireframes/frames/WF-XXX-frame-name.md
+docs//wireframes/frames/WF-XXX-frame-name.md
 ```
 
 Each frame spec should correspond to one row in:
 
 ```text
-docs/central/wireframes/wireframe-spec.md
+docs//wireframes/wireframe-spec.md
 ```
 
 Use the surrounding wireframe documents intentionally. They tell you what this
@@ -32,7 +32,7 @@ must stay visually consistent.
 
 Before filling a frame file, read:
 
-- `docs/central/wireframes/wireframe-spec.md`
+- `docs//wireframes/wireframe-spec.md`
 
 Use it to find:
 
