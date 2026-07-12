@@ -197,7 +197,7 @@ components:
 
     PaperCreated:
       type: object
-      required: [paperId, fileKey, uploadUrl, status]
+      required: [paperId, fileKey, uploadUrl, uploadExpiresAt, status, createdAt]
       properties:
         paperId:
           type: string
