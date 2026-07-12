@@ -4,6 +4,6 @@
 
 | ADR | 제목 | Status | Date |
 |---|---|---|---|
-| [ADR-001](ADR-001-pdf-upload-presigned-url.md) | PDF 업로드는 presigned URL 기반 FE → S3 직접 업로드 | Proposed | 2026-07-03 |
+| [ADR-001](ADR-001-pdf-upload-presigned-url.md) | PDF 업로드는 presigned URL 기반 FE → S3 직접 업로드 | Accepted | 2026-07-03 |
 
 Status: `Proposed`(합의 전) · `Accepted`(확정) · `Superseded`(다른 ADR로 대체) · `Deprecated`(폐기)
