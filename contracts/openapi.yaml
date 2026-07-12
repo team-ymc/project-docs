@@ -71,6 +71,9 @@ paths:
           description: |
             파일명 중복 — 같은 파일명의 논문이 이미 있음. code: DUPLICATE_FILENAME
             레코드를 만들지 않고 거절한다(presigned URL도 발급하지 않음). (FT-003 Story 2)
+
+            주의: 업로드에 실패한 UPLOAD_PENDING 레코드도 중복으로 걸린다 —
+            MVP는 같은 파일명의 재업로드를 지원하지 않는다. (FT-003 Resolved)
           content:
             application/json:
               schema:
@@ -194,7 +197,7 @@ components:
 
     PaperCreated:
       type: object
-      required: [paperId, fileKey, uploadUrl, uploadExpiresAt, status]
+      required: [paperId, fileKey, uploadUrl, status]
       properties:
         paperId:
           type: string
