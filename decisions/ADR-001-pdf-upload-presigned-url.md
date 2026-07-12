@@ -64,7 +64,8 @@ FE의 PDF 확장자/크기 검사는 사용자 경험을 위한 사전 검증으
 **옵션 (지금 구현하지 않음, 필요 시 별도 결정)**
 
 - 브라우저 종료 후에도 즉시 처리가 필요하다는 요구가 발생하면, complete API에 더해 S3 ObjectCreated event 기반 완료 감지를 이중 신호로 검토한다. MVP에서는 complete API로 충분하다.
-- 메시지 큐 구현체 선정(SQS 등) — Data Flow의 `Queue`는 추상 표현이며, 구체 큐 도입은 별도 결정으로 다룬다.
+
+> Data Flow의 `Queue`는 **SQS**다 (로컬은 LocalStack). 큐 이름·리전·버킷은 `contracts/asyncapi.yaml`이 SSOT다.
 
 ## 6. Data Flow
 

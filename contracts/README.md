@@ -14,7 +14,7 @@ contracts/
     └── parse-result.schema.json       AI → BE                        envelope만 확정
 ```
 
-`asyncapi.yaml`은 큐 이름·방향의 **SSOT**다. 큐 구현체(SQS 등)는 미결이라 `servers`가 아직 없다 — 정해지면 리전·버킷 같은 배선 값을 여기 두고 `infra/local/bootstrap.sh`와 `app/be/application.yml`이 따라간다.
+`asyncapi.yaml`은 큐 이름·방향과 리전·버킷 같은 **공유 값의 SSOT**다. 큐는 **SQS**(로컬은 LocalStack)다. `infra/local/bootstrap.sh`와 `app/be/application.yml`의 값은 여기서 온다.
 
 ## 규칙
 
@@ -35,4 +35,3 @@ contracts/
 ## 미확정
 
 - **`parse-result.result`** — 비어 있다. 추측으로 채우지 말 것. BE 상태 전이엔 불필요하며, FT-004 Reader 착수 전까지 정의한다.
-- **큐 구현체** — ADR-001의 옵션 항목.

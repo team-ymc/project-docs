@@ -4,14 +4,27 @@ info:
   title: YMC BE-AI Messaging
   version: 0.1.0
   description: |
-    BE ↔ AI 파싱 배선. 큐 이름과 방향의 SSOT. payload는 schema/를 참조한다.
+    BE ↔ AI 파싱 배선. **큐 이름·리전·버킷 등 공유 값의 SSOT.** payload는 schema/를 참조한다.
 
     - Source: features/FT-003-논문-등록-분석.md (Story 3·4·5)
     - ADR: decisions/ADR-001-pdf-upload-presigned-url.md
 
-    큐 구현체(SQS 등)는 미결이라 servers를 선언하지 않는다. 정해지면 여기에 추가한다.
+    공유 값 (app/be `application.yml`, infra/local/bootstrap.sh가 이 값을 따른다):
+    - region: ap-northeast-2
+    - S3 bucket: ymc-documents
+    - 큐: parse-requests · parse-results (아래 channels)
 
 defaultContentType: application/json
+
+servers:
+  local:
+    host: localhost.localstack.cloud:4566
+    protocol: sqs
+    description: 로컬 개발 (LocalStack). 이 도메인은 항상 127.0.0.1로 풀린다.
+  prod:
+    host: sqs.ap-northeast-2.amazonaws.com
+    protocol: sqs
+    description: 운영 (AWS). 자격증명은 IAM 역할로 획득한다.
 
 channels:
   parseRequests:
