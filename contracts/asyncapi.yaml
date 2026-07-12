@@ -1,0 +1,64 @@
+asyncapi: 3.0.0
+
+info:
+  title: YMC BE-AI Messaging
+  version: 0.1.0
+  description: |
+    BE ↔ AI 파싱 배선. 큐 이름과 방향의 SSOT. payload는 schema/를 참조한다.
+
+    - Source: features/FT-003-논문-등록-분석.md (Story 3·4·5)
+    - ADR: decisions/ADR-001-pdf-upload-presigned-url.md
+
+    큐 구현체(SQS 등)는 미결이라 servers를 선언하지 않는다. 정해지면 여기에 추가한다.
+
+defaultContentType: application/json
+
+channels:
+  parseRequests:
+    address: parse-requests
+    title: 파싱 요청 큐 (BE → AI)
+    messages:
+      parseRequest:
+        $ref: "#/components/messages/ParseRequest"
+
+  parseResults:
+    address: parse-results
+    title: 파싱 결과 큐 (AI → BE)
+    messages:
+      parseResult:
+        $ref: "#/components/messages/ParseResult"
+
+operations:
+  publishParseRequest:
+    action: send
+    title: BE가 파싱을 요청한다
+    summary: FT-003 Story 3. complete의 조건부 전이에 성공한 건만 발행한다(중복 호출 시 재발행 없음).
+    channel:
+      $ref: "#/channels/parseRequests"
+    messages:
+      - $ref: "#/channels/parseRequests/messages/parseRequest"
+
+  consumeParseResult:
+    action: receive
+    title: BE가 파싱 결과를 수신해 상태를 전이한다
+    summary: FT-003 Story 5. 상태의 단일 writer는 BE다.
+    channel:
+      $ref: "#/channels/parseResults"
+    messages:
+      - $ref: "#/channels/parseResults/messages/parseResult"
+
+components:
+  messages:
+    # schemaFormat을 명시하지 않는다 — AsyncAPI 파서가 draft-2020-12를 모른다(Unknown schema format).
+    # 스키마 파일은 2020-12로 두고 여기서는 기본 포맷으로 $ref만 건다.
+    ParseRequest:
+      name: ParseRequest
+      contentType: application/json
+      payload:
+        $ref: "./schema/parse-request.schema.json"
+
+    ParseResult:
+      name: ParseResult
+      contentType: application/json
+      payload:
+        $ref: "./schema/parse-result.schema.json"
