@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/team-ymc/project-docs/blob/main/contracts/schema/parse-request.schema.json",
+  "title": "ParseRequest",
+  "description": "BE → AI (parse-requests 큐). 파일 바이트가 아니라 fileKey 참조만 보낸다. (ADR-001)",
+  "type": "object",
+  "required": ["paperId", "fileKey"],
+  "additionalProperties": false,
+  "properties": {
+    "paperId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "결과가 이 값으로 되돌아온다.",
+      "examples": ["550e8400-e29b-41d4-a716-446655440000"]
+    },
+    "fileKey": {
+      "type": "string",
+      "minLength": 1,
+      "description": "원본 PDF의 S3 object key. 파싱 서버가 자체 권한으로 읽는다.",
+      "examples": ["papers/550e8400-e29b-41d4-a716-446655440000/original.pdf"]
+    }
+  }
+}
