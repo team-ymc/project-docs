@@ -7,7 +7,7 @@ FE·BE·AI 사이 계약의 SSOT 디렉토리
 ```
 contracts/
 ├── README.md
-├── openapi.yaml                       동기  FE ↔ BE (REST)            0.1.0 확정
+├── openapi.yaml                       동기  FE ↔ BE (REST)            0.1.1 확정
 ├── asyncapi.yaml                      비동기 배선 — 큐 이름·방향       확정
 └── schema/                            비동기 payload
     ├── parse-request.schema.json      BE → AI                        확정
