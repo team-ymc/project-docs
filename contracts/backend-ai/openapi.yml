@@ -1,0 +1,220 @@
+openapi: 3.1.0
+info:
+  title: AI Server
+  version: 0.1.0
+paths:
+  /api/v1/agents/base-pdf-agent/runs:
+    post:
+      tags:
+      - base-pdf-agent
+      summary: Run
+      operationId: base-pdf-agent-run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BasePdfAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BasePdfAgentRunResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/document-parser/parse:
+    post:
+      tags:
+      - document-parser
+      summary: Parse
+      operationId: document-parser-parse
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentParseRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentParseResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/simple-agent/runs:
+    post:
+      tags:
+      - simple-agent
+      summary: Run
+      operationId: simple-agent-run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleAgentRunResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/simple-agent/runs/stream:
+    post:
+      tags:
+      - simple-agent
+      summary: Run Stream
+      operationId: simple-agent-run_stream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimpleAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+components:
+  schemas:
+    BasePdfAgentRunRequest:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        paper_id:
+          type: string
+          title: Paper Id
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - message
+      title: BasePdfAgentRunRequest
+    BasePdfAgentRunResponse:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        paper_id:
+          type: string
+          title: Paper Id
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - message
+      title: BasePdfAgentRunResponse
+    DocumentParseRequest:
+      properties:
+        paper_id:
+          type: string
+          title: Paper Id
+      type: object
+      required:
+      - paper_id
+      title: DocumentParseRequest
+    DocumentParseResponse:
+      properties:
+        paper_id:
+          type: string
+          title: Paper Id
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - paper_id
+      - message
+      title: DocumentParseResponse
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    SimpleAgentRunRequest:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - thread_id
+      - message
+      title: SimpleAgentRunRequest
+    SimpleAgentRunResponse:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - thread_id
+      - message
+      title: SimpleAgentRunResponse
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
