@@ -8,10 +8,15 @@ info:
     - ADR: decisions/ADR-001-pdf-upload-presigned-url.md
     - BE↔AI 비동기 계약: contracts/asyncapi.yaml
 
-  version: 0.1.1
+  version: 0.1.2
 
-# Sprint 01은 인증 없음. 사용자는 서버가 고정값으로 처리한다. (FT-001에서 도입)
-security: []
+# FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
+# 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
+#   GET /api/oauth2/authorization/google  → Google 동의 화면으로 리다이렉트
+#   GET /api/login/oauth2/code/google     → 콜백. 성공: {FE_ORIGIN}/auth/popup-done.html로 302
+#                                            실패: {FE_ORIGIN}/auth/popup-done.html?error=oauth_failed
+security:
+  - bearerAuth: []
 
 servers:
   - url: http://localhost:8080
@@ -22,6 +27,62 @@ servers:
   #   description: 운영(prod)
 
 paths:
+  /api/auth/refresh:
+    post:
+      operationId: refreshSession
+      summary: refresh 쿠키로 access token 발급·회전
+      description: |
+        ymc_refresh 쿠키의 토큰을 검증해 access token을 발급하고, refresh 토큰을 회전한다
+        (이전 토큰 폐기 + 새 쿠키 Set-Cookie). FE는 앱 부트스트랩과 401 재시도 시 호출한다.
+        폐기된 토큰의 재사용이 감지되면 해당 사용자의 모든 세션을 폐기한다 (응답은 동일한 401).
+      tags: [auth]
+      security: []   # 인증 수단이 쿠키 자체다
+      responses:
+        "200":
+          description: 새 access token + 회전된 refresh 쿠키(Set-Cookie)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: "쿠키 없음·만료·폐기·재사용. code: AUTH_REFRESH_INVALID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/auth/logout:
+    post:
+      operationId: logout
+      summary: 세션 종료 (refresh 무효화 + 쿠키 삭제)
+      description: |
+        refresh token을 즉시 폐기하고 쿠키를 지운다. 멱등 — 쿠키가 없어도 204.
+        주의: 이미 발급된 access token은 회수 불가라 만료(최대 30분)까지 유효하다.
+      tags: [auth]
+      security: []
+      responses:
+        "204":
+          description: 세션 종료됨 (쿠키 삭제 Set-Cookie 포함)
+
+  /api/auth/me:
+    get:
+      operationId: getMe
+      summary: 현재 사용자 조회
+      tags: [auth]
+      responses:
+        "200":
+          description: 인증된 사용자
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: "access token 없음·만료. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /api/papers:
     get:
       operationId: listPapers
@@ -38,6 +99,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaperList"
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     post:
       operationId: createPaper
       summary: 논문 레코드 생성 및 presigned 업로드 URL 발급
@@ -63,6 +130,12 @@ paths:
                 $ref: "#/components/schemas/PaperCreated"
         "400":
           description: 필수 필드 누락, 허용되지 않는 contentType 등 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
           content:
             application/json:
               schema:
@@ -107,6 +180,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaperStatusResponse"
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: 존재하지 않는 paperId
           content:
@@ -141,6 +220,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaperStatusResponse"
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: 존재하지 않는 paperId
           content:
@@ -171,6 +256,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PaperDownload" }
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
         "404":
           description: 존재하지 않는 paperId. code PAPER_NOT_FOUND
           content:
@@ -183,7 +273,41 @@ paths:
               schema: { $ref: "#/components/schemas/Error" }
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: POST /api/auth/refresh가 발급한 access token (만료 30분)
+
   schemas:
+    TokenResponse:
+      type: object
+      required: [accessToken, expiresIn, user]
+      properties:
+        accessToken:
+          type: string
+          description: Bearer access token (JWT). FE는 메모리에만 보관한다 — 스토리지 저장 금지.
+        expiresIn:
+          type: integer
+          description: access token 만료까지 남은 초 (발급 시점 기준, 1800)
+        user:
+          $ref: "#/components/schemas/AuthUser"
+
+    AuthUser:
+      type: object
+      required: [userId, displayName]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          nullable: true
+          description: provider가 이메일을 주지 않으면 null
+        displayName:
+          type: string
+
     PaperList:
       type: object
       required: [papers]
@@ -241,7 +365,7 @@ components:
         fileKey:
           type: string
           description: BE가 생성하는 S3 object key. 서비스 간 메시지에는 파일 바이트가 아니라 이 참조 key가 전달된다. (ADR-001)
-          example: papers/550e8400-e29b-41d4-a716-446655440000/original.pdf
+          example: uploads/00000000-0000-0000-0000-000000000001/550e8400-e29b-41d4-a716-446655440000.pdf
         uploadUrl:
           type: string
           format: uri
@@ -317,6 +441,8 @@ components:
             - DUPLICATE_FILENAME    : 같은 파일명의 논문이 이미 있음 (409, create)
             - PAPER_NOT_FOUND       : 존재하지 않는 paperId (404)
             - UPLOAD_NOT_FOUND      : S3에 객체가 없음 (409, complete)
+            - UNAUTHORIZED          : access token 없음·만료 (401)
+            - AUTH_REFRESH_INVALID  : refresh 쿠키 없음·만료·폐기·재사용 (401)
           enum:
             [
               VALIDATION_ERROR,
@@ -324,6 +450,8 @@ components:
               DUPLICATE_FILENAME,
               PAPER_NOT_FOUND,
               UPLOAD_NOT_FOUND,
+              UNAUTHORIZED,
+              AUTH_REFRESH_INVALID,
             ]
         message:
           type: string
