@@ -1,0 +1,142 @@
+version: 1
+id: simple-agent-run-stream
+status: current
+summary: simple agent 응답을 SSE로 전송하는 endpoint이다.
+
+transport:
+  type: sse
+  method: POST
+  path: /api/v1/agents/simple-agent/runs/stream
+  response_content_type: text/event-stream
+
+request:
+  content_type: application/json
+  body_fields:
+    - name: thread_id
+      type: string
+      required: true
+      description: LangGraph checkpoint에 사용되는 대화 thread 식별자
+    - name: message
+      type: string
+      required: true
+      description: 사용자가 입력한 메시지
+  example:
+    thread_id: conversation_123
+    message: Hello
+
+sse_format:
+  data_type_matches_event: true
+  example_frame: |
+    event: message.delta
+    data: {"type":"message.delta","thread_id":"conversation_123","delta":"Hello"}
+
+event_sequences:
+  success:
+    description: 정상적으로 assistant 응답 생성이 완료된 경우
+    events:
+      - run.started
+      - message.delta
+      - message.completed
+      - run.completed
+    notes:
+      - message.delta는 0개, 1개, 또는 여러 개가 올 수 있다.
+  failure:
+    description: 응답 생성 중 오류가 발생한 경우
+    events:
+      - run.failed
+    notes:
+      - run.failed 이전에 run.started가 이미 전송되었을 수 있다.
+      - run.failed 이전에 일부 message.delta가 이미 전송되었을 수 있다.
+
+events:
+  - name: run.started
+    terminal: false
+    description: AI 서버가 요청 처리를 시작했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.started
+      - name: thread_id
+        type: string
+        required: true
+
+  - name: message.delta
+    terminal: false
+    description: assistant 응답의 부분 chunk를 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: message.delta
+      - name: thread_id
+        type: string
+        required: true
+      - name: delta
+        type: string
+        required: true
+        description: assistant 응답의 부분 문자열
+    backend_notes:
+      - delta를 받은 순서대로 누적한다.
+      - delta 하나가 완전한 단어, 문장, Markdown block이라고 가정하지 않는다.
+
+  - name: message.completed
+    terminal: false
+    description: assistant 응답 전체가 완성되었을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: message.completed
+      - name: thread_id
+        type: string
+        required: true
+      - name: message
+        type: string
+        required: true
+        description: 최종 assistant message
+    backend_notes:
+      - 직접 누적한 delta보다 message.completed.message를 우선한다.
+
+  - name: run.completed
+    terminal: true
+    outcome: success
+    description: run이 성공적으로 종료되었을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.completed
+      - name: thread_id
+        type: string
+        required: true
+
+  - name: run.failed
+    terminal: true
+    outcome: failure
+    description: run이 실패했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.failed
+      - name: thread_id
+        type: string
+        required: true
+      - name: error
+        type: string
+        required: true
+        description: 현재는 구조화된 error object가 아닌 plain string
+
+backend_handling:
+  - message.delta는 순서대로 누적한다.
+  - message.completed.message를 최종 assistant message로 사용한다.
+  - run.completed를 성공 종료로 처리한다.
+  - run.failed를 실패 종료로 처리한다.
+  - run.failed 이전에 받은 partial delta는 최종 assistant message로 확정하지 않는다.
+  - stream 연결 자체가 실패하면 HTTP 오류로 처리한다.
+
+limitations:
+  - stream resume은 지원하지 않는다.
+  - SSE event id는 전송하지 않는다.
+  - run.failed.error는 구조화된 error object가 아니라 plain string이다.

@@ -1,0 +1,105 @@
+version: 1
+kind: sse-contract-guidance
+title: BE-AI SSE Contract
+language: ko
+
+purpose: >
+  AI 서버와 Backend 서버 사이의 Server-Sent Events(SSE) 계약을 endpoint별 YAML 파일로
+  일관되게 작성하기 위한 가이드이다.
+
+scope:
+  includes:
+    - SSE 기반 HTTP streaming endpoint
+    - endpoint별 request body
+    - endpoint별 event 순서
+    - endpoint별 event payload
+    - Backend 처리 규칙
+  excludes:
+    - 일반 request/response HTTP API
+    - SQS, Kafka 같은 message queue 계약
+
+relationship_to_openapi:
+  openapi_file: contracts/backend-ai/openapi.yml
+  note: >
+    OpenAPI는 SSE endpoint의 path와 request body는 표현할 수 있지만,
+    SSE event 이름, event 순서, data payload는 충분히 표현하지 못한다.
+    따라서 SSE 상세 계약은 endpoint별 YAML 파일에 작성한다.
+
+global_rules:
+  - event 이름과 payload schema는 반드시 endpoint별 파일에 명시한다.
+  - 하나의 HTTP stream 안에서 event는 전송 순서를 보장한다.
+  - Backend는 endpoint별 파일에 정의된 terminal event를 기준으로 stream 종료를 판단한다.
+  - Backend는 partial event payload를 최종 응답으로 확정하면 안 된다.
+
+sse_format:
+  response_content_type: text/event-stream
+  frame:
+    event_line: "event: <event_name>"
+    data_line: "data: <json_object>"
+    separator: "blank line"
+  data_rules:
+    - data는 JSON object 문자열이어야 한다.
+    - data.type을 사용하는 endpoint에서는 data.type이 event 이름과 같아야 한다.
+
+endpoint_file_format:
+  required_top_level_keys:
+    - version
+    - id
+    - status
+    - transport
+    - request
+    - event_sequences
+    - events
+    - backend_handling
+  recommended_path: contracts/backend-ai/sse/<endpoint-id>.yml
+  notes:
+    - endpoint별 파일 하나가 SSE endpoint 하나를 설명한다.
+    - 새 SSE endpoint를 추가하면 이 파일의 endpoints 목록에도 추가한다.
+    - event 이름은 endpoint별 파일 안에서만 확정한다.
+
+endpoint_template:
+  version: 1
+  id: "<endpoint-id>"
+  status: current
+  summary: "<이 endpoint가 제공하는 SSE 기능>"
+  transport:
+    type: sse
+    method: POST
+    path: /api/v1/...
+    response_content_type: text/event-stream
+  request:
+    content_type: application/json
+    body_fields:
+      - name: "<field_name>"
+        type: string
+        required: true
+        description: "<field description>"
+  event_sequences:
+    success:
+      description: "<성공 시 event 순서 설명>"
+      events:
+        - "<event-name>"
+    failure:
+      description: "<실패 시 event 순서 설명>"
+      events:
+        - "<event-name>"
+      notes:
+        - "<failure sequence note>"
+  events:
+    - name: "<event-name>"
+      terminal: false
+      description: "<event description>"
+      payload_fields:
+        - name: type
+          type: string
+          required: true
+          description: "SSE event 이름과 같은 값"
+  backend_handling:
+    - "<Backend 처리 규칙>"
+  limitations:
+    - "<현재 제한사항>"
+
+endpoints:
+  - id: simple-agent-run-stream
+    file: docs/contracts/backend-ai/sse/simple-agent-run-stream.yml
+    status: current
