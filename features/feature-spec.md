@@ -36,7 +36,7 @@ Paper Teacher의 제품 역량을 독립적으로 개발·검증 가능한 featu
 | FT-003 | 논문 등록·분석 | FT-002 | UF-002 | In Progress | features/FT-003-논문-등록-분석.md |
 | FT-004 | 논문 학습 뷰어 | FT-002, FT-003 | UF-003, UF-004, UF-005 | In Progress | features/FT-004-논문-학습-뷰어.md |
 | FT-005 | 전체 번역 | FT-004 | UF-004 | In Progress | features/FT-005-전체-번역.md |
-| FT-006 | 인라인 설명·번역 | FT-004 | UF-005 | In Progress | features/FT-006-인라인-설명-번역.md |
+| FT-006 | 인라인 액션 | FT-004 | UF-005 | In Progress | features/FT-006-인라인-액션.md |
 | FT-007 | AI 튜터 채팅 | FT-004 | UF-003 | In Progress | features/FT-007-ai-튜터-채팅.md |
 | FT-008 | 위키 생성 | FT-003 | TBD | Not Started | features/FT-008-위키-생성.md |
 | FT-009 | 구조 맵 | FT-003 | TBD | Not Started | features/FT-009-구조-맵.md |
@@ -50,7 +50,7 @@ FT-001 소셜 인증
         └→ FT-003 논문 등록·분석 (구조 추출)
               ├→ FT-004 논문 학습 뷰어 (공통 캔버스)
               │     ├→ FT-005 전체 번역
-              │     ├→ FT-006 인라인 설명·번역
+              │     ├→ FT-006 인라인 액션
               │     └→ FT-007 AI 튜터 채팅
               ├→ FT-008 위키 생성        → (FT-004 / FT-007 참조)
               └→ FT-009 구조 맵          → (FT-004 / FT-007 참조)
