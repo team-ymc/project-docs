@@ -6,7 +6,7 @@
 - Status: Proposed
 - Deciders: geunhh
 - Tracking: FT-003 논문 등록 · 분석 Story 7
-- Related: ADR-001, ADR-002, `contracts/openapi.yaml`
+- Related: ADR-001, ADR-002, `contracts/frontend-backend/openapi.yaml`
 
 ## 2. Context
 
