@@ -101,5 +101,5 @@ endpoint_template:
 
 endpoints:
   - id: simple-agent-run-stream
-    file: docs/contracts/backend-ai/sse/simple-agent-run-stream.yml
+    file: contracts/backend-ai/sse/simple-agent-run-stream.yml
     status: current

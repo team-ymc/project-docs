@@ -6,7 +6,7 @@
 - Status: Accepted
 - Deciders: 근흐흐
 - Tracking: FT-003 논문 등록 · 분석 / YMC-179
-- Implements: `contracts/openapi.yaml` (0.1.0), `contracts/asyncapi.yaml`, `contracts/schema/parse-request.schema.json`, `contracts/schema/parse-result.schema.json`
+- Implements: `contracts/frontend-backend/openapi.yaml` / `contracts/backend-ai/openapi.yml`
 
 ## 2. Context
 
@@ -65,7 +65,8 @@ FE의 PDF 확장자/크기 검사는 사용자 경험을 위한 사전 검증으
 
 - 브라우저 종료 후에도 즉시 처리가 필요하다는 요구가 발생하면, complete API에 더해 S3 ObjectCreated event 기반 완료 감지를 이중 신호로 검토한다. MVP에서는 complete API로 충분하다.
 
-> Data Flow의 `Queue`는 **SQS**다 (로컬은 LocalStack). 큐 이름·리전·버킷은 `contracts/asyncapi.yaml`이 SSOT다.
+> Data Flow의 `Queue`는 **SQS**다 (로컬은 LocalStack). 큐 이름과 전달 의미론은 ADR-002가,
+> BE↔AI HTTP API와 그 request/response schema는 `contracts/backend-ai/openapi.yml`이 소유한다.
 
 ## 6. Data Flow
 
@@ -144,7 +145,8 @@ sequenceDiagram
 
 ## 7. Updates
 
-- **2026-07-11** — Status를 `Proposed` → `Accepted`로 확정. 이 ADR을 전제로 `contracts/openapi.yaml`이 0.1.0으로 고정되었고, BE 구현(YMC-182)이 착수되었다. 상태 enum(`UPLOAD_PENDING → UPLOADED → PROCESSING → COMPLETED | FAILED | EXPIRED`)과 조건부 전이(complete 중복 호출 방어), reconciliation batch가 모두 계약과 feature 문서에 반영되었다.
+- **2026-07-11** — Status를 `Proposed` → `Accepted`로 확정. 이 ADR을 전제로 현재의 `contracts/frontend-backend/openapi.yaml`이 0.1.0으로 고정되었고, BE 구현(YMC-182)이 착수되었다. 상태 enum(`UPLOAD_PENDING → UPLOADED → PROCESSING → COMPLETED | FAILED | EXPIRED`)과 조건부 전이(complete 중복 호출 방어), reconciliation batch가 모두 계약과 feature 문서에 반영되었다.
 - **2026-07-12** — batch 스캔 범위에 `PROCESSING`을 추가하고 타임아웃 시 `FAILED`로 전이하도록 §5·§6을 고쳤다. 기존 batch는 `UPLOAD_PENDING`/`UPLOADED`만 봐서, 파싱 워커가 죽으면 "영원히 진행 중"으로 남는 구멍이 있었다.
 - **2026-07-12** — **reconciliation batch를 post-MVP로 결정했다.** MVP는 정체를 방치한다 — 멈춘 레코드는 서재에 "진행 중"으로 계속 남고, `EXPIRED`는 발생하지 않는다. batch를 구현할 Story도 티켓도 없는 상태에서 MVP 인수조건으로만 걸려 있었기에, 스코프를 정직하게 내렸다. §5 Consequences·Follow-ups에 갭을 명시했다.
-- **2026-07-12** — BE↔AI 계약을 파일로 만들었다 (`contracts/asyncapi.yaml`, `schema/parse-request`, `schema/parse-result`). 참조만 되고 실재하지 않던 상태를 해소했다. envelope만 확정하고 파싱 산출물 본문(`result`)은 AI 소유로 비워 뒀다.
+- **2026-07-12** — 당시 BE↔AI 비동기 계약을 별도 AsyncAPI와 JSON Schema 파일로 만들었다. envelope만 확정하고 파싱 산출물 본문은 AI 소유로 비워 뒀다.
+- **2026-07-22** — 임시 AsyncAPI·외부 JSON Schema 파일을 제거했다. 현재 BE↔AI HTTP API와 그 request/response schema의 SSOT는 `contracts/backend-ai/openapi.yml`이며, SQS 토폴로지와 전달 의미론은 ADR-002가 유지한다.

@@ -1,0 +1,952 @@
+openapi: 3.2.0
+info:
+  title: YMC FE-BE API
+  description: |
+    FE↔BE HTTP API contract. REST와 SSE를 함께 정의하는 SSOT다.
+
+    - Source: features/FT-002-서재.md, features/FT-003-논문-등록-분석.md,
+      features/FT-007-ai-튜터-채팅.md
+    - ADR: decisions/ADR-001-pdf-upload-presigned-url.md,
+      decisions/ADR-004-chat-streaming-be-relay.md
+    - BE↔AI API 계약: contracts/backend-ai/openapi.yml
+    - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
+
+  version: 0.2.0
+
+# FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
+# 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
+#   GET /api/oauth2/authorization/google  → Google 동의 화면으로 리다이렉트
+#   GET /api/login/oauth2/code/google     → 콜백. 성공: {FE_ORIGIN}/auth/popup-done.html로 302
+#                                            실패: {FE_ORIGIN}/auth/popup-done.html?error=oauth_failed
+security:
+  - bearerAuth: []
+
+servers:
+  - url: http://localhost:8080
+    description: 로컬 개발 (BE)
+  # - url: https://dev-api.paperteacher.example
+  #   description: 개발(dev)
+  # - url: https://api.paperteacher.example
+  #   description: 운영(prod)
+
+paths:
+  /api/auth/refresh:
+    post:
+      operationId: refreshSession
+      summary: refresh 쿠키로 access token 발급·회전
+      description: |
+        ymc_refresh 쿠키의 토큰을 검증해 access token을 발급하고, refresh 토큰을 회전한다
+        (이전 토큰 폐기 + 새 쿠키 Set-Cookie). FE는 앱 부트스트랩과 401 재시도 시 호출한다.
+        폐기된 토큰의 재사용이 감지되면 해당 사용자의 모든 세션을 폐기한다 (응답은 동일한 401).
+      tags: [auth]
+      security: []   # 인증 수단이 쿠키 자체다
+      responses:
+        "200":
+          description: 새 access token + 회전된 refresh 쿠키(Set-Cookie)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          description: "쿠키 없음·만료·폐기·재사용. code: AUTH_REFRESH_INVALID"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/auth/logout:
+    post:
+      operationId: logout
+      summary: 세션 종료 (refresh 무효화 + 쿠키 삭제)
+      description: |
+        refresh token을 즉시 폐기하고 쿠키를 지운다. 멱등 — 쿠키가 없어도 204.
+        주의: 이미 발급된 access token은 회수 불가라 만료(최대 30분)까지 유효하다.
+      tags: [auth]
+      security: []
+      responses:
+        "204":
+          description: 세션 종료됨 (쿠키 삭제 Set-Cookie 포함)
+
+  /api/auth/me:
+    get:
+      operationId: getMe
+      summary: 현재 사용자 조회
+      tags: [auth]
+      responses:
+        "200":
+          description: 인증된 사용자
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: "access token 없음·만료. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/papers:
+    get:
+      operationId: listPapers
+      summary: 서재 논문 목록 조회
+      description: |
+        서재(WF-016)에 표시할 논문 목록. 정렬·페이지네이션은 MVP 범위 밖 — 단순 전체 목록이다.
+
+        상태값 → 행 표시 매핑은 FT-002 Story 3의 표를 따른다. FE는 그 표를 벗어나 매핑하지 않는다.
+      tags: [papers]
+      responses:
+        "200":
+          description: 논문 목록 (없으면 빈 배열 — 빈 서재 WF-004)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperList"
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      operationId: createPaper
+      summary: 논문 레코드 생성 및 presigned 업로드 URL 발급
+      description: |
+        BE가 paperId·fileKey를 생성하고 레코드를 UPLOAD_PENDING으로 만든 뒤 presigned upload URL을 발급한다.
+        FE는 그 URL로 S3에 직접 업로드하고 complete를 호출한다 — 파일 바이트는 BE를 거치지 않는다. (ADR-001)
+
+        레코드 생성이 업로드보다 먼저다. 이 시점에 BE가 가진 것은 메타데이터뿐이라 내용 기반 유효성 판정은
+        하지 않고 파일명 중복만 판정한다. (FT-003 Story 2)
+      tags: [papers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaperRequest"
+      responses:
+        "201":
+          description: 레코드 생성됨. presigned URL로 S3 업로드 후 complete를 호출한다.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperCreated"
+        "400":
+          description: 필수 필드 누락, 허용되지 않는 contentType 등 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: |
+            파일명 중복 — 같은 파일명의 논문이 이미 있음. code: DUPLICATE_FILENAME
+            레코드를 만들지 않고 거절한다(presigned URL도 발급하지 않음). (FT-003 Story 2)
+
+            주의: 업로드에 실패한 UPLOAD_PENDING 레코드도 중복으로 걸린다 —
+            MVP는 같은 파일명의 재업로드를 지원하지 않는다. (FT-003 Out of Scope)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/papers/{paperId}/complete:
+    post:
+      operationId: completePaperUpload
+      summary: S3 업로드 완료 통보 (파싱 트리거)
+      description: |
+        FE가 presigned URL로 S3 업로드를 마친 뒤 호출하는 primary 완료 신호다.
+        BE는 S3 HEAD로 객체 존재를 확인하고, 조건부로 UPLOAD_PENDING → UPLOADED로
+        전이한 뒤 parse-requests 큐에 (paperId, fileKey)를 발행하고 PROCESSING으로
+        전이한다.
+
+        멱등: 이미 전이된 레코드에 대한 중복 호출은 재발행 없이 현재 상태를 반환한다.
+        객체가 아직 S3에 없으면 상태를 유지하고 409를 반환한다(재시도 가능). (ADR-001)
+      tags: [papers]
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: create 시 발급된 paperId
+      responses:
+        "200":
+          description: 업로드 확인됨. 파싱이 비동기로 시작된다(또는 이미 진행 중).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperStatusResponse"
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: 존재하지 않는 paperId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: S3에 객체가 아직 없음 — 업로드 미완료/실패. UPLOAD_PENDING 유지, 재시도 가능.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/papers/{paperId}/status:
+    get:
+      operationId: getPaperStatus
+      summary: 논문 처리 상태 조회 (폴링용)
+      description: FE가 새로고침 없이 상태를 반영하기 위해 주기적으로 호출한다. (YMC-184, YMC-186)
+      tags: [papers]
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: create 시 발급된 paperId
+      responses:
+        "200":
+          description: 현재 상태
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperStatusResponse"
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: 존재하지 않는 paperId
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/papers/{paperId}/download:
+    get:
+      operationId: getPaperDownloadUrl
+      summary: 원본 PDF 다운로드 URL 발급
+      description: |
+        완료된 논문의 원본 PDF를 받기 위한 presigned GET URL을 발급한다.
+        브라우저는 이 URL로 S3에서 직접 내려받는다 — 파일 바이트는 BE를 거치지 않는다 (ADR-001, 업로드와 대칭).
+        URL에는 Content-Disposition(attachment; filename=원본파일명)이 서명돼 있어 원본 파일명으로 저장된다.
+
+        가용 조건은 "S3에 원본 객체가 있음"이다(status가 UPLOADED 이상). UPLOAD_PENDING/EXPIRED는 409.
+        "완료 시에만 다운로드"라는 제품 규칙(FT-002 Story 5)은 FE가 COMPLETED 행에서만 노출해 구현한다.
+      tags: [papers]
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: presigned GET URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaperDownload" }
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: 존재하지 않는 paperId. code PAPER_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: 원본 객체가 아직 없음(UPLOAD_PENDING/EXPIRED). code UPLOAD_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/papers/{paperId}/chat/messages:
+    post:
+      operationId: createChatMessageStream
+      summary: AI 튜터에게 질문하고 답변을 SSE로 수신
+      description: |
+        인증된 사용자가 소유한 논문에 질문을 보내고 assistant 답변을 스트리밍한다.
+        요청은 JSON body와 Bearer header가 필요한 POST이므로 FE는 EventSource가 아니라
+        fetch의 ReadableStream으로 `text/event-stream` 응답을 소비한다.
+
+        `sessionId`를 생략하면 BE가 새 채팅 세션을 만들고, 기존 세션의 후속 질문에는
+        이전 응답에서 받은 `sessionId`를 보낸다. BE는 질문과 status=GENERATING인
+        assistant message를 먼저 저장한 뒤 스트림을 시작한다.
+
+        이 operation과 `components.schemas.ChatSseEvent`가 FE↔BE 채팅 SSE 계약의 SSOT다.
+        OpenAPI 3.2의 `text/event-stream.itemSchema`가 event 이름과 JSON data schema를 정의한다.
+
+        스트림 시작 전의 인증·권한·입력 오류는 아래 JSON HTTP 오류로 반환하고,
+        200 응답이 시작된 뒤의 AI 오류·timeout은 terminal `error` SSE event로 반환한다.
+        `message.completed` 또는 `error`를 하나 보낸 뒤 BE가 스트림을 닫는다.
+      tags: [chat]
+      x-sse-lifecycle:
+        charset: UTF-8
+        frame: "event: <event-name> + data: <JSON object> + blank line"
+        eventId: unsupported
+        retryLine: unsupported
+        heartbeatIntervalSeconds: 15
+        heartbeatRule: message.started 이후 outbound event가 15초 동안 없으면 BE가 생성한다.
+        successSequence:
+          - "message.started (exactly one)"
+          - "message.delta (zero or more)"
+          - "heartbeat (zero or more, interleaved)"
+          - "message.completed (exactly one, terminal)"
+        failureSequence:
+          - "message.started (exactly one)"
+          - "message.delta (zero or more)"
+          - "heartbeat (zero or more, interleaved)"
+          - "error (exactly one, terminal)"
+        rules:
+          - data.type은 SSE event 이름과 같아야 한다.
+          - 한 HTTP stream 안에서 domain event의 전송 순서를 보장한다.
+          - message.completed와 error 중 최대 하나만 보낸다.
+          - terminal event를 보낸 뒤 BE는 stream을 정상 종료한다.
+          - terminal event 없는 EOF를 FE는 성공으로 간주하지 않는다.
+          - heartbeat는 연결 유지용이며 상태를 바꾸거나 application deadline을 연장하지 않는다.
+          - BE와 중간 계층은 응답을 버퍼링·캐싱·변형하지 않는다.
+        frontendDisconnect:
+          - BE는 FE 방향 전송만 중단하고 application deadline 안에서 AI 수신과 최종 저장을 계속한다.
+          - FE disconnect만으로 assistant message를 FAILED로 바꾸지 않는다.
+          - stream resume과 Last-Event-ID는 지원하지 않으며 재접속 시 저장된 session message를 조회한다.
+      x-upstream-event-mapping:
+        contract: ../backend-ai/sse/simple-agent-run-stream.yml
+        endpoint: "POST /api/v1/agents/simple-agent/runs/stream"
+        request:
+          path.paperId: BE 권한·session association·correlation에만 사용하고 AI에는 전달하지 않는다.
+          body.sessionId: 생략 시 새로 생성한 값을 포함해 AI body.thread_id에 UUID 문자열 그대로 전달한다.
+          body.content: AI body.message에 UTF-8 질문 문자열 그대로 전달한다.
+          body.clientMessageId: BE 멱등 처리에만 사용하고 AI에는 전달하지 않는다.
+        events:
+          message.started: BE가 user message와 assistant GENERATING row를 commit한 뒤 자체 생성한다.
+          run.started: BE 내부 run 시작 확인에만 사용하고 FE에는 보내지 않는다.
+          message.delta: 같은 순서의 FE message.delta로 전달하고 bounded memory에 누적한다.
+          message.completed: 최종 content 후보로 보관하고 이 event만으로 FE 성공을 보내지 않는다.
+          run.completed: AI message.completed 수신과 COMPLETED DB commit 뒤 FE message.completed로 변환한다.
+          run.failed: FAILED DB commit 뒤 사용자용 메시지의 FE error(AI_RUN_FAILED)로 변환한다.
+          heartbeat: FE outbound 침묵 시간을 기준으로 BE가 자체 생성한다.
+        protocolFailures:
+          - AI message.completed 없이 run.completed를 받으면 AI_PROTOCOL_ERROR다.
+          - AI message.completed 뒤 run.completed 없이 EOF가 오면 AI_PROTOCOL_ERROR다.
+          - upstream terminal event 없이 EOF가 오면 AI_STREAM_DISCONNECTED다.
+          - application deadline 전에 upstream terminal event가 없으면 AI_TIMEOUT이다.
+      x-stream-handling:
+        backend:
+          - stream 시작 전 인증·권한·논문 상태·session 소유권·사용량·동시 실행을 검증한다.
+          - user message와 assistant GENERATING row를 한 transaction으로 저장한 뒤 message.started를 보낸다.
+          - AI stream은 한 owner만 한 번 구독하며 delta를 즉시 전달하고 bounded memory에 누적한다.
+          - AI 완성본이 누적 delta와 다르면 차이를 기록하고 AI 완성본을 우선한다.
+          - 성공은 AI message.completed와 run.completed 수신 및 COMPLETED DB commit 뒤 확정한다.
+          - 실패 시 partial delta를 저장하지 않고 FAILED DB commit 뒤 연결된 FE에 error를 보낸다.
+          - 최종 저장 실패 후 별도 FAILED 전이도 실패하면 terminal event 없이 닫고 운영 경보를 발생시킨다.
+          - application timeout 시 AI 연결과 실제 LLM 호출의 취소를 전파한다.
+        frontend:
+          - streaming TextDecoder를 사용하고 network chunk와 UTF-8 문자·SSE frame 경계가 같다고 가정하지 않는다.
+          - 빈 줄로 frame을 분리한 뒤 event와 data line을 조립하고 data JSON을 파싱한다.
+          - message.delta는 같은 messageId의 임시 content에 순서대로 append한다.
+          - message.completed에서 임시 content를 전체 content로 replace한다.
+          - HTTP 오류·terminal error·terminal 없는 EOF는 완료로 처리하지 않는다.
+      x-contract-test-cases:
+        - run.started → message.delta* → message.completed → run.completed를 성공 stream으로 변환한다.
+        - delta가 한글 UTF-8 또는 Markdown syntax 중간에서 나뉘어도 completed.content로 수렴한다.
+        - AI run.failed를 raw error 노출 없이 FAILED 저장 후 terminal error로 변환한다.
+        - AI message.completed 뒤 run.completed가 누락되면 AI_PROTOCOL_ERROR로 끝낸다.
+        - application timeout 시 AI 취소를 전파하고 FAILED 저장 후 AI_TIMEOUT으로 끝낸다.
+        - FE 연결을 중간에 종료해도 upstream을 한 번만 소비하고 최종 상태를 저장한다.
+        - terminal event 없는 EOF를 FE가 성공으로 처리하지 않는다.
+        - 동일 clientMessageId 재전송이 user message와 AI run을 중복 생성하지 않는다.
+      x-contract-limitations:
+        - stream resume, SSE event id와 retry line은 지원하지 않는다.
+        - 사용자 취소 API와 실행 중단 UI는 지원하지 않는다.
+        - session message 조회 API는 별도 OpenAPI operation으로 정의해야 한다.
+        - 현재 BE↔AI simple-agent request에는 paper_id와 BE canonical history가 없다.
+        - paper context와 canonical history 전달에는 BE↔AI streaming contract 확장이 필요하다.
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: |
+            질문 대상 논문의 BE 식별자. BE가 소유권과 학습 가능 상태를 검증하며,
+            session은 생성 시 이 paperId에 고정된다.
+        - name: Accept
+          in: header
+          required: true
+          schema:
+            const: text/event-stream
+          description: SSE 응답을 요청한다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatMessageStreamRequest"
+            example:
+              sessionId: 4f0d5ca6-6f79-4f30-a970-d07e6527d076
+              clientMessageId: 0bfbf67a-31d0-4585-88a5-0ddac640d57e
+              content: 이 논문의 핵심 기여가 뭐야?
+      responses:
+        "200":
+          description: |
+            SSE 스트림이 시작됨. `message.completed` 또는 `error` event가 terminal이다.
+            terminal event 없이 EOF가 오면 FE는 완료로 간주하지 않는다.
+          headers:
+            Cache-Control:
+              description: 중간 계층의 응답 변형·캐싱 방지
+              schema:
+                type: string
+                example: no-cache, no-transform
+          content:
+            text/event-stream:
+              itemSchema:
+                $ref: "#/components/schemas/ChatSseEvent"
+              examples:
+                success:
+                  summary: 정상 완료
+                  value: |
+                    event: message.started
+                    data: {"type":"message.started","paperId":"550e8400-e29b-41d4-a716-446655440000","sessionId":"4f0d5ca6-6f79-4f30-a970-d07e6527d076","messageId":"af7342d7-45a8-4b4b-bc38-f7050b977c14","clientMessageId":"0bfbf67a-31d0-4585-88a5-0ddac640d57e","status":"GENERATING"}
+
+                    event: message.delta
+                    data: {"type":"message.delta","paperId":"550e8400-e29b-41d4-a716-446655440000","sessionId":"4f0d5ca6-6f79-4f30-a970-d07e6527d076","messageId":"af7342d7-45a8-4b4b-bc38-f7050b977c14","delta":"핵심 기여는"}
+
+                    event: heartbeat
+                    data: {"type":"heartbeat","paperId":"550e8400-e29b-41d4-a716-446655440000","sessionId":"4f0d5ca6-6f79-4f30-a970-d07e6527d076","messageId":"af7342d7-45a8-4b4b-bc38-f7050b977c14","emittedAt":"2026-07-22T12:00:15Z"}
+
+                    event: message.completed
+                    data: {"type":"message.completed","paperId":"550e8400-e29b-41d4-a716-446655440000","sessionId":"4f0d5ca6-6f79-4f30-a970-d07e6527d076","messageId":"af7342d7-45a8-4b4b-bc38-f7050b977c14","content":"핵심 기여는 **어텐션만으로** 시퀀스를 처리한 것입니다.","contentFormat":"markdown","status":"COMPLETED"}
+                aiFailure:
+                  summary: AI 실행 실패
+                  value: |
+                    event: message.started
+                    data: {"type":"message.started","paperId":"550e8400-e29b-41d4-a716-446655440000","sessionId":"4f0d5ca6-6f79-4f30-a970-d07e6527d076","messageId":"af7342d7-45a8-4b4b-bc38-f7050b977c14","clientMessageId":"0bfbf67a-31d0-4585-88a5-0ddac640d57e","status":"GENERATING"}
+
+                    event: error
+                    data: {"type":"error","paperId":"550e8400-e29b-41d4-a716-446655440000","sessionId":"4f0d5ca6-6f79-4f30-a970-d07e6527d076","messageId":"af7342d7-45a8-4b4b-bc38-f7050b977c14","status":"FAILED","error":{"code":"AI_RUN_FAILED","message":"답변을 생성하지 못했습니다.","retryable":true}}
+                timeout:
+                  summary: application timeout
+                  value: |
+                    event: message.started
+                    data: {"type":"message.started","paperId":"550e8400-e29b-41d4-a716-446655440000","sessionId":"4f0d5ca6-6f79-4f30-a970-d07e6527d076","messageId":"af7342d7-45a8-4b4b-bc38-f7050b977c14","clientMessageId":"0bfbf67a-31d0-4585-88a5-0ddac640d57e","status":"GENERATING"}
+
+                    event: error
+                    data: {"type":"error","paperId":"550e8400-e29b-41d4-a716-446655440000","sessionId":"4f0d5ca6-6f79-4f30-a970-d07e6527d076","messageId":"af7342d7-45a8-4b4b-bc38-f7050b977c14","status":"FAILED","error":{"code":"AI_TIMEOUT","message":"답변 생성 시간이 초과되었습니다.","retryable":true}}
+        "400":
+          description: "잘못된 요청. code: VALIDATION_ERROR"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: |
+            paperId가 없으면 PAPER_NOT_FOUND. sessionId가 없거나 현재 사용자·paperId에
+            속하지 않으면 CHAT_SESSION_NOT_FOUND.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: |
+            논문이 아직 학습 가능 상태가 아니면 PAPER_NOT_READY. 같은 세션에 이미
+            생성 중인 답변이 있으면 CHAT_RUN_IN_PROGRESS. clientMessageId를 다른 요청
+            내용에 재사용하면 CLIENT_MESSAGE_ID_CONFLICT.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: "채팅 사용량 제한 초과. code: CHAT_USAGE_LIMIT_EXCEEDED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: POST /api/auth/refresh가 발급한 access token (만료 30분)
+
+  schemas:
+    TokenResponse:
+      type: object
+      required: [accessToken, expiresIn, user]
+      properties:
+        accessToken:
+          type: string
+          description: Bearer access token (JWT). FE는 메모리에만 보관한다 — 스토리지 저장 금지.
+        expiresIn:
+          type: integer
+          description: access token 만료까지 남은 초 (발급 시점 기준, 1800)
+        user:
+          $ref: "#/components/schemas/AuthUser"
+
+    AuthUser:
+      type: object
+      required: [userId, displayName]
+      properties:
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: [string, "null"]
+          description: provider가 이메일을 주지 않으면 null
+        displayName:
+          type: string
+
+    PaperList:
+      type: object
+      required: [papers]
+      properties:
+        papers:
+          type: array
+          description: 등록된 논문이 없으면 빈 배열. FE는 빈 배열을 빈 서재(WF-004)로 렌더한다.
+          items:
+            $ref: "#/components/schemas/PaperListItem"
+
+    PaperListItem:
+      type: object
+      required: [paperId, filename, status, createdAt, updatedAt]
+      description: 서재 목록의 한 행(WF-016). 학습 페이지 진입은 status=COMPLETED인 행에서만 가능하다. (FT-002 Story 4)
+      properties:
+        paperId:
+          type: string
+          format: uuid
+        filename:
+          type: string
+          description: 원본 파일명. MVP는 이것을 행의 제목으로 쓴다 (파싱이 추출한 논문 제목이 아니다).
+          example: attention-is-all-you-need.pdf
+        status:
+          $ref: "#/components/schemas/PaperStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          description: 상태가 마지막으로 바뀐 시각.
+
+    CreatePaperRequest:
+      type: object
+      required: [filename, contentType]
+      properties:
+        filename:
+          type: string
+          description: 원본 파일명 (표시·참조용). 사용자별 중복 판정의 기준. (FT-003 Story 2)
+          example: attention-is-all-you-need.pdf
+        contentType:
+          type: string
+          enum: [application/pdf]
+          description: MVP는 PDF만. FE 사전 검증 보조용이며, 신뢰 검증은 업로드 후 BE/Worker에서 재수행한다.
+
+    PaperCreated:
+      type: object
+      required: [paperId, fileKey, uploadUrl, uploadExpiresAt, status, createdAt]
+      properties:
+        paperId:
+          type: string
+          format: uuid
+          description: BE가 insert 전 생성하는 UUID. 이후 모든 조회·이벤트의 correlation key.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        fileKey:
+          type: string
+          description: BE가 생성하는 S3 object key. 서비스 간 메시지에는 파일 바이트가 아니라 이 참조 key가 전달된다. (ADR-001)
+          example: uploads/00000000-0000-0000-0000-000000000001/550e8400-e29b-41d4-a716-446655440000.pdf
+        uploadUrl:
+          type: string
+          format: uri
+          description: S3 presigned PUT URL. 짧은 만료 시간의 업로드 권한만 위임한다.
+        uploadExpiresAt:
+          type: string
+          format: date-time
+          description: presigned URL 만료 시각
+        status:
+          $ref: "#/components/schemas/PaperStatus"
+        createdAt:
+          type: string
+          format: date-time
+
+    PaperDownload:
+      type: object
+      required: [downloadUrl, expiresAt]
+      description: 원본 PDF를 받기 위한 presigned GET URL. FE는 이 URL로 브라우저가 직접 다운로드한다.
+      properties:
+        downloadUrl:
+          type: string
+          format: uri
+          description: S3 presigned GET URL. Content-Disposition(attachment; filename)이 서명에 포함된다.
+        expiresAt:
+          type: string
+          format: date-time
+          description: presigned URL 만료 시각.
+
+    PaperStatusResponse:
+      type: object
+      required: [paperId, status, updatedAt]
+      properties:
+        paperId:
+          type: string
+          format: uuid
+          description: 서재는 행마다 폴링하므로 응답이 뒤섞일 수 있다 — 응답만으로 판별하기 위해 싣는다.
+        status:
+          $ref: "#/components/schemas/PaperStatus"
+        updatedAt:
+          type: string
+          format: date-time
+          description: 상태가 마지막으로 바뀐 시각.
+
+    PaperStatus:
+      type: string
+      description: |
+        논문 라이프사이클. 단일 writer는 BE다 — 파싱 서버는 결과만 발행한다.
+
+        정상 전이: UPLOAD_PENDING → UPLOADED → PROCESSING → COMPLETED | FAILED
+        - UPLOAD_PENDING: 레코드 생성·URL 발급됨, complete 대기 (FE가 S3 업로드 중)
+        - UPLOADED: complete 수신·S3 HEAD 확인됨 (파싱 발행 직전의 짧은 상태)
+        - PROCESSING: 파싱 진행 중
+        - COMPLETED / FAILED: 파싱 완료 / 실패 (terminal)
+        - EXPIRED: 업로드가 끝내 확인되지 않음 (terminal). FAILED와 원인이 달라 상태값은 분리해 두지만,
+          사용자 표시는 둘 다 '실패'다 (FT-002 Story 3). **MVP에서는 발생하지 않는다** —
+          이 값은 reconciliation batch(ADR-001 §5, post-MVP)만이 쓴다.
+
+        **MVP는 정체를 정리하지 않는다.** 워커 유실 등으로 결과가 끝내 오지 않으면 레코드는 PROCESSING에
+        (혹은 complete가 끝내 안 오면 UPLOAD_PENDING에) 영구히 남는다. batch 도입은 post-MVP다. (ADR-001 §5)
+      enum: [UPLOAD_PENDING, UPLOADED, PROCESSING, COMPLETED, FAILED, EXPIRED]
+
+    ChatMessageStreamRequest:
+      type: object
+      required: [clientMessageId, content]
+      additionalProperties: false
+      properties:
+        sessionId:
+          type: [string, "null"]
+          format: uuid
+          description: |
+            BE가 생성하는 채팅 세션 식별자. 첫 질문에서는 생략하거나 null로 보내고,
+            후속 질문에서는 같은 paperId에 속한 기존 sessionId를 보낸다.
+            BE는 BE↔AI 요청의 `thread_id`에 이 값을 문자열로 그대로 전달한다.
+        clientMessageId:
+          type: string
+          format: uuid
+          description: |
+            FE가 질문 전 생성하는 멱등 식별자. access token refresh에 따른 재전송이나
+            더블 클릭에서도 같은 값을 유지한다. BE는 동일 요청을 새 AI run으로 실행하지 않는다.
+        content:
+          type: string
+          minLength: 1
+          description: 사용자가 입력한 질문의 UTF-8 plain text. BE↔AI 요청의 `message`로 전달한다.
+
+    ChatMessageStatus:
+      type: string
+      description: |
+        assistant message의 BE 저장 상태. GENERATING에서 COMPLETED 또는 FAILED로만 전이한다.
+      enum: [GENERATING, COMPLETED, FAILED]
+
+    ChatSseEvent:
+      type: object
+      description: |
+        OpenAPI 3.2가 `text/event-stream`의 각 item으로 해석하는 SSE event다.
+        `event`는 SSE event line, `data`는 JSON 문자열인 data line을 뜻한다.
+        `data.contentSchema`가 JSON 파싱 뒤의 payload 계약이다.
+      required: [event, data]
+      additionalProperties: false
+      properties:
+        event:
+          type: string
+          enum: [message.started, message.delta, heartbeat, message.completed, error]
+        data:
+          type: string
+      oneOf:
+        - title: message.started
+          properties:
+            event:
+              const: message.started
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/ChatMessageStartedEventData"
+        - title: message.delta
+          properties:
+            event:
+              const: message.delta
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/ChatMessageDeltaEventData"
+        - title: heartbeat
+          properties:
+            event:
+              const: heartbeat
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/ChatHeartbeatEventData"
+        - title: message.completed
+          properties:
+            event:
+              const: message.completed
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/ChatMessageCompletedEventData"
+        - title: error
+          properties:
+            event:
+              const: error
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/ChatStreamErrorEventData"
+
+    ChatMessageStartedEventData:
+      type: object
+      description: |
+        user message와 assistant GENERATING row가 commit되어 식별자가 확정됐음을 알린다.
+        이 event 뒤부터 delta 또는 heartbeat가 올 수 있다.
+      required: [type, paperId, sessionId, messageId, clientMessageId, status]
+      additionalProperties: false
+      properties:
+        type:
+          const: message.started
+        paperId:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        messageId:
+          type: string
+          format: uuid
+        clientMessageId:
+          type: string
+          format: uuid
+          description: 요청과 응답을 연결하는 FE 생성 멱등 식별자다.
+        status:
+          const: GENERATING
+
+    ChatMessageDeltaEventData:
+      type: object
+      description: |
+        assistant 답변 Markdown source의 부분 문자열이다. 완전한 UTF-8 byte chunk,
+        단어, 문장 또는 Markdown block이라고 가정하지 않는다. FE는 같은 messageId에
+        수신 순서대로 append하며 BE는 delta마다 DB에 저장하지 않는다.
+      required: [type, paperId, sessionId, messageId, delta]
+      additionalProperties: false
+      properties:
+        type:
+          const: message.delta
+        paperId:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        messageId:
+          type: string
+          format: uuid
+        delta:
+          type: string
+          description: UTF-8 Markdown source의 임의 문자열 조각
+
+    ChatHeartbeatEventData:
+      type: object
+      description: |
+        침묵 구간의 idle timeout을 막기 위해 BE가 생성하는 비즈니스 상태와 무관한 event다.
+        assistant 상태를 바꾸거나 전체 application deadline을 연장하지 않는다.
+      required: [type, paperId, sessionId, messageId, emittedAt]
+      additionalProperties: false
+      properties:
+        type:
+          const: heartbeat
+        paperId:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        messageId:
+          type: string
+          format: uuid
+        emittedAt:
+          type: string
+          format: date-time
+
+    ChatMessageCompletedEventData:
+      type: object
+      description: |
+        AI의 message.completed와 run.completed를 모두 받고 최종 assistant content와
+        COMPLETED 상태를 DB에 commit한 뒤 보내는 성공 terminal event다.
+        FE는 누적 delta 전체를 content로 replace한다. content는 렌더링된 HTML이 아니라
+        Markdown source이므로 raw HTML을 비활성화하거나 sanitize하고 URL protocol을 제한한다.
+      required: [type, paperId, sessionId, messageId, content, contentFormat, status]
+      additionalProperties: false
+      x-sse-terminal: success
+      properties:
+        type:
+          const: message.completed
+        paperId:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        messageId:
+          type: string
+          format: uuid
+        content:
+          type: string
+          description: DB에 저장된 전체 assistant 답변 Markdown source
+        contentFormat:
+          const: markdown
+        status:
+          const: COMPLETED
+
+    ChatStreamErrorEventData:
+      type: object
+      description: |
+        stream 시작 뒤 실행을 성공으로 확정할 수 없고 assistant FAILED 저장까지 끝났을 때
+        보내는 실패 terminal event다. 앞서 받은 partial delta는 완료 content로 확정하지 않는다.
+      required: [type, paperId, sessionId, messageId, status, error]
+      additionalProperties: false
+      x-sse-terminal: failure
+      properties:
+        type:
+          const: error
+        paperId:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        messageId:
+          type: string
+          format: uuid
+        status:
+          const: FAILED
+        error:
+          $ref: "#/components/schemas/ChatStreamErrorDetail"
+
+    ChatStreamErrorDetail:
+      type: object
+      description: |
+        AI raw exception, 내부 주소와 stack trace를 포함하지 않는 안정된 FE 오류다.
+        `retryable`은 같은 질문을 새 clientMessageId로 다시 시도할 수 있는지를 뜻한다.
+      required: [code, message, retryable]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          enum:
+            - AI_RUN_FAILED
+            - AI_STREAM_DISCONNECTED
+            - AI_TIMEOUT
+            - AI_PROTOCOL_ERROR
+            - MESSAGE_PERSISTENCE_FAILED
+        message:
+          type: string
+          description: 사용자에게 노출 가능한 안정된 설명
+        retryable:
+          type: boolean
+      oneOf:
+        - title: AI run 실패
+          properties:
+            code:
+              const: AI_RUN_FAILED
+            retryable:
+              const: true
+        - title: AI stream 단절
+          properties:
+            code:
+              const: AI_STREAM_DISCONNECTED
+            retryable:
+              const: true
+        - title: AI 응답 제한 시간 초과
+          properties:
+            code:
+              const: AI_TIMEOUT
+            retryable:
+              const: true
+        - title: AI protocol 위반
+          properties:
+            code:
+              const: AI_PROTOCOL_ERROR
+            retryable:
+              const: false
+        - title: 최종 message 저장 실패
+          properties:
+            code:
+              const: MESSAGE_PERSISTENCE_FAILED
+            retryable:
+              const: true
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: |
+            기계 판별용 에러 코드. enum은 닫혀 있다 — 새 코드는 여기부터 PR로 추가한다.
+
+            - VALIDATION_ERROR      : 필수 필드 누락 등 (400)
+            - UNSUPPORTED_FILE_TYPE : contentType이 application/pdf가 아님 (400)
+            - DUPLICATE_FILENAME    : 같은 파일명의 논문이 이미 있음 (409, create)
+            - PAPER_NOT_FOUND       : 존재하지 않는 paperId (404)
+            - UPLOAD_NOT_FOUND      : S3에 객체가 없음 (409, complete)
+            - UNAUTHORIZED          : access token 없음·만료 (401)
+            - AUTH_REFRESH_INVALID  : refresh 쿠키 없음·만료·폐기·재사용 (401)
+            - FORBIDDEN             : 인증됐지만 대상 논문 접근 권한 없음 (403)
+            - PAPER_NOT_READY       : 논문이 아직 채팅 가능한 상태가 아님 (409)
+            - CHAT_SESSION_NOT_FOUND: 세션 없음 또는 현재 사용자·논문에 속하지 않음 (404)
+            - CHAT_RUN_IN_PROGRESS  : 같은 세션에서 assistant 답변 생성 중 (409)
+            - CLIENT_MESSAGE_ID_CONFLICT: clientMessageId를 다른 요청에 재사용함 (409)
+            - CHAT_USAGE_LIMIT_EXCEEDED: 채팅 사용량 제한 초과 (429)
+          enum:
+            [
+              VALIDATION_ERROR,
+              UNSUPPORTED_FILE_TYPE,
+              DUPLICATE_FILENAME,
+              PAPER_NOT_FOUND,
+              UPLOAD_NOT_FOUND,
+              UNAUTHORIZED,
+              AUTH_REFRESH_INVALID,
+              FORBIDDEN,
+              PAPER_NOT_READY,
+              CHAT_SESSION_NOT_FOUND,
+              CHAT_RUN_IN_PROGRESS,
+              CLIENT_MESSAGE_ID_CONFLICT,
+              CHAT_USAGE_LIMIT_EXCEEDED,
+            ]
+        message:
+          type: string
+          description: 사람이 읽는 설명
