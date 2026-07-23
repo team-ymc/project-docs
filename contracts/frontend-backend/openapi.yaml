@@ -11,7 +11,7 @@ info:
     - BE↔AI API 계약: contracts/backend-ai/openapi.yml
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
 
-  version: 0.2.1
+  version: 0.2.2
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -867,6 +867,7 @@ components:
       description: |
         AI raw exception, 내부 주소와 stack trace를 포함하지 않는 안정된 FE 오류다.
         `retryable`은 같은 질문을 새 clientMessageId로 다시 시도할 수 있는지를 뜻한다.
+        AI_RESPONSE_TOO_LARGE는 BE가 delta 누적 상한을 초과해 스트림을 중단한 경우다 — partial은 저장되지 않는다.
       required: [code, message, retryable]
       additionalProperties: false
       properties:
@@ -878,6 +879,7 @@ components:
             - AI_TIMEOUT
             - AI_PROTOCOL_ERROR
             - MESSAGE_PERSISTENCE_FAILED
+            - AI_RESPONSE_TOO_LARGE
         message:
           type: string
           description: 사용자에게 노출 가능한 안정된 설명
@@ -914,6 +916,12 @@ components:
               const: MESSAGE_PERSISTENCE_FAILED
             retryable:
               const: true
+        - title: AI 응답 길이 상한 초과
+          properties:
+            code:
+              const: AI_RESPONSE_TOO_LARGE
+            retryable:
+              const: false
 
     ChatDuplicateMessageError:
       type: object
