@@ -1,0 +1,175 @@
+version: 1
+id: base-pdf-agent-run-stream
+status: current
+summary: 파싱된 논문을 기반으로 생성한 assistant 응답을 SSE로 전송하는 endpoint이다.
+
+transport:
+  type: sse
+  method: POST
+  path: /api/v1/agents/base-pdf-agent/runs/stream
+  response_content_type: text/event-stream
+
+request:
+  content_type: application/json
+  body_fields:
+    - name: thread_id
+      type: string
+      required: true
+      description: LangGraph checkpoint에 사용되는 대화 thread 식별자
+    - name: paper_id
+      type: string
+      required: true
+      description: 답변에 사용할 파싱된 논문 package 식별자
+    - name: message
+      type: string
+      required: true
+      description: 논문에 관해 사용자가 입력한 메시지
+  example:
+    thread_id: conversation_123
+    paper_id: 1706.03762v7
+    message: 이 논문의 핵심 기여를 요약해 주세요.
+
+sse_format:
+  data_type_matches_event: true
+  example_frame: |
+    event: message.delta
+    data: {"type":"message.delta","thread_id":"conversation_123","paper_id":"1706.03762v7","delta":"이 논문은"}
+
+event_sequences:
+  success:
+    description: 정상적으로 논문 기반 assistant 응답 생성이 완료된 경우
+    events:
+      - run.started
+      - message.delta
+      - message.completed
+      - run.completed
+    notes:
+      - message.delta는 0개, 1개, 또는 여러 개가 올 수 있다.
+  failure:
+    description: 논문 확인 또는 응답 생성 중 오류가 발생한 경우
+    events:
+      - run.failed
+    notes:
+      - run.failed 이전에 run.started가 전송된다.
+      - run.failed 이전에 일부 message.delta가 이미 전송되었을 수 있다.
+      - stream 처리가 시작된 뒤의 오류는 HTTP 오류가 아니라 run.failed event로 전달된다.
+
+events:
+  - name: run.started
+    terminal: false
+    description: AI 서버가 논문 기반 응답 처리를 시작했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.started
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+
+  - name: message.delta
+    terminal: false
+    description: assistant 응답의 부분 chunk를 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: message.delta
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: delta
+        type: string
+        required: true
+        description: assistant 응답의 부분 문자열
+    backend_notes:
+      - delta를 받은 순서대로 누적한다.
+      - delta 하나가 완전한 단어, 문장, Markdown block이라고 가정하지 않는다.
+
+  - name: message.completed
+    terminal: false
+    description: assistant 응답 전체가 완성되었을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: message.completed
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: message
+        type: string
+        required: true
+        description: 최종 assistant message
+    backend_notes:
+      - 직접 누적한 delta보다 message.completed.message를 우선한다.
+
+  - name: run.completed
+    terminal: true
+    outcome: success
+    description: run이 성공적으로 종료되었을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.completed
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+
+  - name: run.failed
+    terminal: true
+    outcome: failure
+    description: 논문 확인 또는 응답 생성에 실패했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.failed
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: error
+        type: object
+        required: true
+        fields:
+          - name: code
+            type: string
+            required: true
+            allowed_values:
+              - PAPER_ID_INVALID
+              - PAPER_DOCUMENT_NOT_FOUND
+              - INTERNAL_SERVER_ERROR
+          - name: message
+            type: string
+            required: true
+            description: 클라이언트에 노출 가능한 안정적인 오류 메시지
+
+backend_handling:
+  - 모든 event의 thread_id와 paper_id가 요청 값과 일치하는지 확인한다.
+  - message.delta는 순서대로 누적한다.
+  - message.completed.message를 최종 assistant message로 사용한다.
+  - run.completed를 성공 종료로 처리한다.
+  - run.failed를 실패 종료로 처리하고 error.code로 오류를 분기한다.
+  - run.failed 이전에 받은 partial delta는 최종 assistant message로 확정하지 않는다.
+  - stream 연결 자체가 실패하면 HTTP 오류로 처리한다.
+
+limitations:
+  - stream resume은 지원하지 않는다.
+  - SSE event id는 전송하지 않는다.
+  - paper document 전체를 매 run마다 model context에 포함하므로 큰 논문은 처리 한계가 있을 수 있다.

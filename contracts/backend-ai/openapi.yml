@@ -28,6 +28,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/base-pdf-agent/runs/stream:
+    post:
+      tags:
+      - base-pdf-agent
+      summary: Run Stream
+      operationId: base-pdf-agent-run_stream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BasePdfAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/document-parser/parse:
     post:
       tags:
@@ -47,6 +68,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentParseResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/document-parser/parse/stream:
+    post:
+      tags:
+      - document-parser
+      summary: Parse Stream
+      operationId: document-parser-parse_stream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentParseRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
         '422':
           description: Validation Error
           content:

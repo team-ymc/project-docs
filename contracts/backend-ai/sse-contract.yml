@@ -23,7 +23,7 @@ relationship_to_openapi:
   note: >
     OpenAPI는 SSE endpoint의 path와 request body는 표현할 수 있지만,
     SSE event 이름, event 순서, data payload는 충분히 표현하지 못한다.
-    따라서 SSE 상세 계약은 endpoint별 YAML 파일에 작성한다.
+    따라서 SSE 상세 계약은 contracts/backend-ai/sse 디렉토리에 endpoint별 YAML 파일로 작성한다.
 
 global_rules:
   - event 이름과 payload schema는 반드시 endpoint별 파일에 명시한다.
@@ -102,4 +102,10 @@ endpoint_template:
 endpoints:
   - id: simple-agent-run-stream
     file: contracts/backend-ai/sse/simple-agent-run-stream.yml
+    status: current
+  - id: base-pdf-agent-run-stream
+    file: contracts/backend-ai/sse/base-pdf-agent-run-stream.yml
+    status: current
+  - id: document-parser-parse-stream
+    file: contracts/backend-ai/sse/document-parser-parse-stream.yml
     status: current

@@ -1,0 +1,173 @@
+version: 1
+id: document-parser-parse-stream
+status: current
+summary: PDF 문서 parsing 진행 상황과 완료 결과를 SSE로 전송하는 endpoint이다.
+
+transport:
+  type: sse
+  method: POST
+  path: /api/v1/document-parser/parse/stream
+  response_content_type: text/event-stream
+  response_headers:
+    Cache-Control: no-cache
+    X-Accel-Buffering: "no"
+
+request:
+  content_type: application/json
+  body_fields:
+    - name: paper_id
+      type: string
+      required: true
+      description: original.pdf가 저장된 paper package 식별자
+  example:
+    paper_id: 1706.03762v7
+
+sse_format:
+  data_type_matches_event: true
+  example_frame: |
+    event: parse.progress
+    data: {"type":"parse.progress","paper_id":"1706.03762v7","stage":"parsing","progress_percent":35,"message":"PaddleOCR is parsing the document."}
+
+event_sequences:
+  success:
+    description: 문서 package 생성과 저장이 정상적으로 완료된 경우
+    events:
+      - parse.started
+      - parse.progress
+      - parse.completed
+    notes:
+      - parse.progress는 0개, 1개, 또는 여러 개가 올 수 있다.
+      - progress_percent는 성공 흐름에서 0부터 100까지 증가한다.
+  failure:
+    description: 입력 검증, 원본 확인, provider 처리 또는 package 생성 중 오류가 발생한 경우
+    events:
+      - parse.failed
+    notes:
+      - parse.failed 이전에 parse.started가 전송된다.
+      - parse.failed 이전에 일부 parse.progress가 이미 전송되었을 수 있다.
+      - stream 처리가 시작된 뒤의 오류는 HTTP 오류가 아니라 parse.failed event로 전달된다.
+
+events:
+  - name: parse.started
+    terminal: false
+    description: AI 서버가 문서 parsing 처리를 시작했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: parse.started
+      - name: paper_id
+        type: string
+        required: true
+      - name: progress_percent
+        type: integer
+        required: true
+        value: 0
+      - name: message
+        type: string
+        required: true
+        value: Document parsing started.
+
+  - name: parse.progress
+    terminal: false
+    description: 문서 parsing 작업의 현재 단계와 진행률을 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: parse.progress
+      - name: paper_id
+        type: string
+        required: true
+      - name: stage
+        type: string
+        required: true
+        allowed_values:
+          - preparing
+          - parsing
+          - extracting
+          - building
+          - uploading
+      - name: progress_percent
+        type: integer
+        required: true
+        minimum: 0
+        maximum: 100
+        description: 현재 작업의 전체 진행률
+      - name: message
+        type: string
+        required: true
+        description: 현재 작업을 설명하는 사용자 표시용 메시지
+    backend_notes:
+      - stage와 progress_percent를 진행 상태 표시에 사용한다.
+      - 같은 stage의 parse.progress가 여러 번 올 수 있다.
+      - message의 정확한 문자열을 상태 분기 기준으로 사용하지 않는다.
+
+  - name: parse.completed
+    terminal: true
+    outcome: success
+    description: 문서 package 생성과 저장이 성공적으로 종료되었을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: parse.completed
+      - name: paper_id
+        type: string
+        required: true
+      - name: message
+        type: string
+        required: true
+        description: parsing 완료 메시지
+      - name: page_count
+        type: integer
+        required: true
+        minimum: 0
+        description: 처리된 PDF page 수
+      - name: progress_percent
+        type: integer
+        required: true
+        value: 100
+
+  - name: parse.failed
+    terminal: true
+    outcome: failure
+    description: 문서 parsing에 실패했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: parse.failed
+      - name: paper_id
+        type: string
+        required: true
+      - name: error
+        type: object
+        required: true
+        fields:
+          - name: code
+            type: string
+            required: true
+            allowed_values:
+              - PAPER_ID_INVALID
+              - DOCUMENT_SOURCE_NOT_FOUND
+              - PADDLEOCR_TOKEN_MISSING
+              - INTERNAL_SERVER_ERROR
+          - name: message
+            type: string
+            required: true
+            description: 클라이언트에 노출 가능한 안정적인 오류 메시지
+
+backend_handling:
+  - 모든 event의 paper_id가 요청 값과 일치하는지 확인한다.
+  - parse.started를 진행률 0으로 처리한다.
+  - parse.progress의 stage와 progress_percent로 현재 진행 상태를 갱신한다.
+  - parse.completed를 성공 종료로 처리하고 page_count를 결과 metadata로 저장한다.
+  - parse.failed를 실패 종료로 처리하고 error.code로 오류를 분기한다.
+  - parse.failed 이전에 받은 진행 상태는 성공 결과로 확정하지 않는다.
+  - stream 연결 자체가 실패하면 HTTP 오류로 처리한다.
+
+limitations:
+  - stream resume은 지원하지 않는다.
+  - SSE event id는 전송하지 않는다.
+  - parsing은 long-running request이며 provider 처리 시간 동안 연결을 유지한다.
