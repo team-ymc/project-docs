@@ -11,7 +11,7 @@ info:
     - BE↔AI API 계약: contracts/backend-ai/openapi.yml
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
 
-  version: 0.2.2
+  version: 0.2.3
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -582,7 +582,7 @@ components:
         fileKey:
           type: string
           description: BE가 생성하는 S3 object key. 서비스 간 메시지에는 파일 바이트가 아니라 이 참조 key가 전달된다. (ADR-001)
-          example: uploads/00000000-0000-0000-0000-000000000001/550e8400-e29b-41d4-a716-446655440000.pdf
+          example: uploads/550e8400-e29b-41d4-a716-446655440000/original.pdf
         uploadUrl:
           type: string
           format: uri

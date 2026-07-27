@@ -1,0 +1,79 @@
+# BE ↔ AI SQS 메시지 계약
+#
+# 이 파일은 SQS 메시지 payload 스키마의 SSOT다.
+# - 채널 토폴로지(큐 2개)와 전달 의미론(at-least-once, visibility timeout, DLQ)은
+#   decisions/ADR-002-be-ai-messaging-sqs.md가 소유한다. 여기에 다시 적지 않는다.
+# - BE↔AI HTTP API는 backend-ai/openapi.yml이 소유한다. 이 파일과 무관하다.
+#
+# 이 파일은 OpenAPI/AsyncAPI 문서가 아니다. schemas의 각 항목은 JSON Schema다.
+
+version: 0.1.0
+
+# wire 규칙
+# - SQS wire field는 camelCase다. (기존 BE 발행 형식과 일치)
+#   각 서비스 내부 표현(BE camelCase, AI snake_case)은 서비스 내부 구현이며 계약이 아니다.
+# - 송신 측과 계약 검증 테스트는 additionalProperties: false를 따른다.
+# - 수신 측은 forward compatibility를 위해 모르는 필드를 관대하게 무시할 수 있다.
+
+channels:
+  parse-requests:
+    direction: BE → AI
+    message: "#/schemas/ParseRequest"
+  parse-results:
+    direction: AI → BE
+    message: "#/schemas/ParseResult"
+
+schemas:
+  ParseRequest:
+    type: object
+    required: [paperId, fileKey]
+    additionalProperties: false
+    properties:
+      paperId:
+        type: string
+        format: uuid
+        description: >-
+          이 파싱 작업과 Paper를 연결하는 식별자. BE 도메인 식별자이자
+          요청·결과의 상관관계 키.
+      fileKey:
+        type: string
+        minLength: 1
+        description: >-
+          원본 PDF가 저장된 불투명한 S3 object key. AI는 이 값을 그대로
+          GetObject에 사용하며, 형식을 해석하거나 paperId로 키를 조립하지 않는다.
+          키 형식은 BE 저장소 내부 구현이라 버전이 섞일 수 있다.
+
+  ParseResult:
+    type: object
+    required: [paperId, status]
+    additionalProperties: false
+    properties:
+      paperId:
+        type: string
+        format: uuid
+        description: 대응하는 ParseRequest의 paperId.
+      status:
+        type: string
+        enum: [COMPLETED, FAILED]
+      error:
+        type: object
+        required: [code]
+        additionalProperties: false
+        properties:
+          code:
+            type: string
+            minLength: 1
+          message:
+            type: string
+      result:
+        type: object
+        description: >-
+          미확정 — FT-004 Reader 착수 전 확정한다. 그 전까지 BE는 이 필드를
+          해석하지 않는다. 추측으로 채우지 말 것.
+    allOf:
+      - if:
+          properties:
+            status: { const: FAILED }
+          required: [status]
+        then:
+          required: [error]
