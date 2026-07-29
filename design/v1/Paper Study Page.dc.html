@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/radius.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/styles.css">
+  <script src="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    body{margin:0}
+    ::-webkit-scrollbar{width:10px;height:10px}
+    ::-webkit-scrollbar-thumb{background:var(--color-border);border-radius:6px}
+    ::-webkit-scrollbar-track{background:transparent}
+    @keyframes ptDotBounce{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}
+    .pt-composer::-webkit-scrollbar{width:5px}
+    .pt-composer::-webkit-scrollbar-thumb{background:var(--color-border);border-radius:4px}
+    .pt-composer::-webkit-scrollbar-track{background:transparent}
+    .pt-paper-wrap article{padding:28px 36px !important}
+    .pt-student-msg div{background:var(--color-bg-surface) !important;color:var(--color-text-body) !important;border:none !important;border-radius:14px 14px 4px 14px !important;padding:11px 15px !important}
+  </style>
+</helmet>
+
+<div style="height:100vh;width:100%;display:flex;flex-direction:column;background:var(--color-bg-canvas);font-family:var(--font-sans);overflow:hidden">
+
+  <!-- R1 Global top bar -->
+  <div style="height:52px;flex-shrink:0;background:var(--color-bg-walnut);color:var(--color-on-dark);display:flex;align-items:stretch">
+    <div style="flex:1;min-width:0;display:flex;align-items:center;padding:0 20px 0 16px;gap:16px">
+      <a href="./Paper%20Landing%20Page.dc.html" style="display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none;color:inherit">
+        <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.PaperStackMark" size="22" color="var(--color-on-dark)" hint-size="22px,22px"></x-import>
+        <span style="font-family:var(--font-serif);font-weight:600;font-size:16px;letter-spacing:-0.005em;white-space:nowrap">Paper Teacher</span>
+      </a>
+      <div style="width:1px;height:18px;background:rgba(255,253,247,0.18);flex-shrink:0"></div>
+      <a href="./Paper%20Bookshelf%20Page.dc.html" style="display:flex;align-items:center;gap:6px;background:transparent;border:none;padding:7px 10px;border-radius:9999px;color:var(--color-on-dark);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;transition:background 150ms ease;white-space:nowrap;flex-shrink:0;text-decoration:none" style-hover="background:rgba(255,253,247,0.12)">
+        <i class="ph ph-arrow-left" style="font-size:14px"></i>
+        서재로
+      </a>
+      <div style="width:1px;height:18px;background:rgba(255,253,247,0.18);flex-shrink:0"></div>
+      <div style="font-family:var(--font-serif);font-size:15px;font-weight:600;color:var(--color-on-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;opacity:0.92">Cross-Modal Alignment via Contrastive Representation Learning</div>
+      <div style="width:1px;height:18px;background:rgba(255,253,247,0.18);flex-shrink:0"></div>
+      <div style="display:flex;align-items:center;background:rgba(255,253,247,0.08);border:1px solid rgba(255,253,247,0.2);border-radius:9999px;padding:3px;gap:2px;flex-shrink:0">
+        <button aria-label="원문 (영어) 보기" title="원문 (영어) 보기" onClick="{{ setLangEn }}" style="{{ langEnStyle }}">EN</button>
+        <button aria-label="번역 (한국어) 보기" title="번역 (한국어) 보기" onClick="{{ setLangKr }}" style="{{ langKrStyle }}">KR</button>
+      </div>
+    </div>
+    <div style="{{ topBarRightStyle }}">
+      <button aria-label="프로필" title="프로필" style="width:32px;height:32px;border-radius:9999px;border:1px solid rgba(255,253,247,0.25);background:var(--color-bg-walnut-raised);color:var(--color-on-dark);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 150ms ease" style-hover="background:rgba(255,253,247,0.12)">
+        <i class="ph ph-user" style="font-size:15px"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- R2 Study work area -->
+  <div style="flex:1;display:flex;min-height:0;overflow:hidden">
+
+    <!-- R3 TOC nav rail -->
+    <div style="{{ railStyle }}">
+      <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.IconButton" icon="{{ tocIcon }}" label="{{ tocLabel }}" size="32" onClick="{{ toggleToc }}" hint-size="32px,32px"></x-import>
+      <sc-if value="{{ tocOpen }}">
+        <div style="display:flex;flex-direction:column;gap:2px;width:100%">
+          <sc-for list="{{ toc }}" as="item" hint-placeholder-count="9">
+            <button onClick="{{ item.onClick }}" style="{{ item.rowStyle }}">{{ item.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- R4 Paper viewer -->
+    <div ref="{{ paperViewerRef }}" onMouseUp="{{ handlePaperMouseUp }}" onScroll="{{ handleViewerScroll }}" style="flex:1;min-width:0;overflow-y:auto;background:var(--color-bg-canvas);padding:8px 8px 24px;display:flex;justify-content:center">
+      <div class="pt-paper-wrap" style="width:100%;max-width:1000px">
+      <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.PaperSheet" title="Cross-Modal Alignment via Contrastive Representation Learning" meta="Kwon, J., Park, S., and Lee, H. — Preprint, 2025" hint-size="100%,1900px" style="width:100%;max-width:1000px">
+        <div style="display:flex;flex-direction:column;gap:24px">
+          <sc-for list="{{ blocks }}" as="block" hint-placeholder-count="14">
+            <sc-if value="{{ block.isHeading }}">
+              <h2 id="{{ block.id }}" style="font-family:var(--font-serif);font-size:var(--heading-size);font-weight:var(--heading-weight);line-height:var(--heading-line);letter-spacing:var(--heading-tracking);color:var(--color-text-heading);margin:0;scroll-margin-top:24px">{{ block.text }}</h2>
+            </sc-if>
+            <sc-if value="{{ block.isSubheading }}">
+              <h3 id="{{ block.id }}" style="font-family:var(--font-serif);font-size:var(--subheading-size);font-weight:var(--subheading-weight);line-height:var(--subheading-line);letter-spacing:var(--subheading-tracking);color:var(--color-text-heading);margin:0;scroll-margin-top:24px">{{ block.text }}</h3>
+            </sc-if>
+            <sc-if value="{{ block.isPara }}">
+              <p style="margin:0">{{ block.text }}</p>
+            </sc-if>
+            <sc-if value="{{ block.isFigure }}">
+              <figure style="margin:0">
+                <div style="border:1px solid var(--color-border);background:var(--color-bg-surface);border-radius:4px;height:220px;display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);font-family:var(--font-sans);font-size:13px">Figure placeholder</div>
+                <figcaption style="font-family:var(--font-sans);font-size:13px;color:var(--color-text-muted);margin-top:10px;line-height:1.5">{{ block.text }}</figcaption>
+              </figure>
+            </sc-if>
+            <sc-if value="{{ block.isEquation }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:4px;padding:22px 24px">
+                <div style="font-family:var(--font-serif);font-style:italic;font-size:16px;color:var(--color-text-heading)">{{ block.text }}</div>
+                <div style="font-family:var(--font-sans);font-size:13px;color:var(--color-text-muted);flex-shrink:0">(1)</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ block.isTable }}">
+              <div>
+                <table style="width:100%;border-collapse:collapse">
+                  <sc-for list="{{ block.rows }}" as="row" hint-placeholder-count="4">
+                    <tr>
+                      <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="4">
+                        <td style="{{ cell.style }}">{{ cell.text }}</td>
+                      </sc-for>
+                    </tr>
+                  </sc-for>
+                </table>
+                <div style="font-family:var(--font-sans);font-size:13px;color:var(--color-text-muted);margin-top:10px">{{ block.caption }}</div>
+              </div>
+            </sc-if>
+          </sc-for>
+        </div>
+      </x-import>
+      </div>
+    </div>
+
+    <!-- Resizable splitter -->
+    <sc-if value="{{ chatOpen }}">
+      <div onMouseDown="{{ startResize }}" style="width:6px;flex-shrink:0;cursor:col-resize;background:transparent;position:relative" style-hover="background:var(--color-primary-subtle)">
+        <div style="position:absolute;top:0;bottom:0;left:2px;width:1px;background:var(--color-border)"></div>
+      </div>
+    </sc-if>
+
+    <!-- R5 AI chat panel -->
+    <div style="{{ chatPanelStyle }}">
+      <sc-if value="{{ chatOpen }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--color-border);flex-shrink:0">
+          <div style="display:flex;align-items:center;gap:2px">
+            <div style="position:relative">
+              <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.IconButton" icon="clock-counter-clockwise" label="이전 대화 기록" size="36" onClick="{{ toggleHistory }}" hint-size="36px,36px"></x-import>
+              <sc-if value="{{ historyOpen }}">
+                <div style="position:absolute;top:42px;left:0;width:220px;background:var(--color-bg-paper);border:1px solid var(--color-border);border-radius:8px;box-shadow:var(--shadow-menu);padding:6px;z-index:10;display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{ historyList }}" as="h" hint-placeholder-count="2">
+                    <button onClick="{{ h.onClick }}" style="text-align:left;padding:9px 10px;border:none;background:transparent;border-radius:6px;font-family:var(--font-sans);font-size:13px;color:var(--color-text-body);cursor:pointer" style-hover="background:var(--color-primary-subtle)">{{ h.title }}</button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+            <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.IconButton" icon="note-pencil" label="새 대화" size="36" onClick="{{ newConversation }}" hint-size="36px,36px"></x-import>
+          </div>
+          <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.IconButton" icon="sidebar-simple" label="AI 튜터 접기" size="36" onClick="{{ toggleChat }}" hint-size="36px,36px"></x-import>
+        </div>
+
+        <div ref="{{ notebookWrapRef }}" style="flex:1;min-height:0;overflow:hidden;display:flex">
+        <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.TutorNotebook" hint-size="100%,100%" style="flex:1;min-height:0">
+          <sc-if value="{{ hasMessages }}">
+            <sc-for list="{{ messages }}" as="msg" hint-placeholder-count="0">
+              <sc-if value="{{ msg.isUser }}">
+                <div class="pt-student-msg" style="display:flex;justify-content:flex-end">
+                  <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.StudentMessage" hint-size="auto,auto">{{ msg.text }}</x-import>
+                </div>
+              </sc-if>
+              <sc-if value="{{ msg.isAssistant }}">
+                <sc-if value="{{ msg.loading }}">
+                  <div style="display:flex;gap:4px;padding:6px 0">
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--color-text-muted);display:inline-block;animation:ptDotBounce 1.2s infinite ease-in-out"></span>
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--color-text-muted);display:inline-block;animation:ptDotBounce 1.2s infinite ease-in-out;animation-delay:0.15s"></span>
+                    <span style="width:6px;height:6px;border-radius:50%;background:var(--color-text-muted);display:inline-block;animation:ptDotBounce 1.2s infinite ease-in-out;animation-delay:0.3s"></span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ msg.notLoading }}">
+                  <div style="border-left:2px solid var(--color-accent-brass);padding-left:12px">
+                    <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.NotebookSection" hint-size="auto,auto">{{ msg.text }}</x-import>
+                  </div>
+                </sc-if>
+              </sc-if>
+            </sc-for>
+          </sc-if>
+        </x-import>
+        </div>
+
+        <div style="padding:14px 16px 16px;flex-shrink:0;position:relative">
+          <div style="position:absolute;left:0;right:0;top:-16px;height:16px;background:linear-gradient(to bottom, transparent, var(--color-bg-paper));pointer-events:none"></div>
+          <sc-if value="{{ hasContext }}">
+            <div style="margin-bottom:8px;position:relative;display:inline-block">
+              <div onClick="{{ toggleContextTooltip }}" style="{{ contextChipStyle }}">
+                <i class="ph ph-quotes" style="font-size:12px;color:var(--color-text-muted)"></i>
+                <span>인용</span>
+                <button onClick="{{ onClearContextClick }}" aria-label="인용 제거" style="background:transparent;border:none;cursor:pointer;color:var(--color-text-muted);padding:0;display:flex;align-items:center;margin-left:2px">
+                  <i class="ph ph-x" style="font-size:12px"></i>
+                </button>
+              </div>
+              <sc-if value="{{ contextHover }}">
+                <div style="{{ contextTooltipStyle }}">
+                  <button onClick="{{ closeContextTooltip }}" aria-label="닫기" style="position:absolute;top:10px;right:10px;background:transparent;border:none;cursor:pointer;color:var(--color-text-muted);padding:2px;display:flex;align-items:center">
+                    <i class="ph ph-x" style="font-size:12px"></i>
+                  </button>
+                  <div style="padding-right:20px;padding-top:2px;max-height:160px;overflow-y:auto">{{ composerContextText }}</div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+          <div style="{{ composerBoxStyle }}">
+            <textarea class="pt-composer" ref="{{ chatInputRef }}" value="{{ chatInput }}" onChange="{{ handleInputChange }}" onKeyDown="{{ handleKeyDown }}" onFocus="{{ handleComposerFocus }}" onBlur="{{ handleComposerBlur }}" placeholder="AI에게 질문해보세요" rows="1" style="flex:1;min-width:0;resize:none;border:none;outline:none;background:transparent;padding:8px 0;font-family:var(--font-sans);font-size:15px;line-height:1.5;color:var(--color-text-body);min-height:22px;max-height:150px;box-sizing:border-box;scrollbar-width:thin;scrollbar-color:var(--color-border) transparent"></textarea>
+            <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.IconButton" icon="paper-plane-tilt" label="질문 보내기" size="34" onClick="{{ handleSend }}" disabled="{{ isStreaming }}" hint-size="34px,34px" style="flex-shrink:0;margin-bottom:2px"></x-import>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ chatCollapsed }}">
+        <div style="padding-top:12px;display:flex;justify-content:center">
+          <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.IconButton" icon="sidebar-simple" label="AI 튜터 열기" size="36" onClick="{{ toggleChat }}" hint-size="36px,36px"></x-import>
+        </div>
+      </sc-if>
+    </div>
+
+  </div>
+
+  <!-- Selection popup: Translate / Ask -->
+  <sc-if value="{{ selectionToolbarVisible }}">
+    <div ref="{{ selectionToolbarRef }}" style="{{ selectionToolbarStyle }}">
+      <sc-if value="{{ showSelectionTranslate }}">
+        <button onClick="{{ onSelectionTranslate }}" style="{{ selToolbarBtnStyle }}" style-hover="{{ selToolbarBtnHoverStyle }}">
+          <i class="ph ph-translate" style="font-size:14px"></i>
+          번역
+        </button>
+        <div style="width:1px;align-self:stretch;background:rgba(255,253,247,0.18);margin:4px 0"></div>
+      </sc-if>
+      <button onClick="{{ onSelectionAsk }}" style="{{ selToolbarBtnStyle }}" style-hover="{{ selToolbarBtnHoverStyle }}">
+        <i class="ph ph-chat-circle-text" style="font-size:14px"></i>
+        질문하기
+      </button>
+    </div>
+  </sc-if>
+
+  <!-- Ask: current chat vs new chat -->
+  <sc-if value="{{ askPopupVisible }}">
+    <div ref="{{ askPopupRef }}" style="{{ askPopupStyle }}">
+      <button onClick="{{ onAskCurrentChat }}" style="{{ askPopupRowStyle }}" style-hover="background:var(--color-primary-subtle)">
+        <span style="width:26px;height:26px;border-radius:50%;background:var(--color-primary-subtle);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ph ph-arrow-bend-up-left" style="font-size:13px;color:var(--color-primary)"></i>
+        </span>
+        <span style="font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--color-text-heading)">현재 채팅</span>
+      </button>
+      <div style="height:1px;background:var(--color-border);margin:2px 6px"></div>
+      <button onClick="{{ onAskNewChat }}" style="{{ askPopupRowStyle }}" style-hover="background:var(--color-primary-subtle)">
+        <span style="width:26px;height:26px;border-radius:50%;background:var(--color-primary-subtle);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ph ph-note-pencil" style="font-size:13px;color:var(--color-primary)"></i>
+        </span>
+        <span style="font-family:var(--font-sans);font-size:13px;font-weight:600;color:var(--color-text-heading)">새 채팅</span>
+      </button>
+    </div>
+  </sc-if>
+
+  <!-- Direct translation popup -->
+  <sc-if value="{{ translationPopupVisible }}">
+    <div ref="{{ translationPopupRef }}" style="{{ translationPopupStyle }}">
+      <button onClick="{{ closeTranslationPopup }}" aria-label="닫기" style="position:absolute;top:10px;right:10px;background:transparent;border:none;cursor:pointer;color:var(--color-text-muted);padding:2px;display:flex;align-items:center">
+        <i class="ph ph-x" style="font-size:14px"></i>
+      </button>
+      <div style="font-family:var(--font-serif);font-size:13px;line-height:1.6;color:var(--color-text-muted);padding-right:18px;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--color-border)">{{ translationPopupOriginal }}</div>
+      <div style="font-family:var(--font-serif);font-size:15px;line-height:1.7;color:var(--color-text-body)">{{ translationPopupTranslated }}</div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const BLOCKS = [
+  { type:'heading', id:'abstract', en:'Abstract', kr:'초록' },
+  { type:'para', en:'We study how visual and textual representations can be aligned without dense pairwise supervision. We propose a contrastive objective that anchors embeddings from both modalities to a shared latent space using a lightweight projection head, relying only on weak, sentence-level correspondence between figures and captions. Across three benchmark suites, the resulting representations transfer to retrieval and captioning tasks with consistent gains over encoder-only baselines, while requiring an order of magnitude less paired data during training.',
+    kr:'본 연구는 밀도 높은 쌍 지도 없이 시각 표현과 텍스트 표현을 정렬하는 방법을 다룬다. 그림과 캡션 사이의 약한 문장 단위 대응만을 활용하여, 가벼운 투영 헤드를 통해 두 모달리티의 임베딩을 공유 잠재 공간에 고정하는 대조 학습 목적함수를 제안한다. 세 가지 벤치마크 전반에서 제안된 표현은 인코더 단독 기준선 대비 검색 및 캡셔닝 과제에서 일관된 성능 향상을 보이며, 학습에 필요한 짝지어진 데이터의 양은 기존 대비 10분의 1 수준으로 줄어든다.' },
+  { type:'heading', id:'intro', en:'1. Introduction', kr:'1. 서론' },
+  { type:'para', en:'Understanding a research paper often means connecting a passage of text to the figure, table, or equation it refers to, a skill that comes naturally to a trained reader but remains difficult for automated systems trained on isolated modalities. Most cross-modal alignment methods address this by learning from very large, densely paired corpora, an assumption that rarely holds outside a handful of curated datasets.',
+    kr:'논문을 읽는다는 것은 종종 하나의 문장을 그것이 가리키는 그림, 표, 혹은 수식과 연결 짓는 일을 의미한다. 숙련된 독자에게는 자연스러운 이 능력은, 각 모달리티를 따로 학습한 자동화 시스템에는 여전히 어려운 과제로 남아 있다. 기존의 교차 모달 정렬 기법 대부분은 아주 크고 촘촘하게 짝지어진 말뭉치로부터 학습하는 방식을 택하는데, 이는 소수의 정제된 데이터셋을 벗어나면 거의 성립하지 않는 가정이다.' },
+  { type:'para', en:'In this work we revisit alignment under a weaker supervision signal: sentence-level references that already exist inside ordinary documents. We frame the problem as a contrastive matching task between short passages and the regions they describe, and show that a simple shared-space objective is sufficient to recover much of the alignment quality of fully supervised approaches.',
+    kr:'이 연구에서는 일반 문서 안에 이미 존재하는 문장 단위 참조라는 더 약한 지도 신호 아래에서 정렬 문제를 다시 살펴본다. 우리는 이를 짧은 문단과 그것이 설명하는 영역 사이의 대조적 매칭 과제로 정식화하며, 단순한 공유 공간 목적함수만으로도 완전 지도 방식에 준하는 정렬 품질을 상당 부분 회복할 수 있음을 보인다.' },
+  { type:'figure', en:'Figure 1. Overview of the proposed alignment framework: text and region encoders feed a shared projection head trained with a sentence-level contrastive objective.',
+    kr:'그림 1. 제안하는 정렬 프레임워크 개요: 텍스트 인코더와 영역 인코더의 출력이 문장 단위 대조 학습 목적함수로 학습된 공유 투영 헤드로 전달된다.' },
+  { type:'heading', id:'related', en:'2. Related work', kr:'2. 관련 연구' },
+  { type:'para', en:'Prior approaches to multi-modal alignment fall into two broad families: large-scale contrastive pretraining on web-scale pairs, and structured attention mechanisms that learn correspondence end-to-end from downstream task labels. Our approach differs in that it targets documents with naturally occurring, sparse references rather than requiring either curated pairs or task-specific supervision.',
+    kr:'다중 모달 정렬에 대한 기존 접근은 크게 두 갈래로 나뉜다. 웹 규모의 쌍 데이터에 대한 대규모 대조 사전학습과, 하위 과제 레이블로부터 대응 관계를 종단간으로 학습하는 구조적 어텐션 기법이다. 본 연구의 접근은 정제된 쌍 데이터나 과제별 지도 없이, 문서 안에 자연스럽게 존재하는 희소한 참조만을 대상으로 한다는 점에서 차별화된다.' },
+  { type:'heading', id:'method', en:'3. Method', kr:'3. 방법론' },
+  { type:'para', en:'We formulate alignment as a contrastive learning problem over a batch of passage–region pairs. Each passage and its corresponding region are encoded independently, projected into a shared 256-dimensional space, and pulled together relative to all other pairs in the batch.',
+    kr:'우리는 정렬 문제를 한 배치 내 문단–영역 쌍에 대한 대조 학습 문제로 정식화한다. 각 문단과 그에 대응하는 영역은 독립적으로 인코딩된 뒤 공유된 256차원 공간으로 투영되며, 같은 배치 내 다른 모든 쌍과 비교하여 서로 가까워지도록 학습된다.' },
+  { type:'subheading', id:'method-objective', en:'3.1 Contrastive objective', kr:'3.1 대조 학습 목적함수' },
+  { type:'equation', en:'L = −log[ exp(sim(z_i, z_j)/τ) / Σ_k exp(sim(z_i, z_k)/τ) ]', kr:'L = −log[ exp(sim(z_i, z_j)/τ) / Σ_k exp(sim(z_i, z_k)/τ) ]' },
+  { type:'para', en:'Here sim(·,·) denotes cosine similarity, τ is a learned temperature, and the sum in the denominator ranges over all region embeddings in the batch. This objective encourages each passage embedding to sit closer to its matching region than to any unrelated one.',
+    kr:'여기서 sim(·,·)은 코사인 유사도, τ는 학습되는 온도 파라미터이며, 분모의 합은 배치 내 모든 영역 임베딩에 대해 계산된다. 이 목적함수는 각 문단 임베딩이 관련 없는 영역보다 대응하는 영역에 더 가깝게 위치하도록 유도한다.' },
+  { type:'subheading', id:'method-impl', en:'3.2 Implementation details', kr:'3.2 구현 세부사항' },
+  { type:'para', en:'We use a 12-layer transformer text encoder and a ResNet-50 region encoder, both kept frozen except for the projection heads, which are 256-dimensional and trained with AdamW at a batch size of 256 for 20 epochs.',
+    kr:'텍스트 인코더로는 12층 트랜스포머를, 영역 인코더로는 ResNet-50을 사용하며 두 인코더는 고정한 채 256차원 투영 헤드만 학습한다. 배치 크기 256으로 AdamW를 사용해 20 에폭 동안 학습한다.' },
+  { type:'heading', id:'experiments', en:'4. Experiments', kr:'4. 실험' },
+  { type:'subheading', id:'exp-datasets', en:'4.1 Datasets', kr:'4.1 데이터셋' },
+  { type:'para', en:'We construct three datasets from openly available preprints by extracting sentence-level references to figures and tables during parsing, without any additional human annotation.',
+    kr:'별도의 사람 주석 없이, 파싱 과정에서 그림과 표에 대한 문장 단위 참조를 추출하여 공개 프리프린트로부터 세 가지 데이터셋을 구성한다.' },
+  { type:'subheading', id:'exp-baselines', en:'4.2 Baselines', kr:'4.2 비교 대상' },
+  { type:'para', en:'We evaluate on three retrieval benchmarks built from academic documents, comparing against an encoder-only baseline and a fully-supervised alignment model trained on ten times more paired data.',
+    kr:'우리는 학술 문서로부터 구축된 세 가지 검색 벤치마크에서 평가를 수행하며, 인코더 단독 기준선 및 열 배 많은 짝지어진 데이터로 학습된 완전 지도 정렬 모델과 비교한다.' },
+  { type:'table', captionEn:'Table 1. Recall@10 (%) across three retrieval benchmarks.', captionKr:'표 1. 세 검색 벤치마크에 대한 Recall@10 (%).',
+    rows:[
+      { header:true, cells:['Method','Benchmark A','Benchmark B','Benchmark C'] },
+      { header:false, cells:['Encoder-only baseline','41.2','38.7','44.0'] },
+      { header:false, cells:['Fully-supervised alignment','58.9','55.1','60.3'] },
+      { header:false, cells:['Ours (weak supervision)','56.4','52.8','59.1'] }
+    ] },
+  { type:'heading', id:'results', en:'5. Results', kr:'5. 결과' },
+  { type:'para', en:'Despite using an order of magnitude less paired supervision, our method closes most of the gap to the fully-supervised model and clearly outperforms the encoder-only baseline across all three benchmarks.',
+    kr:'짝지어진 지도 신호를 10분의 1만 사용했음에도, 제안한 방법은 완전 지도 모델과의 격차 대부분을 좁히며 세 벤치마크 모두에서 인코더 단독 기준선을 뚜렷하게 앞선다.' },
+  { type:'figure', en:'Figure 2. Retrieval accuracy as paired supervision is reduced; the proposed method degrades gracefully while the encoder-only baseline collapses early.',
+    kr:'그림 2. 짝지어진 지도 데이터를 줄여감에 따른 검색 정확도 변화. 제안한 방법은 완만하게 성능이 감소하는 반면, 인코더 단독 기준선은 이른 시점에 급격히 무너진다.' },
+  { type:'heading', id:'conclusion', en:'6. Conclusion', kr:'6. 결론' },
+  { type:'para', en:'We presented a lightweight contrastive framework for aligning text and visual regions from weak, sentence-level references. The approach narrows the gap to fully-supervised alignment while requiring substantially less paired data, suggesting that ordinary documents already contain enough signal for practical cross-modal alignment.',
+    kr:'우리는 약한 문장 단위 참조만으로 텍스트와 시각 영역을 정렬하는 경량 대조 학습 프레임워크를 제시했다. 이 접근은 훨씬 적은 짝지어진 데이터로도 완전 지도 정렬과의 격차를 좁히며, 일반적인 문서만으로도 실용적인 교차 모달 정렬에 충분한 신호가 존재함을 시사한다.' }
+];
+
+const HISTORY = [
+  { id:'h1', title:'초록 요약 관련 대화', messages:[
+      { isUser:true, isAssistant:false, text:'초록 내용 요약해줘' },
+      { isUser:false, isAssistant:true, label:'핵심 아이디어', text:'이 논문은 약한 문장 단위 대응만으로 텍스트와 시각 정보를 정렬하는 대조 학습 방법을 제안합니다.' }
+    ] },
+  { id:'h2', title:'대조 학습 수식 관련 대화', messages:[
+      { isUser:true, isAssistant:false, text:'수식 (1)이 뭘 의미하는지 설명해줘' },
+      { isUser:false, isAssistant:true, label:'예시', text:'수식 (1)은 대조 학습의 손실함수로, 문단 임베딩이 대응하는 영역에는 가깝게 나머지 영역에는 멀어지도록 만듭니다.' }
+    ] }
+];
+
+const PAPER_SHEET_PROPS = { style:{ padding:'28px 36px', maxWidth:'1000px' } };
+const STUDENT_MSG_PROPS = { style:{ background:'var(--color-primary-subtle)', border:'none', borderRadius:'14px 14px 4px 14px', padding:'11px 15px', fontSize:'15px', lineHeight:'1.6' } };
+
+const CANNED = {
+  summary: { q:'이 논문의 핵심을 요약해줘', label:'핵심 아이디어',
+    a:'이 논문은 그림과 캡션처럼 문서에 이미 존재하는 약한 문장 단위 대응만으로 텍스트와 시각 정보를 정렬할 수 있음을 보입니다. 핵심은 무거운 쌍 지도 데이터 없이도 공유 잠재 공간을 학습하는 대조 학습 목적함수입니다.' },
+  translate: { q:'이 섹션을 한국어로 번역해줘', label:'예시',
+    a:'초록의 첫 문장을 번역하면: 본 연구는 밀도 높은 쌍 지도 없이 시각 표현과 텍스트 표현을 정렬하는 방법을 다룬다. 이런 방식으로 선택한 문단을 문장 단위로 번역해 드릴 수 있습니다.' },
+  background: { q:'대조 학습이 뭔지 배경 지식을 알려줘', label:'이해도 확인',
+    a:'대조 학습은 서로 관련된 샘플은 가깝게, 관련 없는 샘플은 멀게 임베딩하도록 학습하는 방식입니다. 이 논문에서는 문단과 그에 대응하는 그림 영역을 가까이, 나머지 영역들과는 멀어지도록 학습합니다. 이 논문의 수식 (1)이 어떤 항을 최소화하는지 더 설명해볼까요?' },
+  default: { label:'핵심 아이디어',
+    a:'좋은 질문입니다. 이 논문의 맥락에서 보면, 제안된 방법은 적은 양의 짝지어진 데이터로도 완전 지도 방식에 가까운 정렬 성능을 얻는 것을 목표로 합니다. 더 구체적으로 어떤 부분이 궁금하신가요?' }
+};
+
+class Component extends DCLogic {
+  paperViewerRef = React.createRef();
+  notebookWrapRef = React.createRef();
+  chatInputRef = React.createRef();
+  selectionToolbarRef = React.createRef();
+  translationPopupRef = React.createRef();
+  askPopupRef = React.createRef();
+  streamTimer = null;
+  pendingRange = null;
+  pendingText = '';
+  state = { tocOpen:false, activeSection:'abstract', translated:false, chatOpen:true, chatWidthOpen:400, historyOpen:false, messages:[], chatInput:'', isStreaming:false, history: HISTORY.slice(), composerFocused:false, selectionToolbar:{ visible:false, x:0, y:0 }, translationPopup:{ visible:false, x:0, y:0, original:'', translated:'' }, askPopup:{ visible:false, x:0, y:0 }, composerContext:null, contextHover:false };
+
+  componentDidMount(){
+    document.addEventListener('mousedown', this.handleDocMouseDown, true);
+  }
+
+  componentWillUnmount(){
+    if (this.streamTimer) clearInterval(this.streamTimer);
+    document.removeEventListener('mousedown', this.handleDocMouseDown, true);
+  }
+
+  handleDocMouseDown = (e) => {
+    const tb = this.selectionToolbarRef.current;
+    const tp = this.translationPopupRef.current;
+    const ap = this.askPopupRef.current;
+    if ((tb && tb.contains(e.target)) || (tp && tp.contains(e.target)) || (ap && ap.contains(e.target))) return;
+    const viewer = this.paperViewerRef.current;
+    if (viewer && viewer.contains(e.target)) return;
+    if (this.state.selectionToolbar.visible) this.hideSelectionToolbar();
+    if (this.state.translationPopup.visible) this.closeTranslationPopup();
+    if (this.state.askPopup.visible) this.hideAskPopup();
+  };
+
+  hideAskPopup = () => this.setState({ askPopup:{ visible:false, x:0, y:0 } });
+
+  closeTranslationPopup = () => this.setState({ translationPopup:{ visible:false, x:0, y:0, original:'', translated:'' } });
+
+  handleViewerScroll = () => {
+    if (this.state.selectionToolbar.visible) this.hideSelectionToolbar();
+  };
+
+  hideSelectionToolbar(){
+    this.setState({ selectionToolbar:{ visible:false, x:0, y:0 } });
+  }
+
+  handlePaperMouseUp = () => {
+    requestAnimationFrame(() => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || sel.rangeCount === 0) { this.hideSelectionToolbar(); return; }
+      const text = sel.toString().trim();
+      if (!text) { this.hideSelectionToolbar(); return; }
+      const range = sel.getRangeAt(0);
+      const viewer = this.paperViewerRef.current;
+      if (!viewer) return;
+      const rect = range.getBoundingClientRect();
+      const vRect = viewer.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) { this.hideSelectionToolbar(); return; }
+      let x = rect.left + rect.width / 2;
+      let y = rect.top;
+      x = Math.max(vRect.left + 90, Math.min(x, vRect.right - 90));
+      this.pendingRange = range.cloneRange();
+      this.pendingText = text;
+      this.setState({ selectionToolbar:{ visible:true, x, y } });
+    });
+  };
+
+  applyHighlightFlash(){
+    const range = this.pendingRange;
+    if (!range) return;
+    try {
+      const mark = document.createElement('span');
+      mark.style.background = 'var(--color-primary-subtle)';
+      mark.style.transition = 'background 900ms ease';
+      mark.style.borderRadius = '2px';
+      range.surroundContents(mark);
+      setTimeout(() => { mark.style.background = 'transparent'; }, 650);
+    } catch (e) { /* selection spans multiple elements; skip flash */ }
+  }
+
+  truncate(text, n){
+    return text.length > n ? text.slice(0, n).trim() + '\u2026' : text;
+  }
+
+  mockTranslate(text){
+    return '\uC120\uD0DD\uD558\uC2E0 \uBB38\uC7A5\uC744 \uD55C\uAD6D\uC5B4\uB85C \uC625\uAE30\uBA74 \uC790\uC5F0\uC2A4\uB7EC\uC6B4 \uD559\uC220 \uBB38\uCCB4\uB85C \uBC88\uC5ED\uB429\uB2C8\uB2E4. (\uBCF8 \uBAA9\uC5C5\uC5D0\uC11C\uB294 \uC608\uC2DC \uBC88\uC5ED\uC774 \uD45C\uC2DC\uB429\uB2C8\uB2E4.)';
+  }
+
+  onSelectionTranslate = () => {
+    const text = this.pendingText;
+    if (!text) return;
+    const x = this.state.selectionToolbar.x, y = this.state.selectionToolbar.y;
+    this.applyHighlightFlash();
+    window.getSelection().removeAllRanges();
+    this.hideSelectionToolbar();
+    this.setState({ translationPopup:{ visible:true, x, y, original:this.truncate(text, 220), translated:this.mockTranslate(text) } });
+  };
+
+  onSelectionAsk = () => {
+    if (!this.pendingText) return;
+    const x = this.state.selectionToolbar.x, y = this.state.selectionToolbar.y;
+    this.hideSelectionToolbar();
+    this.setState({ askPopup:{ visible:true, x, y } });
+  };
+
+  pasteIntoComposer(text){
+    const quoted = `\u201C${this.truncate(text, 300)}\u201D\n`;
+    this.setState({ chatInput: quoted }, () => {
+      const el = this.chatInputRef.current;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    });
+  }
+
+  attachContext(text){
+    this.setState({ composerContext: text, contextHover:false, chatInput:'\uC778\uC6A9\uB41C \uB0B4\uC6A9\uC744 \uC124\uBA85\uD574\uC918' }, () => {
+      const el = this.chatInputRef.current;
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+      el.focus();
+      el.setSelectionRange(el.value.length, el.value.length);
+    });
+  }
+
+  clearContext = () => this.setState({ composerContext:null, contextHover:false });
+  onClearContextClick = (e) => { e.stopPropagation(); this.clearContext(); };
+  toggleContextTooltip = () => this.setState(s => ({ contextHover: !s.contextHover }));
+  closeContextTooltip = () => this.setState({ contextHover:false });
+
+  onAskCurrentChat = () => {
+    const text = this.pendingText;
+    if (!text) return;
+    this.applyHighlightFlash();
+    window.getSelection().removeAllRanges();
+    this.hideAskPopup();
+    if (!this.state.chatOpen) this.setState({ chatOpen:true });
+    this.attachContext(text);
+  };
+
+  onAskNewChat = () => {
+    const text = this.pendingText;
+    if (!text) return;
+    this.applyHighlightFlash();
+    window.getSelection().removeAllRanges();
+    this.hideAskPopup();
+    if (!this.state.chatOpen) this.setState({ chatOpen:true });
+    this.newConversation();
+    this.attachContext(text);
+  };
+
+  componentDidUpdate(prevProps, prevState){
+    if (!prevState) return;
+    const prevMsgs = prevState.messages || [], msgs = this.state.messages || [];
+    const prevLast = prevMsgs[prevMsgs.length - 1];
+    const last = msgs[msgs.length - 1];
+    if (prevMsgs.length !== msgs.length || (last && prevLast && last.text !== prevLast.text)) {
+      this.scrollChatToBottom();
+    }
+  }
+
+  scrollChatToBottom(){
+    requestAnimationFrame(() => {
+      const root = this.notebookWrapRef.current;
+      if (!root) return;
+      const scrollDiv = root.querySelector('[style*="overflow-y"]') || root;
+      scrollDiv.scrollTop = scrollDiv.scrollHeight;
+    });
+  }
+
+  goToSection = (id) => {
+    this.setState({ activeSection:id });
+    requestAnimationFrame(() => {
+      const container = this.paperViewerRef.current;
+      const el = container && document.getElementById(id);
+      if (!container || !el) return;
+      const targetTop = container.scrollTop + (el.getBoundingClientRect().top - container.getBoundingClientRect().top) - 24;
+      container.scrollTo({ top: targetTop, behavior:'smooth' });
+    });
+  };
+
+  toggleToc = () => this.setState(s => ({ tocOpen: !s.tocOpen }));
+  toggleTranslate = () => this.setState(s => ({ translated: !s.translated }));
+  toggleChat = () => this.setState(s => ({ chatOpen: !s.chatOpen }));
+  toggleHistory = () => this.setState(s => ({ historyOpen: !s.historyOpen }));
+
+  handleInputChange = (e) => {
+    const val = e.target.value;
+    this.setState({ chatInput: val });
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  };
+
+  handleComposerFocus = () => this.setState({ composerFocused:true });
+  handleComposerBlur = () => this.setState({ composerFocused:false });
+
+  handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      this.handleSend();
+    }
+  };
+
+  resetComposerHeight(){
+    if (this.chatInputRef.current) this.chatInputRef.current.style.height = '44px';
+  }
+
+  loadHistory = (id) => {
+    const h = this.state.history.find(x => x.id === id);
+    if (!h) return;
+    if (this.streamTimer) clearInterval(this.streamTimer);
+    this.setState({ messages: h.messages.map(m => ({ ...m })), historyOpen:false, isStreaming:false, chatInput:'' });
+    this.resetComposerHeight();
+  };
+
+  startResize = (e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = this.state.chatWidthOpen;
+    const onMove = (ev) => {
+      let w = startWidth + (startX - ev.clientX);
+      w = Math.max(280, Math.min(640, w));
+      this.setState({ chatWidthOpen: w });
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
+  pushUser(text){
+    this.setState(s => ({ messages: [...s.messages, { isUser:true, isAssistant:false, text }] }));
+  }
+
+  pushLoading(){
+    this.setState(s => ({ messages: [...s.messages, { isUser:false, isAssistant:true, loading:true, text:'' }], isStreaming:true }));
+  }
+
+  beginStreaming(fullText){
+    this.setState(s => {
+      const msgs = s.messages.slice();
+      msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], loading:false };
+      return { messages: msgs };
+    });
+    const words = fullText.split(' ');
+    let i = 0;
+    this.streamTimer = setInterval(() => {
+      i++;
+      const done = i >= words.length;
+      this.setState(s => {
+        const msgs = s.messages.slice();
+        const last = { ...msgs[msgs.length - 1] };
+        last.text = words.slice(0, i).join(' ') + (done ? '' : ' \u258C');
+        msgs[msgs.length - 1] = last;
+        return { messages: msgs, isStreaming: !done };
+      });
+      if (done) clearInterval(this.streamTimer);
+    }, 45);
+  }
+
+  sendChip = (key) => {
+    if (this.state.isStreaming) return;
+    const c = CANNED[key];
+    this.pushUser(c.q);
+    this.pushLoading();
+    setTimeout(() => this.beginStreaming(c.a), 700);
+  };
+
+  handleSend = () => {
+    const text = this.state.chatInput.trim();
+    const ctx = this.state.composerContext;
+    if (!text || this.state.isStreaming) return;
+    const full = ctx ? `\u201C${this.truncate(ctx, 300)}\u201D\n\n${text}` : text;
+    this.pushUser(full);
+    this.setState({ chatInput:'', composerContext:null, contextHover:false });
+    this.resetComposerHeight();
+    this.pushLoading();
+    setTimeout(() => this.beginStreaming(CANNED.default.a), 700);
+  };
+
+  newConversation = () => {
+    if (this.streamTimer) clearInterval(this.streamTimer);
+    this.setState(s => {
+      let history = s.history;
+      if (s.messages.length) {
+        const firstUser = s.messages.find(m => m.isUser);
+        const raw = firstUser ? firstUser.text : '대화';
+        const title = raw.length > 22 ? raw.slice(0, 22) + '…' : raw;
+        history = [{ id:'c' + Date.now(), title, messages: s.messages.map(m => ({ ...m })) }, ...s.history];
+      }
+      return { messages:[], isStreaming:false, chatInput:'', history };
+    });
+    this.resetComposerHeight();
+  };
+
+  renderVals(){
+    const t = this.state.translated;
+    const blocks = BLOCKS.map(b => ({
+      isHeading: b.type === 'heading', isSubheading: b.type === 'subheading', isPara: b.type === 'para', isFigure: b.type === 'figure',
+      isEquation: b.type === 'equation', isTable: b.type === 'table',
+      id: b.id || '',
+      text: b.type === 'table' ? '' : (t ? b.kr : b.en),
+      caption: b.type === 'table' ? (t ? b.captionKr : b.captionEn) : '',
+      rows: b.type === 'table' ? b.rows.map(r => ({
+        cells: r.cells.map(c => ({
+          text: c,
+          style: r.header
+            ? 'text-align:left;padding:10px 12px;border-bottom:2px solid var(--color-border);font-weight:600;color:var(--color-text-heading);font-family:var(--font-sans);font-size:13px'
+            : 'text-align:left;padding:10px 12px;border-bottom:1px solid var(--color-border);color:var(--color-text-body);font-family:var(--font-sans);font-size:14px'
+        }))
+      })) : null
+    }));
+    const toc = BLOCKS.filter(b => b.type === 'heading' || b.type === 'subheading').map(b => {
+      const active = b.id === this.state.activeSection;
+      const sub = b.type === 'subheading';
+      return {
+        label: t ? b.kr : b.en,
+        onClick: () => this.goToSection(b.id),
+        rowStyle: `display:flex;align-items:center;width:100%;text-align:left;padding:${sub ? '7px 10px 7px 26px' : '9px 10px'};border:none;border-radius:6px;background:${active ? 'var(--color-primary-subtle)' : 'transparent'};color:${active ? 'var(--color-primary)' : 'var(--color-text-body)'};font-family:var(--font-sans);font-size:${sub ? '12.5px' : '13px'};font-weight:${active ? '600' : '400'};cursor:pointer;transition:background 150ms ease`
+      };
+    });
+    const tocOpen = this.state.tocOpen;
+    const chatOpen = this.state.chatOpen;
+    const collapsedWidth = 44;
+    const openWidth = this.state.chatWidthOpen;
+    const chatWidth = chatOpen ? openWidth : collapsedWidth;
+    const rightZoneWidth = chatOpen ? (openWidth + 6) : collapsedWidth;
+    const messages = this.state.messages.map(m => ({ ...m, notLoading: !m.loading }));
+    const historyList = this.state.history.map(h => ({ title: h.title, onClick: () => this.loadHistory(h.id) }));
+    return {
+      blocks, toc, tocOpen, chatOpen, chatCollapsed: !chatOpen,
+      historyOpen: this.state.historyOpen, historyList, toggleHistory: this.toggleHistory,
+      startResize: this.startResize,
+      chatInputRef: this.chatInputRef,
+      handleKeyDown: this.handleKeyDown,
+      handleComposerFocus: this.handleComposerFocus,
+      handleComposerBlur: this.handleComposerBlur,
+      composerBoxStyle: `display:flex;align-items:flex-end;gap:4px;border:1px solid ${this.state.composerFocused ? 'var(--color-primary)' : 'var(--color-border)'};border-radius:14px;background:var(--color-bg-paper);padding:5px 5px 5px 14px;transition:border-color 150ms ease`,
+      railStyle: `width:${tocOpen ? '260px' : '44px'};flex-shrink:0;background:var(--color-bg-surface);border-right:1px solid var(--color-border);display:flex;flex-direction:column;align-items:${tocOpen ? 'flex-start' : 'center'};padding:10px ${tocOpen ? '16px' : '0'};gap:12px;overflow:hidden;box-sizing:border-box;transition:width 200ms ease`,
+      tocIcon: tocOpen ? 'x' : 'list',
+      tocLabel: tocOpen ? '목차 닫기' : '목차 열기',
+      toggleToc: this.toggleToc,
+      setLangEn: () => this.setState({ translated:false }),
+      setLangKr: () => this.setState({ translated:true, translationPopup:{ visible:false, x:0, y:0, original:'', translated:'' } }),
+      langBtnBase: `border:none;padding:5px 12px;border-radius:9999px;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:0.02em;cursor:pointer;transition:background 150ms ease,color 150ms ease`,
+      langEnStyle: `border:none;padding:5px 12px;border-radius:9999px;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:0.02em;cursor:pointer;transition:background 150ms ease,color 150ms ease;background:${!this.state.translated ? 'var(--color-bg-paper)' : 'transparent'};color:${!this.state.translated ? 'var(--color-primary)' : 'rgba(255,253,247,0.6)'}`,
+      langKrStyle: `border:none;padding:5px 12px;border-radius:9999px;font-family:var(--font-sans);font-size:12px;font-weight:700;letter-spacing:0.02em;cursor:pointer;transition:background 150ms ease,color 150ms ease;background:${this.state.translated ? 'var(--color-bg-paper)' : 'transparent'};color:${this.state.translated ? 'var(--color-primary)' : 'rgba(255,253,247,0.6)'}`,
+      topBarRightStyle: `width:${rightZoneWidth}px;box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;justify-content:${chatOpen ? 'flex-end' : 'center'};padding:${chatOpen ? '0 20px' : '0 6px'};border-left:1px solid rgba(255,253,247,0.14)`,
+      chatPanelStyle: `width:${chatWidth}px;box-sizing:border-box;flex-shrink:0;display:flex;flex-direction:column;background:var(--color-bg-paper);border-left:1px solid var(--color-border);overflow:hidden`,
+      toggleChat: this.toggleChat,
+      paperViewerRef: this.paperViewerRef,
+      notebookWrapRef: this.notebookWrapRef,
+      messages, hasMessages: messages.length > 0, noMessages: messages.length === 0,
+      chatInput: this.state.chatInput,
+      handleInputChange: this.handleInputChange,
+      handleSend: this.handleSend,
+      isStreaming: this.state.isStreaming,
+      sendBtnStyle: `width:44px;height:44px;flex-shrink:0;border-radius:9999px;border:none;background:var(--color-primary);color:var(--color-on-primary);display:flex;align-items:center;justify-content:center;cursor:${this.state.isStreaming ? 'not-allowed' : 'pointer'};opacity:${this.state.isStreaming ? 0.5 : 1};transition:background 150ms ease`,
+      sendSummary: () => this.sendChip('summary'),
+      sendTranslate: () => this.sendChip('translate'),
+      sendBackground: () => this.sendChip('background'),
+      newConversation: this.newConversation,
+      handlePaperMouseUp: this.handlePaperMouseUp,
+      handleViewerScroll: this.handleViewerScroll,
+      selectionToolbarRef: this.selectionToolbarRef,
+      selectionToolbarVisible: this.state.selectionToolbar.visible,
+      showSelectionTranslate: !this.state.translated,
+      selectionToolbarStyle: `position:fixed;left:${this.state.selectionToolbar.x}px;top:${this.state.selectionToolbar.y}px;transform:translate(-50%, calc(-100% - 10px));display:inline-flex;background:var(--color-bg-walnut);border-radius:var(--radius-control);box-shadow:var(--shadow-menu);padding:4px;gap:2px;z-index:80`,
+      selToolbarBtnStyle: `display:flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;color:var(--color-on-dark);font-family:var(--font-sans);font-size:13px;font-weight:600;padding:8px 12px;border-radius:var(--radius-structural);white-space:nowrap;transition:background 150ms ease`,
+      selToolbarBtnHoverStyle: `background:rgba(255,253,247,0.14)`,
+      onSelectionTranslate: this.onSelectionTranslate,
+      onSelectionAsk: this.onSelectionAsk,
+      translationPopupRef: this.translationPopupRef,
+      translationPopupVisible: this.state.translationPopup.visible,
+      translationPopupOriginal: this.state.translationPopup.original,
+      translationPopupTranslated: this.state.translationPopup.translated,
+      closeTranslationPopup: this.closeTranslationPopup,
+      translationPopupStyle: `position:fixed;left:${this.state.translationPopup.x}px;top:${this.state.translationPopup.y}px;transform:translate(-50%, calc(-100% - 10px));width:300px;box-sizing:border-box;background:var(--color-bg-paper);border:1px solid var(--color-border);border-radius:var(--radius-control);box-shadow:var(--shadow-menu);padding:14px 16px;z-index:80;position:fixed`,
+      askPopupRef: this.askPopupRef,
+      askPopupVisible: this.state.askPopup.visible,
+      onAskCurrentChat: this.onAskCurrentChat,
+      onAskNewChat: this.onAskNewChat,
+      askPopupStyle: `position:fixed;left:${this.state.askPopup.x}px;top:${this.state.askPopup.y}px;transform:translate(-50%, calc(-100% - 10px));width:max-content;box-sizing:border-box;background:var(--color-bg-paper);border:1px solid var(--color-border);border-radius:10px;box-shadow:var(--shadow-menu);padding:4px;display:flex;flex-direction:column;z-index:80`,
+      askPopupRowStyle: `display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;text-align:left;white-space:nowrap;padding:7px 12px 7px 7px;border:none;background:transparent;border-radius:7px;cursor:pointer;transition:background 150ms ease`,
+      hasContext: !!this.state.composerContext,
+      composerContextText: this.state.composerContext || '',
+      contextHover: this.state.contextHover,
+      onContextHoverEnter: this.onContextHoverEnter,
+      onContextHoverLeave: this.onContextHoverLeave,
+      toggleContextTooltip: this.toggleContextTooltip,
+      closeContextTooltip: this.closeContextTooltip,
+      onClearContextClick: this.onClearContextClick,
+      clearContext: this.clearContext,
+      contextChipStyle: `display:inline-flex;align-items:center;gap:6px;background:var(--color-bg-surface);border:1px solid var(--color-border);border-radius:9999px;padding:5px 8px 5px 10px;font-family:var(--font-sans);font-size:12px;color:var(--color-text-body);cursor:pointer`,
+      contextTooltipStyle: `position:absolute;bottom:calc(100% + 8px);left:0;width:300px;max-width:70vw;box-sizing:border-box;background:var(--color-bg-paper);border:1px solid var(--color-border);border-radius:8px;box-shadow:var(--shadow-menu);padding:12px 14px;font-family:var(--font-serif);font-size:13px;line-height:1.6;color:var(--color-text-body);z-index:90`
+    };
+  }
+}
+</script>
+</body>
+</html>
