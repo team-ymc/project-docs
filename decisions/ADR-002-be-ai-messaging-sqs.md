@@ -33,7 +33,14 @@
 
 ## 3. Decision
 
-**BE ↔ AI 비동기 배선은 AWS SQS 표준 큐 2개로 한다.** `parse-requests`(BE → AI), `parse-results`(AI → BE).
+**BE ↔ AI 비동기 배선은 AWS SQS 표준 큐 2개로 한다.** `parse-requests`(BE → AI), `parse-results`(파싱 결과 producer → BE).
+
+### DLQ 요청의 최종 실패 반영
+
+- **인프라:** redrive policy로 재시도 소진 요청을 `parse-requests-dlq`로 이동시키고,
+  연결된 Lambda가 `FAILED / PARSE_RETRIES_EXHAUSTED` 결과를 `parse-results`에 발행한다.
+- **BE·AI:** DLQ나 재시도 횟수를 직접 다루지 않는다. BE는 기존 결과 consumer로
+  Lambda가 발행한 실패 결과도 동일하게 처리한다.
 
 **이 결정의 근거는 발행 이후 구간의 요청 유실 제거와 운영부담 최소화이다.**
 - 두 서비스는 언제든 죽을 수 있다(배포 · 재시작 · 크래시). 그 사이에 오간 요청이 사라지면 안 된다.
@@ -214,7 +221,8 @@ SQS와 같은 큐 의미론(1 메시지 → 1 컨슈머, ack · 재전달)을 �
 
 가정 부하(§2 실 부하)에서 도출된 것과, 위 트레이드오프가 부르는 후속 작업이며, 처리 후 제거하고 Updates에 기록한다.
 
-- **DLQ + redrive policy를 둔다.** 현재 `infra/local/bootstrap.sh`에 없다. `maxReceiveCount` 초과 시 DLQ로 보내지 않으면 반복 실패하는 메시지가 워커를 영구히 점유한다.
+- **운영 IaC에도 DLQ + redrive policy와 DLQ 처리 Lambda를 둔다.** Lambda는 재시도 소진
+  요청의 최종 실패 결과를 발행한다.
 - **`UPLOADED` 상태의 정체는 주기 배치로 복구한다** — N분 넘게 `UPLOADED`인 레코드를 재발행하고 `PROCESSING`으로 전이한다.
 	- 큐에 메시지가 있는지 확인하지 않고 **무조건 재발행**한다.
 	- 임계 N분은 정상 진행 중인 건(전이 커밋~발행 사이의 순간적 `UPLOADED`)과의 경합을 피하기 위한 것이다.
@@ -224,6 +232,9 @@ SQS와 같은 큐 의미론(1 메시지 → 1 컨슈머, ack · 재전달)을 �
 - **워커 오토스케일링 트리거는 큐 길이로 한다** (오토스케일링 도입 시).
 
 ## 6. Updates
+
+- **2026-07-30** — DLQ에 연결된 Lambda가 `PARSE_RETRIES_EXHAUSTED` 결과를
+  `parse-results`에 발행하도록 결정했다.
 
 - **2026-07-22** — 초기 임시 AsyncAPI·외부 JSON Schema 파일을 제거했다. SQS 채널 토폴로지와 at-least-once 의미론은 이 ADR이 계속 소유하고, BE↔AI HTTP API의 request/response schema는 `contracts/backend-ai/openapi.yml`에서 관리한다.
 
