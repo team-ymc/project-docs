@@ -95,6 +95,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/inline-pdf-agent/runs:
+    post:
+      tags:
+      - inline-pdf-agent
+      summary: Run
+      operationId: inline-pdf-agent-run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InlinePdfAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InlinePdfAgentRunResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/inline-pdf-agent/runs/stream:
+    post:
+      tags:
+      - inline-pdf-agent
+      summary: Run Stream
+      operationId: inline-pdf-agent-run_stream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InlinePdfAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/agents/simple-agent/runs:
     post:
       tags:
@@ -191,13 +237,24 @@ components:
         paper_id:
           type: string
           title: Paper Id
+        status:
+          type: string
+          const: completed
+          title: Status
+          default: completed
         message:
           type: string
           title: Message
+        manifest_key:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Manifest Key
       type: object
       required:
       - paper_id
       - message
+      - manifest_key
       title: DocumentParseResponse
     HTTPValidationError:
       properties:
@@ -208,6 +265,74 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
+    InlinePdfAgentRunRequest:
+      properties:
+        thread_id:
+          type: string
+          minLength: 1
+          title: Thread Id
+        paper_id:
+          type: string
+          minLength: 1
+          title: Paper Id
+        message:
+          type: string
+          minLength: 1
+          title: Message
+        selection:
+          anyOf:
+          - $ref: '#/components/schemas/InlinePdfSelection'
+          - type: 'null'
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - message
+      title: InlinePdfAgentRunRequest
+    InlinePdfAgentRunResponse:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        paper_id:
+          type: string
+          title: Paper Id
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - message
+      title: InlinePdfAgentRunResponse
+    InlinePdfSelection:
+      properties:
+        start:
+          $ref: '#/components/schemas/InlinePdfSelectionAnchor'
+        end:
+          $ref: '#/components/schemas/InlinePdfSelectionAnchor'
+      type: object
+      required:
+      - start
+      - end
+      title: InlinePdfSelection
+    InlinePdfSelectionAnchor:
+      properties:
+        block_id:
+          type: string
+          minLength: 1
+          title: Block Id
+        offset:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Offset
+      type: object
+      required:
+      - block_id
+      title: InlinePdfSelectionAnchor
     SimpleAgentRunRequest:
       properties:
         thread_id:
