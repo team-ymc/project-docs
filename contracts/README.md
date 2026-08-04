@@ -52,7 +52,8 @@ SQS 메시지 payload schema는 `backend-ai/messaging.yml`이 소유한다.
 
 ## 미확정
 
-- **파싱 산출물 조회 계약** — `DocumentParseResponse`는 아직 Reader가 사용할 Markdown·미디어 구조를
-  정의하지 않는다. FT-004 Reader 착수 전에 `backend-ai/openapi.yml`에서 확정한다.
-- **`parse-results`의 `result` 본문** — FT-004 Reader 착수 전까지 미확정이며 BE는 해석하지 않는다.
-  `backend-ai/messaging.yml`에서 확정한다.
+- **`parse-results`(큐 메시지)의 결과 본문** — manifest 키(S3 `manifest.json` object key) 전달 방식으로
+  결정됐으나, 큐 메시지 계약 재작성에는 아직 반영되지 않았다. `backend-ai/`에서 확정한다.
+  파서 산출물 패키지 구조는 ai repo의 `docs/S3_BUCKET_STRUCTURE_*.md`가 기술한다.
+
+> FE↔BE 본문 조회는 `frontend-backend/openapi.yaml` 0.3.0의 `getPaperContent`로 확정됐다 (YMC-293 §2).
