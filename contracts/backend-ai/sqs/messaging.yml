@@ -1,21 +1,18 @@
 # BE ↔ AI SQS 메시지 계약
 #
-# 이 파일은 SQS 메시지 payload 스키마의 SSOT다.
 # - 채널 토폴로지(큐 2개)와 전달 의미론(at-least-once, visibility timeout, DLQ)은
 #   decisions/ADR-002-be-ai-messaging-sqs.md가 소유한다.
 # - ACK, heartbeat, 재시도와 애플리케이션·인프라 책임은
 #   contracts/backend-ai/sqs/README.md가 설명한다.
-# - BE↔AI HTTP API는 backend-ai/openapi.yml이 소유한다. 이 파일과 무관하다.
 #
 # 이 파일은 OpenAPI/AsyncAPI 문서가 아니다. schemas의 각 항목은 JSON Schema다.
 
-version: 0.1.0
+version: 0.2.0
 
 # wire 규칙
-# - SQS wire field는 camelCase다. (기존 BE 발행 형식과 일치)
-#   각 서비스 내부 표현(BE camelCase, AI snake_case)은 서비스 내부 구현이며 계약이 아니다.
 # - 송신 측과 계약 검증 테스트는 additionalProperties: false를 따른다.
 # - 수신 측은 forward compatibility를 위해 모르는 필드를 관대하게 무시할 수 있다.
+# - 중간 progress 메시지는 없으며 parse-results에는 최종 결과만 발행한다.
 
 channels:
   parse-requests:
@@ -28,54 +25,78 @@ channels:
 schemas:
   ParseRequest:
     type: object
-    required: [paperId, fileKey]
+    required: [paper_id, file_key]
     additionalProperties: false
     properties:
-      paperId:
+      paper_id:
         type: string
         format: uuid
         description: >-
-          이 파싱 작업과 Paper를 연결하는 식별자. BE 도메인 식별자이자
-          요청·결과의 상관관계 키.
-      fileKey:
+          이 파싱 작업과 Paper를 연결하는 BE 도메인 식별자이자 요청·결과의
+          상관관계 키. AI worker가 안전하게 처리할 수 있도록 빈 문자열, 절대 경로,
+          슬래시, 역슬래시, 단일 점(.)과 이중 점(..)은 허용하지 않는다.
+      file_key:
         type: string
         minLength: 1
         description: >-
           원본 PDF가 저장된 불투명한 S3 object key. AI는 이 값을 그대로
-          GetObject에 사용하며, 형식을 해석하거나 paperId로 키를 조립하지 않는다.
-          키 형식은 BE 저장소 내부 구현이라 버전이 섞일 수 있다.
+          GetObject에 사용하며 형식을 해석하거나 paper_id로 키를 조립하지 않는다.
+          키 형식은 BE 저장소 내부 구현이므로 버전이 섞일 수 있다.
 
   ParseResult:
+    oneOf:
+      - $ref: "#/schemas/ParseCompletedResult"
+      - $ref: "#/schemas/ParseFailedResult"
+
+  ParseCompletedResult:
     type: object
-    required: [paperId, status]
+    required: [paper_id, status, message, manifest_key]
     additionalProperties: false
     properties:
-      paperId:
+      paper_id:
         type: string
         format: uuid
-        description: 대응하는 ParseRequest의 paperId.
+        description: 대응하는 ParseRequest의 paper_id.
       status:
+        const: completed
+      message:
         type: string
-        enum: [COMPLETED, FAILED]
-      error:
-        type: object
-        required: [code]
-        additionalProperties: false
-        properties:
-          code:
-            type: string
-            minLength: 1
-          message:
-            type: string
-      result:
-        type: object
+        minLength: 1
+        description: 사람이 읽을 수 있는 완료 설명. 상태 판정에는 사용하지 않는다.
+      manifest_key:
+        type: string
+        minLength: 1
         description: >-
-          미확정 — FT-004 Reader 착수 전 확정한다. 그 전까지 BE는 이 필드를
-          해석하지 않는다. 추측으로 채우지 말 것.
-    allOf:
-      - if:
-          properties:
-            status: { const: FAILED }
-          required: [status]
-        then:
-          required: [error]
+          생성된 document package의 manifest.json을 가리키는 S3 object key.
+          URL이나 bucket 이름을 포함하지 않는다.
+
+  ParseFailedResult:
+    type: object
+    required: [paper_id, status, error]
+    additionalProperties: false
+    properties:
+      paper_id:
+        type: string
+        format: uuid
+        description: 대응하는 ParseRequest의 paper_id.
+      status:
+        const: failed
+      error:
+        $ref: "#/schemas/ParseError"
+
+  ParseError:
+    type: object
+    required: [code, message]
+    additionalProperties: false
+    properties:
+      code:
+        type: string
+        enum:
+          - FILE_KEY_INVALID
+          - PAPER_ID_INVALID
+          - DOCUMENT_SOURCE_NOT_FOUND
+          - PARSE_RETRIES_EXHAUSTED
+      message:
+        type: string
+        minLength: 1
+        description: 사람이 읽을 수 있는 실패 설명. 분기에는 code를 사용한다.
