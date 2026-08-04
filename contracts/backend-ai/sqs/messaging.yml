@@ -2,7 +2,9 @@
 #
 # 이 파일은 SQS 메시지 payload 스키마의 SSOT다.
 # - 채널 토폴로지(큐 2개)와 전달 의미론(at-least-once, visibility timeout, DLQ)은
-#   decisions/ADR-002-be-ai-messaging-sqs.md가 소유한다. 여기에 다시 적지 않는다.
+#   decisions/ADR-002-be-ai-messaging-sqs.md가 소유한다.
+# - ACK, heartbeat, 재시도와 애플리케이션·인프라 책임은
+#   contracts/backend-ai/sqs/README.md가 설명한다.
 # - BE↔AI HTTP API는 backend-ai/openapi.yml이 소유한다. 이 파일과 무관하다.
 #
 # 이 파일은 OpenAPI/AsyncAPI 문서가 아니다. schemas의 각 항목은 JSON Schema다.
@@ -20,7 +22,7 @@ channels:
     direction: BE → AI
     message: "#/schemas/ParseRequest"
   parse-results:
-    direction: AI → BE
+    direction: 파싱 결과 producer → BE
     message: "#/schemas/ParseResult"
 
 schemas:
