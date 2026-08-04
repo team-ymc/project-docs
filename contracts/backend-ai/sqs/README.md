@@ -27,14 +27,14 @@ region, endpoint override, credentials와 queue name은 인프라가 환경별�
 
 | 범위 | 설정 | 환경변수 예시 | 설명 |
 |---|---|---|---|
-| 공통 | 요청 queue name | `PARSE_REQUEST_QUEUE_NAME` | 기본값 `parse-requests` |
-| 공통 | 결과 queue name | `PARSE_RESULT_QUEUE_NAME` | 기본값 `parse-results` |
+| AI | 요청 queue name | `DOCUMENT_PARSER_SQS_REQUEST_QUEUE_NAME` | 기본값 `parse-requests` |
+| AI | 결과 queue name | `DOCUMENT_PARSER_SQS_RESULT_QUEUE_NAME` | 기본값 `parse-results` |
 | 공통 | AWS region | `AWS_DEFAULT_REGION` | 기본값 `ap-northeast-2` |
 | 공통 | endpoint override | `AWS_ENDPOINT_URL` | LocalStack에서만 주입하고 실제 AWS에서는 미설정 |
 | 공통 | LocalStack credential | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | 로컬에서만 test 값 사용 |
-| AI | visibility 연장 시간 | `PARSE_VISIBILITY_EXTENSION_SECONDS` | heartbeat 호출 시점부터 다시 확보할 시간 |
-| AI | heartbeat 간격 | `PARSE_VISIBILITY_HEARTBEAT_INTERVAL_SECONDS` | visibility 연장 시간보다 짧게 설정 |
-| AI | 전체 실행 deadline | `PARSE_DEADLINE_SECONDS` | heartbeat와 별도로 제한할 파싱 시간 |
+| AI | visibility 연장 시간 | `DOCUMENT_PARSER_SQS_VISIBILITY_TIMEOUT_SECONDS` | heartbeat 호출 시점부터 다시 확보할 시간 |
+| AI | heartbeat 간격 | `DOCUMENT_PARSER_SQS_HEARTBEAT_INTERVAL_SECONDS` | visibility 연장 시간보다 짧게 설정 |
+| AI | 전체 실행 deadline | `DOCUMENT_PARSER_DEADLINE_SECONDS` | heartbeat와 별도로 제한할 파싱 시간 |
 
 LocalStack에서만 endpoint와 test credential을 주입한다. 실제 AWS에서는
 endpoint를 지정하지 않고 ECS task role이나 EKS workload role을 사용한다.
@@ -59,8 +59,8 @@ endpoint를 지정하지 않고 ECS task role이나 EKS workload role을 사용�
 ### 실패·재시도 처리 원칙
 
 1. 일시 실패에서는 결과를 발행하거나 원본 요청을 삭제하지 않는다.
-2. 확정 실패는 `FAILED` 결과 발행에 성공한 뒤 원본 요청을 삭제한다. Consumer는 결과 발행 주체와 관계없이
-   `COMPLETED`와 `FAILED`를 동일한 consumer에서 처리한다.
+2. 확정 실패는 `failed` 결과 발행에 성공한 뒤 원본 요청을 삭제한다. Consumer는 결과 발행 주체와 관계없이
+   `completed`와 `failed`를 동일한 consumer에서 처리한다.
 3. 앱은 재시도 횟수나 마지막 시도를 판단하지 않는다. `ApproximateReceiveCount`, DLQ
 URL·ARN과 `maxReceiveCount`도 애플리케이션 설정으로 받지 않는다.
     - 즉 DLQ의 존재를 애플리케이션은 모른다.
@@ -75,7 +75,7 @@ URL·ARN과 `maxReceiveCount`도 애플리케이션 설정으로 받지 않는�
 - 큐별 IAM 최소 권한과 모니터링
 
 SQS가 재시도 소진 요청을 `parse-requests-dlq`로 이동시키면 Lambda가 기존 계약의
-`FAILED / PARSE_RETRIES_EXHAUSTED` 결과를 `parse-results`에 발행한다.
+`failed / PARSE_RETRIES_EXHAUSTED` 결과를 `parse-results`에 발행한다.
 
 주요 권한은 다음과 같다.
 
