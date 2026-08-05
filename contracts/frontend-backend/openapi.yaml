@@ -5,13 +5,13 @@ info:
     FE↔BE HTTP API contract. REST와 SSE를 함께 정의하는 SSOT다.
 
     - Source: features/FT-002-서재.md, features/FT-003-논문-등록-분석.md,
-      features/FT-007-ai-튜터-채팅.md
+      features/FT-004-논문-학습-뷰어.md, features/FT-007-ai-튜터-채팅.md
     - ADR: decisions/ADR-001-pdf-upload-presigned-url.md,
       decisions/ADR-004-chat-streaming-be-relay.md
     - BE↔AI API 계약: contracts/backend-ai/openapi.yml
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
 
-  version: 0.2.4
+  version: 0.2.5
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -24,10 +24,10 @@ security:
 servers:
   - url: http://localhost:8080
     description: 로컬 개발 (BE)
-  # - url: https://dev-api.paperteacher.example
-  #   description: 개발(dev)
-  # - url: https://api.paperteacher.example
-  #   description: 운영(prod)
+  - url: https://dev.papertutor.co.kr
+    description: 개발(dev) — FE와 same-origin, /api는 ingress가 BE로 라우팅
+  - url: https://papertutor.co.kr
+    description: 운영(prod) — 동일 구성
 
 paths:
   /api/auth/refresh:
@@ -271,6 +271,54 @@ paths:
               schema: { $ref: "#/components/schemas/Error" }
         "409":
           description: 원본 객체가 아직 없음(UPLOAD_PENDING/EXPIRED). code UPLOAD_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/papers/{paperId}/content:
+    get:
+      operationId: getPaperContent
+      summary: 파싱된 논문 본문 조회
+      description: |
+        완료(COMPLETED)된 논문의 파싱 본문을 반환한다. 파서 산출물의 frontend projection
+        (`frontend/document.json`, 파서 schema v1)을 기반으로 하되, BE가 두 가지를 채워서 준다:
+
+        - 수식(`display_formula`)·표(`table`) 블록은 asset 파일 내용(tex·html)을 **응답에 인라인**한다
+        - 이미지·차트 asset은 **presigned GET URL**로 준다 (만료되면 operation을 다시 호출)
+
+        블록 순서는 `globalOrder` (문서 전체 순서) 오름차순이며, MVP는 페이지네이션이 없다 
+        — 필요해지면 `globalOrder`를 정렬 키로 하는 커서 조회를 추가한다.
+      tags: [papers]
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 파싱 본문 (blocks는 globalOrder 오름차순)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaperContentResponse" }
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: 존재하지 않는 paperId. code PAPER_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: 논문이 COMPLETED가 아니어서 본문이 없음. code PAPER_NOT_READY
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -749,6 +797,140 @@ components:
           format: date-time
           description: presigned URL 만료 시각.
 
+    PaperContentResponse:
+      type: object
+      required: [paperId, title, schemaVersion, blocks, assets]
+      description: |
+        파싱 본문. 파서 frontend projection이 원본이며, BE는 storage-free 구조를 유지한 채
+        수식·표 내용 인라인과 이미지 presigned URL 해석만 더한다 — 뷰어 모델의 소유권은 파서 스키마에 있다.
+      properties:
+        paperId:
+          type: string
+          format: uuid
+        title:
+          type: [string, "null"]
+          description: doc_title 블록의 텍스트. 파서가 제목을 못 찾은 문서는 null — FE는 첫 heading 폴백.
+        schemaVersion:
+          type: integer
+          description: 파서 frontend projection의 schema version.
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaperContentBlock"
+          description: globalOrder 오름차순. (MVP — No 페이지네이션)
+        assets:
+          type: object
+          description: |
+            이미지·차트 asset만 담는다 (assetKey → presigned URL). 수식·표는 블록에 내용이
+            인라인되므로 여기 없다. URL 만료 시 FE는 content를 재조회한다.
+          additionalProperties:
+            $ref: "#/components/schemas/PaperContentAsset"
+
+    PaperContentBlock:
+      type: object
+      required: [blockId, globalOrder, label, content]
+      properties:
+        blockId:
+          type: string
+          description: |
+            파서가 부여한 안정 블록 id (예: p0002-b0006).
+            인라인 액션·번역의 선택 anchor와 TOC·스크롤 이동의 DOM id로 쓴다.
+        globalOrder:
+          type: integer
+          description: 문서 전체 순서 (0부터). 렌더 순서이자 향후 커서 페이지네이션의 정렬 키.
+        label:
+          type: string
+          description: |
+            파서 블록 분류. enum은 닫혀 있다 — 파서 schema 진화로 새 label이 생기면 여기부터 PR로 추가한다.
+            - doc_title / paragraph_title: 제목 계열 (headingLevel 존재). TOC 파생 대상
+            - abstract / text / reference_content: 본문 텍스트 계열 (인라인 $...$ LaTeX 포함 가능)
+            - figure_title: 그림·표 캡션 텍스트
+            - display_formula: 블록 수식 (content.tex)
+            - table: 표 (content.html)
+            - image / chart: 이미지 계열 (content.assetKey → assets 맵)
+          enum:
+            [
+              doc_title,
+              paragraph_title,
+              abstract,
+              text,
+              reference_content,
+              figure_title,
+              display_formula,
+              table,
+              image,
+              chart,
+            ]
+        headingLevel:
+          type: [integer, "null"]
+          description: 제목 계열 블록의 수준 (1부터). 그 외 null.
+        sectionPath:
+          type: array
+          items: { type: string }
+          description: 이 블록이 속한 heading 블록 id의 계층 경로 (바깥→안).
+        content:
+          description: 블록 내용. format으로 판별한다.
+          oneOf:
+            - $ref: "#/components/schemas/PaperTextContent"
+            - $ref: "#/components/schemas/PaperFormulaContent"
+            - $ref: "#/components/schemas/PaperTableContent"
+            - $ref: "#/components/schemas/PaperImageContent"
+
+    PaperTextContent:
+      type: object
+      required: [format, text]
+      properties:
+        format: { type: string, const: text }
+        text:
+          type: string
+          description: 본문 텍스트. 인라인 수식은 $...$ LaTeX로 들어 있을 수 있다.
+
+    PaperFormulaContent:
+      type: object
+      required: [format, tex]
+      properties:
+        format: { type: string, const: formula }
+        tex:
+          type: string
+          description: 블록 수식의 LaTeX 본문. 바깥 $$ 구분자는 포함하지 않는다.
+
+    PaperTableContent:
+      type: object
+      required: [format, html]
+      properties:
+        format: { type: string, const: table }
+        html:
+          type: string
+          description: 파서가 추출한 표 HTML. FE는 렌더 전에 반드시 정화(sanitize)한다.
+
+    PaperImageContent:
+      type: object
+      required: [format, assetKey]
+      properties:
+        format: { type: string, const: image }
+        assetKey:
+          type: string
+          description: "assets 맵의 키 (예: image_0). image·chart label이 공유하는 형식."
+
+    PaperContentAsset:
+      type: object
+      required: [url, mediaType, expiresAt]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: >-
+            S3 presigned GET URL. 만료 창 안에서는 같은 asset에 같은 URL이 재사용될 수 있다
+            (best-effort — 브라우저·중간 캐시 효율 목적이며 보장은 아니다. 인스턴스가 다르면 URL이
+            달라질 수 있고, 어느 쪽이든 expiresAt까지 유효하다).
+        mediaType:
+          type: string
+          description: image/jpeg 등.
+        expiresAt:
+          type: string
+          format: date-time
+          description: presigned URL 만료 시각. 지나면 content 재조회.
+
     PaperStatusResponse:
       type: object
       required: [paperId, status, updatedAt]
@@ -1143,7 +1325,7 @@ components:
             - UNAUTHORIZED          : access token 없음·만료 (401)
             - AUTH_REFRESH_INVALID  : refresh 쿠키 없음·만료·폐기·재사용 (401)
             - FORBIDDEN             : 인증됐지만 대상 논문 접근 권한 없음 (403)
-            - PAPER_NOT_READY       : 논문이 아직 채팅 가능한 상태가 아님 (409)
+            - PAPER_NOT_READY       : 논문이 아직 본문·채팅을 쓸 수 있는 상태(COMPLETED)가 아님 (409)
             - CHAT_SESSION_NOT_FOUND: 세션 없음 또는 현재 사용자·논문에 속하지 않음 (404)
             - CHAT_RUN_IN_PROGRESS  : 같은 세션에서 assistant 답변 생성 중 (409)
             - CLIENT_MESSAGE_ID_CONFLICT: clientMessageId를 다른 요청에 재사용함 (409)
