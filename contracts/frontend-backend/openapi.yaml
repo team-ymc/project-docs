@@ -11,7 +11,7 @@ info:
     - BE↔AI API 계약: contracts/backend-ai/openapi.yml
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
 
-  version: 0.2.5
+  version: 0.2.6
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -189,6 +189,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: 존재하지 않는 paperId
           content:
@@ -229,6 +235,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
           description: 존재하지 않는 paperId
           content:
@@ -261,6 +273,11 @@ paths:
               schema: { $ref: "#/components/schemas/PaperDownload" }
         "401":
           description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
