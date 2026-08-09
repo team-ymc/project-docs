@@ -1003,6 +1003,41 @@ components:
           type: string
           minLength: 1
           description: 사용자가 입력한 질문의 UTF-8 plain text. BE↔AI 요청의 `message`로 전달한다.
+        selection:
+          description: |
+            논문 내 선택 영역. 생략하거나 null이면 논문 전체를 컨텍스트로 쓴다.
+            BE는 이 값을 BE↔AI 요청의 selection(snake_case)으로 그대로 전달한다.
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/ChatSelection"
+
+    ChatSelection:
+      type: object
+      required: [start, end]
+      additionalProperties: false
+      description: |
+        start/end block anchor로 지정하는 선택 영역. document 블록 순서를 따른다.
+        text block offset은 UTF-16 code unit 기준, start는 inclusive, end는 exclusive다.
+        image·table·formula block은 atomic하므로 offset을 보내지 않는다.
+        최대 150 blocks, 선택 렌더링 content 최대 30000 characters.
+      properties:
+        start:
+          $ref: "#/components/schemas/ChatSelectionAnchor"
+        end:
+          $ref: "#/components/schemas/ChatSelectionAnchor"
+
+    ChatSelectionAnchor:
+      type: object
+      required: [blockId]
+      additionalProperties: false
+      properties:
+        blockId:
+          type: string
+          minLength: 1
+        offset:
+          type: [integer, "null"]
+          minimum: 0
+          description: text block 내 UTF-16 code unit offset. atomic block에는 보내지 않는다.
 
     ChatSessionSummary:
       type: object
