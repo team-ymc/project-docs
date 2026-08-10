@@ -37,7 +37,7 @@ User
 
 이는 완전히 동일한 파일을 판정하는 기준이다. DOI·arXiv ID·제목·저자 등을 이용한 의미적 동일 논문 판정과는 구분하며, 의미적 판정은 후속 단계에서 별도 기준으로 추가한다.
 
-FE는 업로드 전에 SHA-256을 계산하고 presigned PUT에 checksum을 포함한다. S3는 업로드된 실제 바이트와 checksum의 일치를 검증하며, BE는 S3가 검증한 checksum만 중복 판정에 사용한다.
+FE는 업로드 전에 SHA-256을 계산하고 presigned PUT에 checksum을 포함한다(`x-amz-checksum-sha256`도 `Content-Length`와 같이 서명 헤더에 들어간다). S3는 업로드된 실제 바이트와 checksum의 일치를 검증하며, BE는 S3가 검증한 checksum만 중복 판정에 사용한다.
 
 중복 여부는 업로드가 완료되기 전에 공개하지 않는다.
 

@@ -11,7 +11,7 @@ info:
     - BE↔AI API 계약: contracts/backend-ai/openapi.yml
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
 
-  version: 0.2.6
+  version: 0.2.7
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -112,8 +112,13 @@ paths:
       operationId: createPaper
       summary: 논문 레코드 생성 및 presigned 업로드 URL 발급
       description: |
-        BE가 paperId·fileKey를 생성하고 레코드를 UPLOAD_PENDING으로 만든 뒤 presigned upload URL을 발급한다.
-        FE는 그 URL로 S3에 직접 업로드하고 complete를 호출한다 — 파일 바이트는 BE를 거치지 않는다. (ADR-001)
+        BE가 paperId·fileKey를 생성하고 레코드를 UPLOAD_PENDING으로 만든 뒤 presigned PUT URL을
+        발급한다. FE는 그 URL로 S3에 직접 업로드하고 complete를 호출한다 — 파일 바이트는 BE를
+        거치지 않는다. (ADR-001)
+
+        요청의 size는 서명에 그대로 들어간다. 상한을 넘으면 URL을 발급하지 않고(413), 발급된 뒤에도
+        신고한 size와 다른 바이트 수로 업로드하면 S3가 서명 불일치로 거절한다 — 상한 강제는 BE의
+        사전 검사와 S3의 서명 검증 두 겹이다.
 
         레코드 생성이 업로드보다 먼저다. 이 시점에 BE가 가진 것은 메타데이터뿐이라 내용 기반 유효성 판정은
         하지 않고 파일명 중복만 판정한다. (FT-003 Story 2)
@@ -154,6 +159,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "413":
+          description: >-
+            size가 최대 허용 용량을 초과함. code: FILE_TOO_LARGE.
+            레코드를 만들지 않고 presigned URL도 발급하지 않는다.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /api/papers/{paperId}/complete:
     post:
@@ -161,9 +174,9 @@ paths:
       summary: S3 업로드 완료 통보 (파싱 트리거)
       description: |
         FE가 presigned URL로 S3 업로드를 마친 뒤 호출하는 primary 완료 신호다.
-        BE는 S3 HEAD로 객체 존재를 확인하고, 조건부로 UPLOAD_PENDING → UPLOADED로
-        전이한 뒤 parse-requests 큐에 (paperId, fileKey)를 발행하고 PROCESSING으로
-        전이한다.
+        BE는 S3 HEAD로 객체 존재와 실제 Content-Length를 확인한다. 상한 이하면
+        조건부로 UPLOAD_PENDING → UPLOADED로 전이한 뒤 parse-requests 큐에
+        (paperId, fileKey)를 발행하고 PROCESSING으로 전이한다. 초과 객체는 삭제한다.
 
         멱등: 이미 전이된 레코드에 대한 중복 호출은 재발행 없이 현재 상태를 반환한다.
         객체가 아직 S3에 없으면 상태를 유지하고 409를 반환한다(재시도 가능). (ADR-001)
@@ -203,6 +216,14 @@ paths:
                 $ref: "#/components/schemas/Error"
         "409":
           description: S3에 객체가 아직 없음 — 업로드 미완료/실패. UPLOAD_PENDING 유지, 재시도 가능.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: >-
+            서명을 우회해 올라온 객체의 실제 크기가 최대 허용 용량을 초과함.
+            code: FILE_TOO_LARGE. 객체를 삭제하고 UPLOAD_PENDING을 유지하며 파싱 요청은 발행하지 않는다.
           content:
             application/json:
               schema:
@@ -762,7 +783,7 @@ components:
 
     CreatePaperRequest:
       type: object
-      required: [filename, contentType]
+      required: [filename, contentType, size]
       properties:
         filename:
           type: string
@@ -771,7 +792,16 @@ components:
         contentType:
           type: string
           enum: [application/pdf]
-          description: MVP는 PDF만. FE 사전 검증 보조용이며, 신뢰 검증은 업로드 후 BE/Worker에서 재수행한다.
+          description: MVP는 PDF만. 서명에 포함되므로 PUT의 Content-Type 헤더도 같은 값이어야 한다.
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 52428800
+          description: >-
+            업로드할 파일의 정확한 바이트 수. 서명에 Content-Length로 들어가므로 실제 업로드가
+            이 값과 다르면 S3가 거절한다. 상한(50 MiB) 초과는 413 FILE_TOO_LARGE.
+          example: 2097152
 
     PaperCreated:
       type: object
@@ -789,7 +819,9 @@ components:
         uploadUrl:
           type: string
           format: uri
-          description: S3 presigned PUT URL. 짧은 만료 시간의 업로드 권한만 위임한다.
+          description: >-
+            S3 presigned PUT URL. 짧은 만료 시간의 업로드 권한만 위임한다.
+            서명에 Content-Type과 요청의 size가 포함되므로 PUT은 같은 헤더와 같은 바이트 수여야 한다.
         uploadExpiresAt:
           type: string
           format: date-time
@@ -1371,6 +1403,7 @@ components:
 
             - VALIDATION_ERROR      : 필수 필드 누락 등 (400)
             - UNSUPPORTED_FILE_TYPE : contentType이 application/pdf가 아님 (400)
+            - FILE_TOO_LARGE        : 신고·업로드된 원본이 최대 허용 용량을 초과함 (413, create·complete)
             - DUPLICATE_FILENAME    : 같은 파일명의 논문이 이미 있음 (409, create)
             - PAPER_NOT_FOUND       : 존재하지 않는 paperId (404)
             - UPLOAD_NOT_FOUND      : S3에 객체가 없음 (409, complete)
@@ -1387,6 +1420,7 @@ components:
             [
               VALIDATION_ERROR,
               UNSUPPORTED_FILE_TYPE,
+              FILE_TOO_LARGE,
               DUPLICATE_FILENAME,
               PAPER_NOT_FOUND,
               UPLOAD_NOT_FOUND,

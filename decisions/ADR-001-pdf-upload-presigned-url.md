@@ -21,7 +21,7 @@ PDF 원본은 S3 호환 object storage에 저장한다. BE는 파일 메타데�
 
 MVP에서는 FE가 업로드 완료 후 BE의 complete API를 호출하는 방식을 primary 완료 신호로 사용한다. BE는 complete 요청을 받으면 S3 HEAD로 객체 존재 여부와 메타데이터를 확인한 뒤 파일 상태를 전이              하고, 파싱 요청 메시지에 `paperId`와 `fileKey`를 담아 발행한다.
 
-FE의 PDF 확장자/크기 검사는 사용자 경험을 위한 사전 검증으로만 사용한다. 신뢰 가능한 검증은 BE 또는 Worker에서 업로드 후 다시 수행한다.
+FE의 PDF 확장자/크기 검사는 사용자 경험을 위한 사전 안내로만 쓴다. 신뢰 가능한 검증은 BE와 S3가 하며, 단일 파일 크기 상한을 어떤 수단으로 강제하는지는 [ADR-005](ADR-005-paper-upload-presigned-put-vs-post.md)가 소유한다.
 
 ## 4. Options Considered
 
@@ -81,7 +81,7 @@ sequenceDiagram
     participant Q as Queue
     participant P as Parsing Server
 
-    FE->>BE: POST /api/papers (filename, contentType)
+    FE->>BE: POST /api/papers (filename, contentType, size)
     BE->>DB: Create paper (UPLOAD_PENDING), fileKey는 BE가 생성
     BE-->>FE: paperId + fileKey + presigned upload URL
 
@@ -90,12 +90,16 @@ sequenceDiagram
     FE->>BE: POST /api/papers/{paperId}/complete
     BE->>S3: HEAD fileKey
 
-    alt 객체 있음 (정상)
+    alt 객체 있음 + 크기 정상
         BE->>DB: UPDATE status=UPLOADED WHERE status=UPLOAD_PENDING
         Note over BE,DB: 1 row 변경된 경우에만 아래로 진행<br/>(complete 중복 호출 시 두 번째는 0 row → 발행 안 함)
         BE->>Q: Publish parse request (paperId, fileKey)
         BE->>DB: UPLOADED -> PROCESSING
         BE-->>FE: 200 OK
+    else 객체 있음 + 크기 상한 초과
+        BE->>S3: DELETE fileKey
+        Note over BE,DB: 상태 전이 없음, UPLOAD_PENDING 유지
+        BE-->>FE: 413 FILE_TOO_LARGE
     else 객체 없음 (업로드 미완료/실패)
         Note over BE,DB: 상태 전이 없음, UPLOAD_PENDING 유지
         BE-->>FE: 4xx (재시도 가능)
@@ -150,3 +154,5 @@ sequenceDiagram
 - **2026-07-12** — **reconciliation batch를 post-MVP로 결정했다.** MVP는 정체를 방치한다 — 멈춘 레코드는 서재에 "진행 중"으로 계속 남고, `EXPIRED`는 발생하지 않는다. batch를 구현할 Story도 티켓도 없는 상태에서 MVP 인수조건으로만 걸려 있었기에, 스코프를 정직하게 내렸다. §5 Consequences·Follow-ups에 갭을 명시했다.
 - **2026-07-12** — 당시 BE↔AI 비동기 계약을 별도 AsyncAPI와 JSON Schema 파일로 만들었다. envelope만 확정하고 파싱 산출물 본문은 AI 소유로 비워 뒀다.
 - **2026-07-22** — 임시 AsyncAPI·외부 JSON Schema 파일을 제거했다. 현재 BE↔AI HTTP API와 그 request/response schema의 SSOT는 `contracts/backend-ai/openapi.yml`이며, SQS 토폴로지와 전달 의미론은 ADR-002가 유지한다.
+- **2026-08-10** — 단일 파일 크기 상한을 도입했다(YMC-315). 강제 수단의 선택(presigned PUT + 서명된 `Content-Length`)과 그 근거는 [ADR-005](ADR-005-paper-upload-presigned-put-vs-post.md)가 소유한다. 이 ADR에는 등록 요청의 `size`와, `complete`의 크기 재검증·`FILE_TOO_LARGE`(413)·초과 객체 삭제가 §6 흐름에 반영됐다.
+- **2026-08-10** — 원본 버킷의 S3 versioning을 `Suspended`로 내렸다(YMC-315). ADR-005가 별도 결정으로 남긴 "versioning과 URL 재사용 정책"이 이 항목이다. 원본은 등록마다 새 UUID 키라 버전 이력이 생기지 않는 반면, presigned URL은 만료 전까지 재사용할 수 있어 같은 키로 반복 PUT하면 noncurrent 버전이 쌓인다 — 크기 상한이 "URL 1건당 무제한"으로 무력화되는 경로다. 파싱 산출물의 버전 이력은 잃지만 원본에서 재생성할 수 있고, 삭제 경로도 단순해져 `s3:DeleteObjectVersion` 권한이 필요 없다.
