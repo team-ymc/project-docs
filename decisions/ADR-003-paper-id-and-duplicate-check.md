@@ -3,7 +3,7 @@
 ## 1. Overview
 
 - Date: 2026-07-21
-- Status: Proposed
+- Status: Accepted
 - Deciders: geunhh
 - Tracking: FT-003 논문 등록 · 분석 Story 7
 - Related: ADR-001, ADR-002, `contracts/frontend-backend/openapi.yaml`,
@@ -161,3 +161,5 @@ Paper 삭제는 서재 항목과 `Paper → Document` 관계만 제거한다. �
   기본 파싱 결과를 공유하기로 제안.
 - **2026-08-11** — 공유 단위를 `Document`로 정리. complete의 신규·중복 처리, 대표 원본과
   파싱 결과의 공유, 기존 AI `paper_id` 유지, Paper 삭제와 파싱 버전 범위를 구체화.
+- **2026-08-12** — 결정을 채택하고 FE↔BE 계약 0.3.0에 checksum 검증 업로드, 기존 결과 재사용
+  상태와 공유 원본 다운로드 규칙을 반영.
