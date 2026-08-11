@@ -7,11 +7,12 @@ info:
     - Source: features/FT-002-서재.md, features/FT-003-논문-등록-분석.md,
       features/FT-004-논문-학습-뷰어.md, features/FT-007-ai-튜터-채팅.md
     - ADR: decisions/ADR-001-pdf-upload-presigned-url.md,
+      decisions/ADR-003-paper-id-and-duplicate-check.md,
       decisions/ADR-004-chat-streaming-be-relay.md
     - BE↔AI API 계약: contracts/backend-ai/openapi.yml
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
 
-  version: 0.2.7
+  version: 0.3.0
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -116,9 +117,16 @@ paths:
         발급한다. FE는 그 URL로 S3에 직접 업로드하고 complete를 호출한다 — 파일 바이트는 BE를
         거치지 않는다. (ADR-001)
 
-        요청의 size는 서명에 그대로 들어간다. 상한을 넘으면 URL을 발급하지 않고(413), 발급된 뒤에도
-        신고한 size와 다른 바이트 수로 업로드하면 S3가 서명 불일치로 거절한다 — 상한 강제는 BE의
-        사전 검사와 S3의 서명 검증 두 겹이다.
+        FE는 업로드할 파일의 SHA-256을 계산해 checksumSha256으로 보낸다. BE는 contentType, size와
+        checksumSha256을 presigned PUT 서명에 포함하고, 응답의 uploadHeaders에 S3 PUT 시 보내야 할
+        헤더를 반환한다. checksumSha256은 URL 발급 조건일 뿐 이 시점의 중복 판정에는 사용하지 않는다.
+
+        상한을 넘으면 URL을 발급하지 않고(413), 발급된 뒤에도 신고한 size·contentType·checksum과
+        다른 파일을 업로드하면 S3가 거절한다. BE는 complete에서 S3가 실제 업로드 바이트와 대조해
+        검증한 checksum만 중복 판정에 사용한다. (ADR-003)
+
+        실제 바이트의 SHA-256이 헤더 값과 다르면 S3는 400 BadDigest로 PUT을 거절한다. FE는 이를
+        업로드 실패로 표시하고 complete를 호출하지 않는다.
 
         레코드 생성이 업로드보다 먼저다. 이 시점에 BE가 가진 것은 메타데이터뿐이라 내용 기반 유효성 판정은
         하지 않고 파일명 중복만 판정한다. (FT-003 Story 2)
@@ -137,7 +145,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/PaperCreated"
         "400":
-          description: 필수 필드 누락, 허용되지 않는 contentType 등 잘못된 요청
+          description: >-
+            필수 필드 누락, Base64 SHA-256 형식이 아닌 checksumSha256 등 잘못된 요청.
+            contentType이 application/pdf가 아니면 UNSUPPORTED_FILE_TYPE, 그 외에는 VALIDATION_ERROR.
           content:
             application/json:
               schema:
@@ -174,9 +184,11 @@ paths:
       summary: S3 업로드 완료 통보 (파싱 트리거)
       description: |
         FE가 presigned URL로 S3 업로드를 마친 뒤 호출하는 primary 완료 신호다.
-        BE는 S3 HEAD로 객체 존재와 실제 Content-Length를 확인한다. 상한 이하면
-        조건부로 UPLOAD_PENDING → UPLOADED로 전이한 뒤 parse-requests 큐에
-        (paperId, fileKey)를 발행하고 PROCESSING으로 전이한다. 초과 객체는 삭제한다.
+        BE는 S3 HEAD로 객체 존재, 실제 Content-Length와 S3가 검증한 ChecksumSHA256을 확인한다.
+
+        검증된 checksum에 재사용할 기본 파싱 작업이나 결과가 없으면 파싱을 시작한다. 이미 발행 대기·
+        진행·완료·실패 상태인 작업이나 결과가 있으면 새로 파싱하지 않고 해당 상태를 반환한다.
+        어느 경우에도 documentId, checksum과 공유 S3 key는 외부 응답에 노출하지 않는다. (ADR-003)
 
         멱등: 이미 전이된 레코드에 대한 중복 호출은 재발행 없이 현재 상태를 반환한다.
         객체가 아직 S3에 없으면 상태를 유지하고 409를 반환한다(재시도 가능). (ADR-001)
@@ -191,7 +203,9 @@ paths:
           description: create 시 발급된 paperId
       responses:
         "200":
-          description: 업로드 확인됨. 파싱이 비동기로 시작된다(또는 이미 진행 중).
+          description: >-
+            업로드 확인 완료. 파싱이 새로 시작되거나, 재사용하는 기존 결과의
+            UPLOADED·PROCESSING·COMPLETED·FAILED 상태가 즉시 반환될 수 있다.
           content:
             application/json:
               schema:
@@ -215,7 +229,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
         "409":
-          description: S3에 객체가 아직 없음 — 업로드 미완료/실패. UPLOAD_PENDING 유지, 재시도 가능.
+          description: |
+            업로드 검증을 완료할 수 없어 UPLOAD_PENDING을 유지하며 파싱 요청을 발행하지 않는다.
+
+            - UPLOAD_NOT_FOUND: S3에 객체가 없음. 업로드 완료 후 complete 재시도 가능.
+            - UPLOAD_CHECKSUM_MISSING: 객체에 S3가 검증한 SHA-256 checksum이 없음. 기존 uploadUrl이
+              유효하면 uploadHeaders를 포함해 같은 파일을 다시 PUT한 뒤 complete를 재시도한다.
+              URL이 만료된 뒤의 업로드 URL 재발급은 MVP에서 지원하지 않는다.
           content:
             application/json:
               schema:
@@ -274,11 +294,14 @@ paths:
       operationId: getPaperDownloadUrl
       summary: 원본 PDF 다운로드 URL 발급
       description: |
-        완료된 논문의 원본 PDF를 받기 위한 presigned GET URL을 발급한다.
+        업로드가 확인된 논문의 원본 PDF를 받기 위한 presigned GET URL을 발급한다. BE는 paperId의 소유권을
+        확인한 뒤 Paper가 연결된 Document의 대표 원본을 찾는다. 중복 등록 때 삭제될 수 있는 이번
+        Paper의 업로드 객체를 다운로드 대상으로 사용하지 않는다. (ADR-003)
         브라우저는 이 URL로 S3에서 직접 내려받는다 — 파일 바이트는 BE를 거치지 않는다 (ADR-001, 업로드와 대칭).
         URL에는 Content-Disposition(attachment; filename=원본파일명)이 서명돼 있어 원본 파일명으로 저장된다.
 
-        가용 조건은 "S3에 원본 객체가 있음"이다(status가 UPLOADED 이상). UPLOAD_PENDING/EXPIRED는 409.
+        가용 조건은 연결된 Document의 대표 원본을 확인할 수 있음이다(status가 UPLOADED 이상).
+        UPLOAD_PENDING/EXPIRED는 409.
         "완료 시에만 다운로드"라는 제품 규칙(FT-002 Story 5)은 FE가 COMPLETED 행에서만 노출해 구현한다.
       tags: [papers]
       parameters:
@@ -308,7 +331,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "409":
-          description: 원본 객체가 아직 없음(UPLOAD_PENDING/EXPIRED). code UPLOAD_NOT_FOUND
+          description: 연결된 Document의 대표 원본을 확인할 수 없음(UPLOAD_PENDING/EXPIRED). code UPLOAD_NOT_FOUND
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -783,7 +806,8 @@ components:
 
     CreatePaperRequest:
       type: object
-      required: [filename, contentType, size]
+      required: [filename, contentType, size, checksumSha256]
+      additionalProperties: false
       properties:
         filename:
           type: string
@@ -802,10 +826,20 @@ components:
             업로드할 파일의 정확한 바이트 수. 서명에 Content-Length로 들어가므로 실제 업로드가
             이 값과 다르면 S3가 거절한다. 상한(50 MiB) 초과는 413 FILE_TOO_LARGE.
           example: 2097152
+        checksumSha256:
+          type: string
+          minLength: 44
+          maxLength: 44
+          pattern: '^[A-Za-z0-9+/]{43}=$'
+          description: >-
+            전체 파일 바이트의 SHA-256 digest를 표준 Base64로 인코딩한 값(32 bytes → 44 chars,
+            마지막 '=' padding 포함). BE는 이 값을 presigned PUT의 x-amz-checksum-sha256 헤더에
+            서명하지만 중복 판정에는 사용하지 않는다. 중복 판정은 complete에서 S3가 검증한 값을 쓴다.
+          example: LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ=
 
     PaperCreated:
       type: object
-      required: [paperId, fileKey, uploadUrl, uploadExpiresAt, status, createdAt]
+      required: [paperId, fileKey, uploadUrl, uploadHeaders, uploadExpiresAt, status, createdAt]
       properties:
         paperId:
           type: string
@@ -814,14 +848,18 @@ components:
           example: 550e8400-e29b-41d4-a716-446655440000
         fileKey:
           type: string
-          description: BE가 생성하는 S3 object key. 서비스 간 메시지에는 파일 바이트가 아니라 이 참조 key가 전달된다. (ADR-001)
+          description: >-
+            이번 Paper의 파일 업로드에 사용하는 S3 object key. complete에서 동일 파일의 기존 결과를
+            재사용하면 이 key의 객체는 삭제될 수 있으며, 이후 다운로드와 파싱에는 공유 원본을 사용한다.
           example: uploads/550e8400-e29b-41d4-a716-446655440000/original.pdf
         uploadUrl:
           type: string
           format: uri
           description: >-
             S3 presigned PUT URL. 짧은 만료 시간의 업로드 권한만 위임한다.
-            서명에 Content-Type과 요청의 size가 포함되므로 PUT은 같은 헤더와 같은 바이트 수여야 한다.
+            FE는 uploadHeaders를 그대로 포함하고 파일 바이트를 body로 PUT한다.
+        uploadHeaders:
+          $ref: "#/components/schemas/PaperUploadHeaders"
         uploadExpiresAt:
           type: string
           format: date-time
@@ -831,6 +869,28 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    PaperUploadHeaders:
+      type: object
+      required: [Content-Type, x-amz-checksum-sha256]
+      additionalProperties:
+        type: string
+      description: >-
+        FE가 uploadUrl로 S3 PUT할 때 모든 항목을 그대로 전송해야 하는 헤더 맵. 현재 두 헤더는
+        필수이며, 향후 다른 서명 헤더가 추가될 수 있다. Content-Length는 브라우저가 파일 body
+        크기로 설정하며 create 요청의 size와 같아야 한다.
+      properties:
+        Content-Type:
+          type: string
+          const: application/pdf
+          example: application/pdf
+        x-amz-checksum-sha256:
+          type: string
+          minLength: 44
+          maxLength: 44
+          pattern: '^[A-Za-z0-9+/]{43}=$'
+          description: CreatePaperRequest.checksumSha256과 같은 Base64 SHA-256 값.
+          example: LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ=
 
     PaperDownload:
       type: object
@@ -998,9 +1058,13 @@ components:
     PaperStatus:
       type: string
       description: |
-        논문 라이프사이클. 단일 writer는 BE다 — 파싱 서버는 결과만 발행한다.
+        사용자에게 보이는 논문 처리 상태. 단일 writer는 BE다 — 파싱 서버는 결과만 발행한다.
 
-        정상 전이: UPLOAD_PENDING → UPLOADED → PROCESSING → COMPLETED | FAILED
+        신규 파싱의 기본 전이: UPLOAD_PENDING → UPLOADED → PROCESSING → COMPLETED | FAILED
+        기존 결과를 재사용하면 complete 직후 UPLOAD_PENDING에서 공유 Document의 현재 상태인
+        UPLOADED·PROCESSING·COMPLETED·FAILED 중 하나로 바로 바뀔 수 있다. FE는 전이 순서를
+        직접 강제하지 않고 응답으로 받은 현재 상태를 표시한다. (ADR-003)
+
         - UPLOAD_PENDING: 레코드 생성·URL 발급됨, complete 대기 (FE가 S3 업로드 중)
         - UPLOADED: complete 수신·S3 HEAD 확인됨 (파싱 발행 직전의 짧은 상태)
         - PROCESSING: 파싱 진행 중
@@ -1407,6 +1471,7 @@ components:
             - DUPLICATE_FILENAME    : 같은 파일명의 논문이 이미 있음 (409, create)
             - PAPER_NOT_FOUND       : 존재하지 않는 paperId (404)
             - UPLOAD_NOT_FOUND      : S3에 객체가 없음 (409, complete)
+            - UPLOAD_CHECKSUM_MISSING: S3가 검증한 SHA-256 checksum이 없음 (409, complete)
             - UNAUTHORIZED          : access token 없음·만료 (401)
             - AUTH_REFRESH_INVALID  : refresh 쿠키 없음·만료·폐기·재사용 (401)
             - FORBIDDEN             : 인증됐지만 대상 논문 접근 권한 없음 (403)
@@ -1424,6 +1489,7 @@ components:
               DUPLICATE_FILENAME,
               PAPER_NOT_FOUND,
               UPLOAD_NOT_FOUND,
+              UPLOAD_CHECKSUM_MISSING,
               UNAUTHORIZED,
               AUTH_REFRESH_INVALID,
               FORBIDDEN,
