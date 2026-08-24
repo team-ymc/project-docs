@@ -69,7 +69,7 @@
                 <div style="flex:1;min-width:0">
                   <div style="font-family:var(--font-serif);font-size:16px;font-weight:600;color:var(--color-text-heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ paper.title }}</div>
                 </div>
-                <div style="font-family:var(--font-sans);font-size:12px;color:var(--color-text-muted);flex-shrink:0;white-space:nowrap">{{ paper.registered }}</div>
+                <div style="font-family:var(--font-sans);font-size:12px;color:var(--color-text-muted);flex-shrink:0;white-space:nowrap">{{ paper.lastAccessed }}</div>
               </a>
             </sc-for>
           </div>
@@ -82,7 +82,7 @@
                   <i class="ph ph-file-text" style="font-size:32px;color:var(--color-text-muted)"></i>
                 </div>
                 <div style="font-size:var(--ui-strong-size);font-weight:var(--ui-strong-weight);color:var(--color-text-heading);margin-bottom:4px;line-height:1.3">{{ paper.title }}</div>
-                <div style="font-size:var(--caption-size);color:var(--color-text-muted)">{{ paper.registered }}</div>
+                <div style="font-size:var(--caption-size);color:var(--color-text-muted)">{{ paper.lastAccessed }}</div>
               </a>
             </sc-for>
           </div>
@@ -161,7 +161,7 @@ const PAPER = {
   title: 'Cross-Modal Alignment via Contrastive Representation Learning',
   author: 'Kwon, J., Park, S., and Lee, H.',
   year: '2025',
-  registered: '마지막 열람: 3일 전',
+  lastAccessed: '최근 조회 · 3일 전',
   href: './Paper%20Study%20Page.dc.html'
 };
 
