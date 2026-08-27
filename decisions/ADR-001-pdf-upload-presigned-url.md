@@ -48,13 +48,13 @@ FE의 PDF 확장자/크기 검사는 사용자 경험을 위한 사전 안내로
 - 파싱 서버는 메시지의 `fileKey`만으로 자체 권한을 사용해 S3에서 원본 PDF를 읽을 수 있어, 서비스 간에 파일 바이트를 주고받지 않는다.
 - 업로드(S3)와 완료 통보(complete API)가 분리된 두 동작이므로 그 사이에 틈이 생긴다. FE가 S3 업로드를 성공한 뒤 complete를 호출하기 전에 종료되면(탭 닫힘 · 네트워크 단절 등), 파일은 S3에 존재하지만 레코드는 `UPLOAD_PENDING`에 멈춰 파싱이 시작되지 않는다. 별도 복구 장치가 없으면 이 레코드는 지연이 아니라 영구히 방치된다.
 - 파싱이 비동기이므로 결과가 끝내 오지 않을 수도 있다(워커 유실 · 메시지 소실). 레코드는 `PROCESSING`에 영구 정체하고, 사용자에게는 "영원히 진행 중"으로 보인다 — 무엇을 해야 할지 알 수 없으니 실패보다 나쁘다.
-- **위 두 정체는 아래 reconciliation batch로만 해소되는데, 그 batch는 post-MVP다. 즉 MVP는 이 갭을 안고 간다.** presigned 직접 업로드를 택한 대가이며, Option B(BE 프록시)였다면 업로드 완료가 단일 요청으로 원자적이라 이 문제가 없었다.
+- **위 두 정체의 복구는 아래 reconciliation batch(post-MVP)의 몫이고, MVP는 deadline 초과 정체를 종결 상태로 내리고 예약을 해제하는 정체 레코드 정리만 한다(Follow-ups).** presigned 직접 업로드를 택한 대가이며, Option B(BE 프록시)였다면 업로드 완료가 단일 요청으로 원자적이라 이 문제가 없었다.
 
 ### Follow-ups
 
-**필수 — 단, MVP에서는 구현하지 않는다 (post-MVP)**
+**필수 — MVP는 정체 레코드 정리(종결·예약 해제)만, 복구는 post-MVP**
 
-> **MVP는 정체를 방치한다.** 아래 batch가 없으므로 멈춘 레코드는 그대로 남고, 서재에는 "진행 중"으로 계속 표시된다. `EXPIRED`는 이 batch만이 쓰는 값이라 **MVP에서는 발생하지 않는다.** 이 갭을 알고 넘어가는 것이며, 해소는 post-MVP다.
+> **MVP는 정체 레코드 정리만 한다.** 주기적으로 도는 작업이 deadline이 지난 정체 레코드를 종결 상태로 내리고(`UPLOAD_PENDING → EXPIRED`는 S3 객체 존재 여부와 무관, `UPLOADED`·`PROCESSING → FAILED`) 사용량 예약을 해제한다(ADR-006). complete 이어받기·재발행 같은 복구는 아래 batch의 몫으로 post-MVP다. deadline 값은 YMC-347을 따른다.
 
 - **Reconciliation batch** 주기적으로 도는 잡이 멈춘 레코드를 실제 상태와 대조해 바로잡는다. **어떤 상태도 영구 정체하지 않는다**는 것이 목적이다.
   - `UPLOAD_PENDING` 정체 — S3에 객체가 있으면 complete 흐름을 이어받아 복구(FE가 complete 전에 종료된 경우), 충분히 경과했는데도 없으면 `EXPIRED`. 사용자가 할 일은 재업로드다.
@@ -156,3 +156,4 @@ sequenceDiagram
 - **2026-07-22** — 임시 AsyncAPI·외부 JSON Schema 파일을 제거했다. 현재 BE↔AI HTTP API와 그 request/response schema의 SSOT는 `contracts/backend-ai/openapi.yml`이며, SQS 토폴로지와 전달 의미론은 ADR-002가 유지한다.
 - **2026-08-10** — 단일 파일 크기 상한을 도입했다(YMC-315). 강제 수단의 선택(presigned PUT + 서명된 `Content-Length`)과 그 근거는 [ADR-005](ADR-005-paper-upload-presigned-put-vs-post.md)가 소유한다. 이 ADR에는 등록 요청의 `size`와, `complete`의 크기 재검증·`FILE_TOO_LARGE`(413)·초과 객체 삭제가 §6 흐름에 반영됐다.
 - **2026-08-10** — 원본 버킷의 S3 versioning을 `Suspended`로 내렸다(YMC-315). ADR-005가 별도 결정으로 남긴 "versioning과 URL 재사용 정책"이 이 항목이다. 원본은 등록마다 새 UUID 키라 버전 이력이 생기지 않는 반면, presigned URL은 만료 전까지 재사용할 수 있어 같은 키로 반복 PUT하면 noncurrent 버전이 쌓인다 — 크기 상한이 "URL 1건당 무제한"으로 무력화되는 경로다. 파싱 산출물의 버전 이력은 잃지만 원본에서 재생성할 수 있고, 삭제 경로도 단순해져 `s3:DeleteObjectVersion` 권한이 필요 없다.
+- **2026-08-27** — **정체 방치를 부분 번복했다(YMC-344).** ADR-006의 사용량 예약이 정체 레코드에 걸려 유한 한도를 잠식하므로, deadline 초과 정체를 종결 상태로 내리고 예약을 해제하는 정체 레코드 정리를 MVP로 끌어올렸다. complete 이어받기·재발행 같은 복구는 여전히 post-MVP다. deadline 값은 YMC-347.

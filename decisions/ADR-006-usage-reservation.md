@@ -4,7 +4,10 @@
 
 - Date: 2026-08-26
 - Status: Accepted
-- Tracking: YMC-344
+- Deciders: 근흐흐
+- Tracking: YMC-344 / `features/FT-011-플랜-사용량-제한.md` (Story 2·3)
+- Implements: `contracts/frontend-backend/openapi.yaml` (`/api/me/plan`, 429 `*_USAGE_LIMIT_EXCEEDED`)
+- Related: ADR-001 §5(정체 레코드 정리), ADR-004
 
 ## 2. Context
 
@@ -12,7 +15,7 @@ Free와 Pro의 유한한 사용량 정책은 AI 질의와 문서 등록의 성�
 
 ## 3. Decision
 
-유한한 사용량 정책에서는 한도 판정과 1회 예약을 원자적으로 처리한다. 예약은 성공하면 확정하고, 시스템 실패 또는 확정된 실행 deadline 초과로 실패하면 해제한다. 같은 실행은 한 번만 예약ㆍ확정ㆍ해제한다.
+유한한 사용량 정책에서는 한도 판정과 1회 예약을 원자적으로 처리한다. 예약은 성공하면 확정하고, 시스템 실패 또는 정해진 실행 deadline 초과로 실패하면 해제한다. 같은 실행은 한 번만 예약ㆍ확정ㆍ해제한다.
 
 | 사용량 | 예약 | 확정 | 해제 |
 |---|---|---|---|
@@ -22,6 +25,8 @@ Free와 Pro의 유한한 사용량 정책은 AI 질의와 문서 등록의 성�
 문서 등록은 예약과 `Paper(UPLOAD_PENDING)` 생성을 같은 트랜잭션으로 처리한다. 한도 초과 시 Paper와 presigned URL을 생성하지 않는다.
 
 사용량은 기간별 `usage_bucket`과 실행별 `usage_record`로 저장하며 버킷에는 집계 카운터를 두지 않는다. 유한한 정책의 예약 트랜잭션은 버킷 행을 잠근 뒤 같은 버킷의 `RESERVED + CONFIRMED` 원장을 집계하고, 한도 미만일 때 `(usageType, sourceId)`가 유일한 `RESERVED` 원장을 추가한다. AI 질의의 `sourceId`는 `clientMessageId`, 문서 등록의 `sourceId`는 `paperId`를 사용한다.
+
+실행 주체가 종료되어 terminal 판정이 남지 않은 경우는 주기적으로 도는 정체 레코드 정리가 회수한다. deadline이 지난 채팅 `GENERATING`은 `FAILED`로, 문서의 비종결 상태는 `EXPIRED` 또는 `FAILED`로 내리고 예약을 해제한다(ADR-001 §5).
 
 구체적인 runtime timeout과 deadline은 YMC-347에서 정리하는 SSOT를 따른다. 사용자 취소에 따른 예약 해제는 MVP에서 다루지 않는다.
 
@@ -54,3 +59,8 @@ MVP에서는 `usage_record`를 직접 집계한다. 버킷 카운터를 함께 �
 - 동시 요청이 유한한 한도를 초과하지 않는다.
 - 현재 사용량은 같은 버킷의 `RESERVED + CONFIRMED` 원장 수로 계산한다.
 - 문서 업로드 또는 처리가 terminal 상태에 도달하지 못하면 예약을 회수하기 위한 deadline 기반 정리가 필요하다.
+
+## 6. Updates
+
+- **2026-08-27** — deadline 초과 정체를 종결 상태로 내리고 예약을 해제하는 **정체 레코드 정리를 MVP로 확정**했다
+- **2026-08-28** — 정리 대상에 채팅 `GENERATING` 정체를 명시했다. BE가 실행 중 종료되면 실행을 감시하던 타이머도 함께 사라지므로, terminal 판정과 예약 해제를 정체 레코드 정리가 대신한다.

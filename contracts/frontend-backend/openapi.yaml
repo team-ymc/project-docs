@@ -1164,11 +1164,11 @@ components:
         - PROCESSING: 파싱 진행 중
         - COMPLETED / FAILED: 파싱 완료 / 실패 (terminal)
         - EXPIRED: 업로드가 끝내 확인되지 않음 (terminal). FAILED와 원인이 달라 상태값은 분리해 두지만,
-          사용자 표시는 둘 다 '실패'다 (FT-002 Story 3). **MVP에서는 발생하지 않는다** —
-          이 값은 reconciliation batch(ADR-001 §5, post-MVP)만이 쓴다.
+          사용자 표시는 둘 다 '실패'다 (FT-002 Story 3). deadline이 지난 UPLOAD_PENDING은
+          정체 레코드 정리가 이 값으로 내린다 (ADR-001 §5).
 
-        **MVP는 정체를 정리하지 않는다.** 워커 유실 등으로 결과가 끝내 오지 않으면 레코드는 PROCESSING에
-        (혹은 complete가 끝내 안 오면 UPLOAD_PENDING에) 영구히 남는다. batch 도입은 post-MVP다. (ADR-001 §5)
+        **MVP는 deadline 초과 정체를 종결 상태로 내리고 사용량 예약을 해제하는 정체 레코드 정리만 한다**
+        (ADR-001 §5, ADR-006). complete 이어받기·재발행 같은 복구는 post-MVP다. deadline 값은 YMC-347.
       enum: [UPLOAD_PENDING, UPLOADED, PROCESSING, COMPLETED, FAILED, EXPIRED]
 
     ChatMessageStreamRequest:
