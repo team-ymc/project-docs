@@ -30,7 +30,7 @@ flowchart LR
 |---|---|---|
 | FE | PR에서 type check, test, build를 수행한다. `main`의 `fe/**` 변경 시 다시 build한다. | S3를 build 결과와 동기화한 뒤 CloudFront cache를 무효화한다. |
 | Backend | PR에서 test와 container build를 수행한다. `main`의 `be/**` 변경 시 test를 다시 실행한다. | commit SHA로 image를 ECR에 저장하고 새 Task Definition revision을 ECS Service에 배포한다. |
-| AI API·Parser Worker | ECR과 ECS 배포 기반을 사용한다. | 저장소 단위 자동 배포 workflow는 별도로 정의한다. |
+| AI API·Parser Worker | PR에서 test와 build를 수행한다. `ai` 저장소 `main` push 시 image를 build한다. | commit SHA image를 ECR에 저장하고 AI API·Parser Worker 두 ECS Service에 새 revision을 배포한다(dev). |
 | Terraform | 변경 사항의 plan을 검토한 뒤 환경 root module을 적용한다. | AWS 리소스와 애플리케이션이 사용하는 배포 기반을 구성한다. |
 
 FE와 Backend 배포는 동시에 하나만 실행한다. 진행 중인 배포를 취소하지 않고 다음 배포가 완료될
