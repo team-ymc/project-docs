@@ -110,6 +110,12 @@ events:
       - name: thread_id
         type: string
         required: true
+      - name: estimated_cost_usd
+        type: number
+        required: false
+        description: >-
+          이 run의 모델 호출 추정 비용 합계(USD). 모델명·토큰 집계는 AI 내부에 두고
+          추정치만 전달한다. 산출할 수 없으면 생략한다.
 
   - name: run.failed
     terminal: true
@@ -132,6 +138,7 @@ backend_handling:
   - message.delta는 순서대로 누적한다.
   - message.completed.message를 최종 assistant message로 사용한다.
   - run.completed를 성공 종료로 처리한다.
+  - run.completed의 estimated_cost_usd는 사용량 확정과 분리된 관측 데이터로 저장한다. 실패한 run의 비용은 저장하지 않는다.
   - run.failed를 실패 종료로 처리한다.
   - run.failed 이전에 받은 partial delta는 최종 assistant message로 확정하지 않는다.
   - stream 연결 자체가 실패하면 HTTP 오류로 처리한다.
