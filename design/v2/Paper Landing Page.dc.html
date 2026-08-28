@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/radius.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/styles.css">
+  <script src="_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/_ds_bundle.js"></script>
+  <link rel="stylesheet" href="vendor/phosphor-regular.css">
+  <style>
+    body{margin:0}
+    a{color:var(--color-primary)}
+    a:hover{color:var(--color-primary-hover)}
+  </style>
+</helmet>
+
+<div style="height:100vh;width:100%;background:var(--color-bg-canvas);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-sans);box-sizing:border-box;position:relative;overflow:hidden">
+
+  <!-- top bar, consistent with bookshelf/study pages -->
+  <div style="position:fixed;top:0;left:0;right:0;height:64px;background:var(--color-bg-walnut);color:var(--color-on-dark);display:flex;align-items:center;justify-content:space-between;padding:0 24px;font-family:var(--font-sans);box-sizing:border-box;z-index:5">
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.PaperStackMark" size="22" color="var(--color-on-dark)" hint-size="22px,22px"></x-import>
+      <span style="font-family:var(--font-serif);font-weight:600;font-size:18px;white-space:nowrap">Paper Teacher</span>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:36px;padding:32px;max-width:480px;text-align:center;position:relative">
+
+    <div style="display:flex;flex-direction:column;gap:16px;font-family:var(--font-serif);color:var(--color-text-heading)">
+      <div style="font-size:var(--display-lg-size);font-weight:var(--display-lg-weight);line-height:var(--display-lg-line);letter-spacing:var(--display-lg-tracking)"><span style="color:var(--color-primary)">업로드</span>만 하세요.<br/><span style="color:var(--color-primary)">이해</span>시켜드립니다.</div>
+      <div style="font-size:16px;font-weight:400;line-height:1.6;color:var(--color-text-muted);letter-spacing:0.005em">Just upload. We will make you understand.</div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+      <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.Button" variant="primary" onClick="{{ goLogin }}" hint-size="auto,48px"><span style="white-space:nowrap">로그인</span></x-import>
+      <a href="./Paper%20Bookshelf%20Page.dc.html" style="display:inline-flex;align-items:center;justify-content:center;height:48px;padding:0 24px;background:transparent;color:var(--color-primary);font-family:var(--font-sans);font-size:var(--ui-strong-size);font-weight:var(--ui-strong-weight);border-radius:var(--radius-pill);border:1px solid var(--color-border);text-decoration:none;transition:border-color 150ms ease,background 150ms ease;white-space:nowrap" style-hover="border-color:var(--color-primary);background:var(--color-primary-subtle)">회원가입</a>
+    </div>
+
+  </div>
+
+  <div style="position:absolute;bottom:28px;font-family:var(--font-sans);font-size:12px;color:var(--color-text-muted);letter-spacing:0.02em">&copy; Paper Teacher</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      goLogin: () => { window.location.href = './Paper%20Bookshelf%20Page.dc.html'; }
+    };
+  }
+}
+</script>
+</body>
+</html>
