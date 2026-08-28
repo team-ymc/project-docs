@@ -90,7 +90,7 @@
 | AI 질의 | idle 60s·deadline 10m → `FAILED`, 해제 | deadline 지난 `GENERATING` → `FAILED`, 해제 |
 | 문서 등록 | 파싱 `FAILED` 수신, 해제 | `UPLOAD_PENDING → EXPIRED`(S3 객체 유무 무관), `UPLOADED`·`PROCESSING → FAILED`, 해제 |
 
-- 정리의 스캔 deadline은 TBD. 채팅은 deadline(10m)보다, 문서는 presigned 만료(10m)와 워커 deadline(3600s)보다 커야 정상 실행을 오판하지 않는다.
+- 정리의 스캔 deadline은 채팅 `GENERATING` 30m, `UPLOAD_PENDING` 1h, `UPLOADED`·`PROCESSING` 3h. 실행 주기는 10m (2026-08-28, YMC-351). 채팅은 deadline(10m)+emitter(11m)보다, 문서는 presigned 만료(10m)와 워커 deadline(3600s)보다 커야 정상 실행을 오판하지 않는다 — 스캔이 짧으면 진행 중인 정상 실행을 종결시키고, 길면 죽은 예약의 반환만 늦어진다. 3h는 dev(requests maxReceiveCount 1) 기준이다 — prod 전환 시 SQS 재시도 총 수명(maxReceiveCount × 워커 deadline) 기준으로 재계산한다.
 - 정리는 종결·해제만 한다. 복구는 post-MVP (ADR-001 §5).
 - requests DLQ 경로는 dlq-handler가 `PARSE_RETRIES_EXHAUSTED`를 발행해 `FAILED` 전이로 해제된다. 실발동 검증은 YMC-305. results DLQ 유실은 정리가 회수한다.
 
@@ -109,3 +109,4 @@
 9. local·dev·prod 큐 설정 불일치. 로컬은 인프라 절단(60s·120s·300s) 재현 불가
 10. dev tfvars에 `alb_idle_timeout_seconds` 누락 — default 120과 우연히 일치
 11. 채팅 스트림 총 시간을 막는 것은 BE deadline(10m)뿐 — `max_tokens` 무제한, per-request 무한
+12. 실행 상한(채팅 deadline 10m, 워커 deadline 3600s)이 실측 없이 잡은 값 — 1차 배포 전 평균 실행 시간을 실측해 상한을 줄이고, §5의 스캔 deadline도 따라 줄인다
