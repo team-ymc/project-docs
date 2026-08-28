@@ -52,8 +52,8 @@
         "message": "<Badge> doesn't accept that prop. Declared props: tone, icon, children, style."
       },
       {
-        "selector": "JSXOpeningElement[name.name='Badge'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:success|danger|neutral)$/]",
-        "message": "<Badge> tone must be one of 'success' | 'danger' | 'neutral'."
+        "selector": "JSXOpeningElement[name.name='Badge'] > JSXAttribute[name.name='tone'] > Literal[value!=/^(?:success|danger|neutral|pro|neutralOnDark|proOnDark)$/]",
+        "message": "<Badge> tone must be one of 'success' | 'danger' | 'neutral' | 'pro' | 'neutralOnDark' | 'proOnDark'."
       },
       {
         "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|icon|disabled|type|onClick|children|style|key|ref|className|style|children)$/]",

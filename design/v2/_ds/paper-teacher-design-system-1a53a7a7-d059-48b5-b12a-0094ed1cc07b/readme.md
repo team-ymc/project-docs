@@ -56,13 +56,15 @@ Standard set authored to the brief's own named components (no codebase/Figma inv
 
 - **core/** — `Button` (primary / secondary / landing / text variants), `IconButton`
 - **forms/** — `Input`, `Select`, `Checkbox`, `Switch`
-- **feedback/** — `Badge`, `Tooltip`, `Toast`
+- **feedback/** — `Badge` (success / danger / neutral, 플랜용 pro / neutralOnDark / proOnDark), `Tooltip`, `Toast`, `UsageMeter` (FT-011 플랜·사용량 미터 — MONTHLY는 `used / limit`와 바, UNLIMITED는 `무제한`과 사선 무늬 바)
 - **navigation/** — `GlobalNav`, `Tabs`
 - **overlays/** — `Dialog`
 - **study/** — `PaperSheet`, `ArchivalFolio`, `TutorNotebook`, `StudentMessage`, `TeachingAction`, `SelectionToolbar`
 - **brand/** — `PaperStackMark`
 
 ### Intentional additions
+`UsageMeter`와 `Badge`의 플랜 톤 세 가지는 FT-011(플랜·사용량 제한) 화면 상태를 위해 v2에서 추가했다. 월넛 바 위의 배지는 `--color-accent-brass-on-dark`(밝은 브라스)를 쓴다.
+
 Not named explicitly in the brief but needed for a working set: `Select`, `Checkbox`, `Switch`, `Tooltip`, `Toast`, `Tabs`, `Dialog` — conventional form/overlay primitives sized down to this brand's quiet, low-chroma treatment (borders + Navy Ink, no shadows-as-default).
 
 ## UI kit
