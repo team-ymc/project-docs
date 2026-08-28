@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"PaperTeacherDesignSystem_1a53a7","components":[{"name":"PaperStackMark","sourcePath":"components/brand/PaperStackMark.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Badge","sourcePath":"components/feedback/Badge.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"Tooltip","sourcePath":"components/feedback/Tooltip.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"GlobalNav","sourcePath":"components/navigation/GlobalNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"},{"name":"Dialog","sourcePath":"components/overlays/Dialog.jsx"},{"name":"ArchivalFolio","sourcePath":"components/study/ArchivalFolio.jsx"},{"name":"PaperSheet","sourcePath":"components/study/PaperSheet.jsx"},{"name":"SelectionToolbar","sourcePath":"components/study/SelectionToolbar.jsx"},{"name":"StudentMessage","sourcePath":"components/study/StudentMessage.jsx"},{"name":"TeachingAction","sourcePath":"components/study/TeachingAction.jsx"},{"name":"TutorNotebook","sourcePath":"components/study/TutorNotebook.jsx"},{"name":"NotebookSection","sourcePath":"components/study/TutorNotebook.jsx"}],"sourceHashes":{"components/brand/PaperStackMark.jsx":"1a4bf989b044","components/core/Button.jsx":"37c1d0729ff3","components/core/IconButton.jsx":"1e23bed888d0","components/feedback/Badge.jsx":"f289f2a7cbf9","components/feedback/Toast.jsx":"cb73389f7ef5","components/feedback/Tooltip.jsx":"8f7722169e7f","components/forms/Checkbox.jsx":"e33408eb3dfa","components/forms/Input.jsx":"1fcfef5f722a","components/forms/Select.jsx":"f5fb4636237f","components/forms/Switch.jsx":"af900246b88b","components/navigation/GlobalNav.jsx":"bfee9c59e4c6","components/navigation/Tabs.jsx":"fd104f124009","components/overlays/Dialog.jsx":"b316af59261a","components/study/ArchivalFolio.jsx":"c3d3e81cb284","components/study/PaperSheet.jsx":"ec9fc3882c0c","components/study/SelectionToolbar.jsx":"12bb1916a592","components/study/StudentMessage.jsx":"700b35b89080","components/study/TeachingAction.jsx":"aecfee8c8a54","components/study/TutorNotebook.jsx":"26c20510b5d8"},"inlinedExternals":[],"unexposedExports":[]} */
+/* @ds-bundle: {"format":4,"namespace":"PaperTeacherDesignSystem_1a53a7","components":[{"name":"PaperStackMark","sourcePath":"components/brand/PaperStackMark.jsx"},{"name":"Button","sourcePath":"components/core/Button.jsx"},{"name":"IconButton","sourcePath":"components/core/IconButton.jsx"},{"name":"Badge","sourcePath":"components/feedback/Badge.jsx"},{"name":"Toast","sourcePath":"components/feedback/Toast.jsx"},{"name":"UsageMeter","sourcePath":"components/feedback/UsageMeter.jsx"},{"name":"Tooltip","sourcePath":"components/feedback/Tooltip.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"GlobalNav","sourcePath":"components/navigation/GlobalNav.jsx"},{"name":"Tabs","sourcePath":"components/navigation/Tabs.jsx"},{"name":"Dialog","sourcePath":"components/overlays/Dialog.jsx"},{"name":"ArchivalFolio","sourcePath":"components/study/ArchivalFolio.jsx"},{"name":"PaperSheet","sourcePath":"components/study/PaperSheet.jsx"},{"name":"SelectionToolbar","sourcePath":"components/study/SelectionToolbar.jsx"},{"name":"StudentMessage","sourcePath":"components/study/StudentMessage.jsx"},{"name":"TeachingAction","sourcePath":"components/study/TeachingAction.jsx"},{"name":"TutorNotebook","sourcePath":"components/study/TutorNotebook.jsx"},{"name":"NotebookSection","sourcePath":"components/study/TutorNotebook.jsx"}],"sourceHashes":{"components/brand/PaperStackMark.jsx":"1a4bf989b044","components/core/Button.jsx":"37c1d0729ff3","components/core/IconButton.jsx":"1e23bed888d0","components/feedback/Badge.jsx":"f289f2a7cbf9","components/feedback/Toast.jsx":"cb73389f7ef5","components/feedback/Tooltip.jsx":"8f7722169e7f","components/forms/Checkbox.jsx":"e33408eb3dfa","components/forms/Input.jsx":"1fcfef5f722a","components/forms/Select.jsx":"f5fb4636237f","components/forms/Switch.jsx":"af900246b88b","components/navigation/GlobalNav.jsx":"bfee9c59e4c6","components/navigation/Tabs.jsx":"fd104f124009","components/overlays/Dialog.jsx":"b316af59261a","components/study/ArchivalFolio.jsx":"c3d3e81cb284","components/study/PaperSheet.jsx":"ec9fc3882c0c","components/study/SelectionToolbar.jsx":"12bb1916a592","components/study/StudentMessage.jsx":"700b35b89080","components/study/TeachingAction.jsx":"aecfee8c8a54","components/study/TutorNotebook.jsx":"26c20510b5d8"},"inlinedExternals":[],"unexposedExports":[]} */
 
 (() => {
 
@@ -220,6 +220,22 @@ const TONES = {
     background: 'var(--color-bg-surface)',
     color: 'var(--color-text-muted)',
     border: '1px solid var(--color-border)'
+  },
+  // FT-011 플랜 배지 — Pro는 Navy Ink, 다크(월넛) 바 위에서는 *OnDark 톤을 쓴다
+  pro: {
+    background: 'var(--color-primary-subtle)',
+    color: 'var(--color-primary)',
+    border: '1px solid var(--color-primary)'
+  },
+  neutralOnDark: {
+    background: 'transparent',
+    color: 'rgba(255,253,247,0.85)',
+    border: '1px solid rgba(255,253,247,0.35)'
+  },
+  proOnDark: {
+    background: 'transparent',
+    color: 'var(--color-accent-brass-on-dark)',
+    border: '1px solid var(--color-accent-brass-on-dark)'
   }
 };
 function Badge({
@@ -316,6 +332,80 @@ function Toast({
 }
 Object.assign(__ds_scope, { Toast });
 })(); } catch (e) { __ds_ns.__errors.push({ path: "components/feedback/Toast.jsx", error: String((e && e.message) || e) }); }
+
+// components/feedback/UsageMeter.jsx
+try { (() => {
+// FT-011 플랜·사용량 미터. MONTHLY: used/limit + 바, UNLIMITED: '무제한' + 사선 무늬 바(횟수 미노출).
+const UNLIMITED_FILL = 'repeating-linear-gradient(135deg, var(--color-primary-selection) 0 4px, var(--color-primary-subtle) 4px 8px)';
+function UsageMeter({
+  label,
+  used = 0,
+  limit = null,
+  unlimited = false,
+  resetLabel,
+  compact = false,
+  style
+}) {
+  const lim = Number(limit);
+  const finite = !unlimited && Number.isFinite(lim) && lim > 0;
+  const u = finite ? Math.max(0, Math.min(lim, Number(used) || 0)) : 0;
+  const remaining = finite ? lim - u : Infinity;
+  const pct = unlimited ? 100 : finite ? Math.round(u / lim * 100) : 0;
+  const fill = unlimited ? UNLIMITED_FILL : remaining === 0 ? 'var(--color-danger)' : 'var(--color-primary)';
+  const valueText = unlimited ? '무제한' : finite ? `${u} / ${lim}` : '';
+  const caption = resetLabel ?? (unlimited ? '이번 달 제한 없음' : null);
+  const fs = compact ? '12px' : 'var(--caption-size)';
+  return React.createElement('div', {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px',
+      fontFamily: 'var(--font-sans)',
+      ...style
+    }
+  }, React.createElement('div', {
+    style: {
+      display: 'flex',
+      alignItems: 'baseline',
+      justifyContent: 'space-between',
+      gap: '12px'
+    }
+  }, React.createElement('span', {
+    style: {
+      fontSize: fs,
+      color: 'var(--color-text-muted)'
+    }
+  }, label), React.createElement('span', {
+    style: {
+      fontSize: fs,
+      fontWeight: 600,
+      color: 'var(--color-text-heading)',
+      fontVariantNumeric: 'tabular-nums'
+    }
+  }, valueText)), React.createElement('div', {
+    style: {
+      height: compact ? '4px' : '6px',
+      borderRadius: 'var(--radius-pill)',
+      background: 'var(--color-border)',
+      overflow: 'hidden'
+    }
+  }, React.createElement('div', {
+    style: {
+      height: '100%',
+      width: `${pct}%`,
+      background: fill,
+      borderRadius: 'var(--radius-pill)',
+      transition: 'width 200ms ease'
+    }
+  })), caption && !compact ? React.createElement('div', {
+    style: {
+      fontSize: '12px',
+      color: 'var(--color-text-muted)'
+    }
+  }, caption) : null);
+}
+Object.assign(__ds_scope, { UsageMeter });
+})(); } catch (e) { __ds_ns.__errors.push({ path: "components/feedback/UsageMeter.jsx", error: String((e && e.message) || e) }); }
 
 // components/feedback/Tooltip.jsx
 try { (() => {
@@ -1004,6 +1094,8 @@ __ds_ns.IconButton = __ds_scope.IconButton;
 __ds_ns.Badge = __ds_scope.Badge;
 
 __ds_ns.Toast = __ds_scope.Toast;
+
+__ds_ns.UsageMeter = __ds_scope.UsageMeter;
 
 __ds_ns.Tooltip = __ds_scope.Tooltip;
 
