@@ -272,6 +272,8 @@ paths:
             - UPLOAD_CHECKSUM_MISSING: 객체에 S3가 검증한 SHA-256 checksum이 없음. 기존 uploadUrl이
               유효하면 uploadHeaders를 포함해 같은 파일을 다시 PUT한 뒤 complete를 재시도한다.
               URL이 만료된 뒤의 업로드 URL 재발급은 MVP에서 지원하지 않는다.
+            - UPLOAD_EXPIRED: 업로드 미완 상태로 방치되어 만료 처리된 논문(EXPIRED). 재시도 불가 —
+              같은 파일을 새로 등록한다(같은 파일명 재등록이 만료된 논문을 대체한다).
           content:
             application/json:
               schema:
@@ -1566,6 +1568,7 @@ components:
             - PAPER_NOT_FOUND       : 존재하지 않는 paperId (404)
             - UPLOAD_NOT_FOUND      : S3에 객체가 없음 (409, complete)
             - UPLOAD_CHECKSUM_MISSING: S3가 검증한 SHA-256 checksum이 없음 (409, complete)
+            - UPLOAD_EXPIRED       : 만료 처리된 논문의 complete — 재등록 필요 (409, complete)
             - UNAUTHORIZED          : access token 없음·만료 (401)
             - AUTH_REFRESH_INVALID  : refresh 쿠키 없음·만료·폐기·재사용 (401)
             - FORBIDDEN             : 인증됐지만 대상 논문 접근 권한 없음 (403)
@@ -1585,6 +1588,7 @@ components:
               PAPER_NOT_FOUND,
               UPLOAD_NOT_FOUND,
               UPLOAD_CHECKSUM_MISSING,
+              UPLOAD_EXPIRED,
               UNAUTHORIZED,
               AUTH_REFRESH_INVALID,
               FORBIDDEN,
