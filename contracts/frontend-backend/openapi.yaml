@@ -1195,13 +1195,19 @@ components:
           type: string
           minLength: 1
           description: 사용자가 입력한 질문의 UTF-8 plain text. BE↔AI 요청의 `message`로 전달한다.
-        selection:
+        selections:
+          type: [array, "null"]
+          minItems: 1
+          maxItems: 5
+          uniqueItems: true
           description: |
-            논문 내 선택 영역. 생략하거나 null이면 논문 전체를 컨텍스트로 쓴다.
-            BE는 이 값을 BE↔AI 요청의 selection(snake_case)으로 그대로 전달한다.
-          oneOf:
-            - type: "null"
-            - $ref: "#/components/schemas/ChatSelection"
+            논문 내 독립적인 선택 영역들의 배열. 생략하거나 null이면 논문 전체를 컨텍스트로 쓴다.
+            빈 배열은 보내지 않는다. 완전히 동일한 selection의 재첨부는 FE가 무시한다(uniqueItems).
+            FE는 첨부 시점에 각 selection의 블록 수·글자 수 제한(ChatSelection 참고)을 검증해
+            초과 선택은 첨부 자체를 차단한다. 서버의 SELECTION_TOO_LARGE는 방어선이다.
+            BE는 배열 순서 그대로 BE↔AI 요청의 selections(snake_case)로 전달한다.
+          items:
+            $ref: "#/components/schemas/ChatSelection"
 
     ChatSelection:
       type: object
