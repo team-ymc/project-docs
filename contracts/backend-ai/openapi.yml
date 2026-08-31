@@ -141,6 +141,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/universal-pdf-agent/runs:
+    post:
+      tags:
+      - universal-pdf-agent
+      summary: Run
+      operationId: universal-pdf-agent-run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UniversalPdfAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UniversalPdfAgentRunResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/universal-pdf-agent/runs/stream:
+    post:
+      tags:
+      - universal-pdf-agent
+      summary: Run Stream
+      operationId: universal-pdf-agent-run_stream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UniversalPdfAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/agents/simple-agent/runs:
     post:
       tags:
@@ -359,6 +405,78 @@ components:
       - thread_id
       - message
       title: SimpleAgentRunResponse
+    UniversalPdfAgentRunRequest:
+      properties:
+        thread_id:
+          type: string
+          minLength: 1
+          title: Thread Id
+        paper_id:
+          type: string
+          minLength: 1
+          title: Paper Id
+        message:
+          type: string
+          minLength: 1
+          title: Message
+        selections:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/UniversalPdfSelection'
+            type: array
+            minItems: 1
+          - type: 'null'
+          title: Selections
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - message
+      title: UniversalPdfAgentRunRequest
+    UniversalPdfAgentRunResponse:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        paper_id:
+          type: string
+          title: Paper Id
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - message
+      title: UniversalPdfAgentRunResponse
+    UniversalPdfSelection:
+      properties:
+        start:
+          $ref: '#/components/schemas/UniversalPdfSelectionAnchor'
+        end:
+          $ref: '#/components/schemas/UniversalPdfSelectionAnchor'
+      type: object
+      required:
+      - start
+      - end
+      title: UniversalPdfSelection
+    UniversalPdfSelectionAnchor:
+      properties:
+        block_id:
+          type: string
+          minLength: 1
+          title: Block Id
+        offset:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Offset
+      type: object
+      required:
+      - block_id
+      title: UniversalPdfSelectionAnchor
     ValidationError:
       properties:
         loc:

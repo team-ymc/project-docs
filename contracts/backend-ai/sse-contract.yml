@@ -109,6 +109,9 @@ endpoints:
   - id: inline-pdf-agent-run-stream
     file: contracts/backend-ai/sse/inline-pdf-agent-run-stream.yml
     status: current
+  - id: universal-pdf-agent-run-stream
+    file: contracts/backend-ai/sse/universal-pdf-agent-run-stream.yml
+    status: current
   - id: document-parser-parse-stream
     file: contracts/backend-ai/sse/document-parser-parse-stream.yml
     status: current
