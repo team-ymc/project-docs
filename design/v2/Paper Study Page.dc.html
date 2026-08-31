@@ -80,10 +80,10 @@
 <div style="height:100vh;width:100%;display:flex;flex-direction:column;background:var(--color-bg-canvas);font-family:var(--font-sans);overflow:hidden">
 
   <!-- R1 Global top bar -->
-  <div style="height:52px;flex-shrink:0;background:var(--color-bg-walnut);color:var(--color-on-dark);display:flex;align-items:stretch">
+  <div style="height:64px;flex-shrink:0;background:var(--color-bg-walnut);color:var(--color-on-dark);display:flex;align-items:stretch">
     <div style="flex:1;min-width:0;display:flex;align-items:center;padding:0 20px 0 16px;gap:16px">
       <a href="./Paper%20Landing%20Page.dc.html" style="display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none;color:inherit">
-        <span style="font-family:var(--font-serif);font-weight:600;font-size:16px;letter-spacing:-0.005em;white-space:nowrap">Paper Teacher</span>
+        <span style="font-family:var(--font-serif);font-weight:600;font-size:18px;letter-spacing:-0.005em;white-space:nowrap">Paper Teacher</span>
       </a>
       <div style="width:1px;height:18px;background:rgba(255,253,247,0.18);flex-shrink:0"></div>
       <a href="./Paper%20Bookshelf%20Page.dc.html" style="display:flex;align-items:center;gap:6px;background:transparent;border:none;padding:7px 10px;border-radius:9999px;color:var(--color-on-dark);font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;transition:background 150ms ease;white-space:nowrap;flex-shrink:0;text-decoration:none" style-hover="background:rgba(255,253,247,0.12)">
@@ -112,6 +112,7 @@
       </div>
     </div>
     <div style="{{ topBarRightStyle }}">
+      <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.Badge" tone="neutralOnDark" hint-size="auto,24px">Free</x-import>
       <button aria-label="프로필" title="프로필" style="width:32px;height:32px;border-radius:9999px;border:1px solid rgba(255,253,247,0.25);background:var(--color-bg-walnut-raised);color:var(--color-on-dark);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 150ms ease" style-hover="background:rgba(255,253,247,0.12)">
         <i class="ph ph-user" style="font-size:15px"></i>
       </button>
@@ -1261,7 +1262,6 @@ class Component extends DCLogic {
     const collapsedWidth = 44;
     const openWidth = this.state.chatWidthOpen;
     const chatWidth = chatOpen ? openWidth : collapsedWidth;
-    const rightZoneWidth = chatOpen ? (openWidth + 6) : collapsedWidth;
     const messages = this.state.messages.map(m => ({ ...m, notLoading: !m.loading }));
     const historyList = this.state.history.map(h => ({ title: h.title, onClick: () => this.loadHistory(h.id) }));
     const composerContext = this.state.composerContext;
@@ -1296,7 +1296,7 @@ class Component extends DCLogic {
       translationButtonLabel: t ? '영문 원문 보기' : '논문 번역',
       translationTopBarStyle: `height:32px;display:flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;background:${t ? 'var(--color-bg-paper)' : 'rgba(255,253,247,0.08)'};border:1px solid ${t ? 'var(--color-bg-paper)' : 'rgba(255,253,247,0.18)'};border-radius:8px;color:${t ? 'var(--color-primary)' : 'rgba(255,253,247,0.88)'};padding:0 10px 0 8px;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:600;white-space:nowrap;transition:background 150ms ease,color 150ms ease,border-color 150ms ease`,
       translationTopBarHoverStyle: t ? `background:var(--color-bg-surface);border-color:var(--color-bg-surface);color:var(--color-primary)` : `background:rgba(255,253,247,0.16);border-color:rgba(255,253,247,0.32);color:var(--color-on-dark)`,
-      topBarRightStyle: `width:${rightZoneWidth}px;box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;justify-content:${chatOpen ? 'flex-end' : 'center'};padding:${chatOpen ? '0 20px' : '0 6px'};border-left:1px solid rgba(255,253,247,0.14)`,
+      topBarRightStyle: `box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 20px;border-left:1px solid rgba(255,253,247,0.14)`,
       chatPanelStyle: `width:${chatWidth}px;box-sizing:border-box;flex-shrink:0;display:flex;flex-direction:column;background:var(--color-bg-paper);border-left:1px solid var(--color-border);overflow:hidden`,
       toggleChat: this.toggleChat,
       paperViewerRef: this.paperViewerRef,
