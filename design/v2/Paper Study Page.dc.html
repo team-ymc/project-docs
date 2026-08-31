@@ -278,49 +278,59 @@
         <div style="padding:14px 16px 16px;flex-shrink:0;position:relative">
           <div style="position:absolute;left:0;right:0;top:-16px;height:16px;background:linear-gradient(to bottom, transparent, var(--color-bg-paper));pointer-events:none"></div>
           <sc-if value="{{ hasContext }}">
-            <div style="margin-bottom:8px;position:relative;display:inline-block">
-              <div onClick="{{ toggleContextTooltip }}" style="{{ contextChipStyle }}">
-                <span style="{{ contextChipIconStyle }}">
-                  <sc-if value="{{ contextIsSelection }}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0">
-                      <path d="M8 4.5H5.5a1 1 0 0 0-1 1V8M16 4.5h2.5a1 1 0 0 1 1 1V8M8 19.5H5.5a1 1 0 0 1-1-1V16M16 19.5h2.5a1 1 0 0 0 1-1V16"></path>
-                      <path d="M8.5 10h7M8.5 14h7"></path>
-                    </svg>
-                  </sc-if>
-                  <sc-if value="{{ contextIsImage }}"><i class="ph ph-image" style="font-size:15px"></i></sc-if>
-                  <sc-if value="{{ contextIsTable }}"><i class="ph ph-table" style="font-size:15px"></i></sc-if>
-                  <sc-if value="{{ contextIsFormula }}"><i class="ph ph-function" style="font-size:15px"></i></sc-if>
-                </span>
-                <span style="{{ contextLabelStyle }}">{{ contextLabel }}</span>
-                <button onClick="{{ onClearContextClick }}" aria-label="{{ contextRemoveLabel }}" style="{{ contextClearButtonStyle }}">
-                  <i class="ph ph-x" style="font-size:12px"></i>
-                </button>
-              </div>
-              <sc-if value="{{ contextHover }}">
-                <div style="{{ contextTooltipStyle }}">
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-bottom:1px solid var(--color-border)">
-                    <div style="display:flex;align-items:center;gap:7px;font-family:var(--font-sans);font-size:12px;font-weight:600;color:var(--color-text-heading)">
-                      <sc-if value="{{ contextIsSelection }}">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;fill:none;stroke:var(--color-text-muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0">
+            <div style="margin-bottom:8px;display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+              <sc-for list="{{ contextChips }}" as="chip" hint-placeholder-count="2">
+                <div style="position:relative;display:inline-block">
+                  <div onClick="{{ chip.toggleTooltip }}" style="{{ chip.chipStyle }}">
+                    <span style="{{ chip.iconStyle }}">
+                      <sc-if value="{{ chip.isSelection }}">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" style="width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0">
                           <path d="M8 4.5H5.5a1 1 0 0 0-1 1V8M16 4.5h2.5a1 1 0 0 1 1 1V8M8 19.5H5.5a1 1 0 0 1-1-1V16M16 19.5h2.5a1 1 0 0 0 1-1V16"></path>
                           <path d="M8.5 10h7M8.5 14h7"></path>
                         </svg>
                       </sc-if>
-                      <sc-if value="{{ contextIsImage }}"><i class="ph ph-image" style="font-size:14px;color:var(--color-success)"></i></sc-if>
-                      <sc-if value="{{ contextIsTable }}"><i class="ph ph-table" style="font-size:14px;color:var(--color-primary)"></i></sc-if>
-                      <sc-if value="{{ contextIsFormula }}"><i class="ph ph-function" style="font-size:14px;color:var(--color-accent-brass)"></i></sc-if>
-                      <span>{{ contextPreviewLabel }}</span>
-                    </div>
-                    <button onClick="{{ closeContextTooltip }}" aria-label="닫기" style="background:transparent;border:none;cursor:pointer;color:var(--color-text-muted);padding:3px;display:flex;align-items:center;border-radius:4px">
-                      <i class="ph ph-x" style="font-size:13px"></i>
+                      <sc-if value="{{ chip.isImage }}"><i class="ph ph-image" style="font-size:15px"></i></sc-if>
+                      <sc-if value="{{ chip.isTable }}"><i class="ph ph-table" style="font-size:15px"></i></sc-if>
+                      <sc-if value="{{ chip.isFormula }}"><i class="ph ph-function" style="font-size:15px"></i></sc-if>
+                    </span>
+                    <span style="{{ chip.labelStyle }}">{{ chip.label }}</span>
+                    <button onClick="{{ chip.onRemove }}" aria-label="{{ chip.removeLabel }}" style="{{ chip.clearButtonStyle }}">
+                      <i class="ph ph-x" style="font-size:12px"></i>
                     </button>
                   </div>
-                  <div style="padding:12px">
-                    <div style="{{ contextPreviewStyle }}">{{ composerContextText }}</div>
-                  </div>
+                  <sc-if value="{{ chip.tooltipOpen }}">
+                    <div style="{{ contextTooltipStyle }}">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-bottom:1px solid var(--color-border)">
+                        <div style="display:flex;align-items:center;gap:7px;font-family:var(--font-sans);font-size:12px;font-weight:600;color:var(--color-text-heading)">
+                          <sc-if value="{{ chip.isSelection }}">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;fill:none;stroke:var(--color-text-muted);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0">
+                              <path d="M8 4.5H5.5a1 1 0 0 0-1 1V8M16 4.5h2.5a1 1 0 0 1 1 1V8M8 19.5H5.5a1 1 0 0 1-1-1V16M16 19.5h2.5a1 1 0 0 0 1-1V16"></path>
+                              <path d="M8.5 10h7M8.5 14h7"></path>
+                            </svg>
+                          </sc-if>
+                          <sc-if value="{{ chip.isImage }}"><i class="ph ph-image" style="font-size:14px;color:var(--color-success)"></i></sc-if>
+                          <sc-if value="{{ chip.isTable }}"><i class="ph ph-table" style="font-size:14px;color:var(--color-primary)"></i></sc-if>
+                          <sc-if value="{{ chip.isFormula }}"><i class="ph ph-function" style="font-size:14px;color:var(--color-accent-brass)"></i></sc-if>
+                          <span>{{ chip.previewLabel }}</span>
+                        </div>
+                        <button onClick="{{ closeContextTooltip }}" aria-label="닫기" style="background:transparent;border:none;cursor:pointer;color:var(--color-text-muted);padding:3px;display:flex;align-items:center;border-radius:4px">
+                          <i class="ph ph-x" style="font-size:13px"></i>
+                        </button>
+                      </div>
+                      <div style="padding:12px">
+                        <div style="{{ chip.previewStyle }}">{{ chip.text }}</div>
+                      </div>
+                    </div>
+                  </sc-if>
                 </div>
+              </sc-for>
+              <sc-if value="{{ contextOverflowVisible }}">
+                <button onClick="{{ toggleContextsExpanded }}" aria-label="{{ contextOverflowLabel }}" style="{{ contextOverflowBadgeStyle }}">{{ contextOverflowText }}</button>
               </sc-if>
             </div>
+          </sc-if>
+          <sc-if value="{{ contextLimitNotice }}">
+            <div style="{{ contextLimitNoticeStyle }}">{{ contextLimitNoticeText }}</div>
           </sc-if>
           <div style="{{ composerBoxStyle }}">
             <textarea class="pt-composer" ref="{{ chatInputRef }}" value="{{ chatInput }}" onChange="{{ handleInputChange }}" onKeyDown="{{ handleKeyDown }}" onFocus="{{ handleComposerFocus }}" onBlur="{{ handleComposerBlur }}" rows="1" style="flex:1;min-width:0;resize:none;border:none;outline:none;background:transparent;padding:8px 0;font-family:var(--font-sans);font-size:15px;line-height:1.5;color:var(--color-text-body);min-height:22px;max-height:150px;box-sizing:border-box;scrollbar-width:thin;scrollbar-color:var(--color-border) transparent"></textarea>
@@ -441,6 +451,9 @@
 
 </x-dc>
 <script type="text/x-dc" data-dc-script>
+const MAX_COMPOSER_CONTEXTS = 5;
+const CONTEXT_COLLAPSE_COUNT = 2;
+
 const PAPER_CONFIG = {
   paperId:'0.0v3',
   title:'Attention Is All You Need',
@@ -516,7 +529,7 @@ class Component extends DCLogic {
   pendingRange = null;
   pendingText = '';
   pendingContextKind = 'selection';
-  state = { tocOpen:false, activeSection:'', translated:false, chatOpen:true, chatWidthOpen:400, historyOpen:false, messages:[], chatInput:'', isStreaming:false, history: HISTORY.slice(), composerFocused:false, paperBlocks:[], translations:{ title:'', blocks:{} }, paperLoading:true, paperError:'', selectionToolbar:{ visible:false, x:0, y:0 }, translationPopup:{ visible:false, x:0, y:0, original:'', translated:'' }, askPopup:{ visible:false, x:0, y:0 }, headingStudyAction:{ visible:false, x:0, y:0, targetId:'', title:'', placement:'right' }, studySession:{ visible:false, sectionTitle:'', progress:0, stage:'' }, contentAskAction:{ visible:false, x:0, y:0, targetId:'', kind:'', text:'' }, composerContext:null, contextHover:false };
+  state = { tocOpen:false, activeSection:'', translated:false, chatOpen:true, chatWidthOpen:400, historyOpen:false, messages:[], chatInput:'', isStreaming:false, history: HISTORY.slice(), composerFocused:false, paperBlocks:[], translations:{ title:'', blocks:{} }, paperLoading:true, paperError:'', selectionToolbar:{ visible:false, x:0, y:0 }, translationPopup:{ visible:false, x:0, y:0, original:'', translated:'' }, askPopup:{ visible:false, x:0, y:0 }, headingStudyAction:{ visible:false, x:0, y:0, targetId:'', title:'', placement:'right' }, studySession:{ visible:false, sectionTitle:'', progress:0, stage:'' }, contentAskAction:{ visible:false, x:0, y:0, targetId:'', kind:'', text:'' }, composerContexts:[], contextTooltipIndex:-1, contextsExpanded:false, contextLimitNotice:false };
 
   componentDidMount(){
     document.addEventListener('mousedown', this.handleDocMouseDown, true);
@@ -1009,7 +1022,12 @@ class Component extends DCLogic {
   }
 
   attachContext(text, kind = 'selection'){
-    this.setState({ composerContext:{ text, kind }, contextHover:false, chatInput:'' }, () => {
+    const contexts = this.state.composerContexts;
+    // 완전 동일한 선택은 재첨부하지 않고 기존 칩 유지, 부분 겹침은 허용 (YMC-362)
+    const isDuplicate = contexts.some(c => c.text === text && c.kind === kind);
+    if (!isDuplicate && contexts.length >= MAX_COMPOSER_CONTEXTS) { this.showContextLimitNotice(); return; }
+    const next = isDuplicate ? contexts : [...contexts, { text, kind }];
+    this.setState({ composerContexts: next, contextTooltipIndex:-1 }, () => {
       const el = this.chatInputRef.current;
       if (!el) return;
       el.style.height = 'auto';
@@ -1019,10 +1037,23 @@ class Component extends DCLogic {
     });
   }
 
-  clearContext = () => this.setState({ composerContext:null, contextHover:false });
-  onClearContextClick = (e) => { e.stopPropagation(); this.clearContext(); };
-  toggleContextTooltip = () => this.setState(s => ({ contextHover: !s.contextHover }));
-  closeContextTooltip = () => this.setState({ contextHover:false });
+  showContextLimitNotice(){
+    if (this.contextNoticeTimer) clearTimeout(this.contextNoticeTimer);
+    this.setState({ contextLimitNotice:true });
+    this.contextNoticeTimer = setTimeout(() => this.setState({ contextLimitNotice:false }), 2500);
+  }
+
+  removeContext(index){
+    this.setState(s => {
+      const next = s.composerContexts.filter((_, i) => i !== index);
+      return { composerContexts: next, contextTooltipIndex:-1, contextsExpanded: next.length > CONTEXT_COLLAPSE_COUNT ? s.contextsExpanded : false };
+    });
+  }
+
+  clearContexts = () => this.setState({ composerContexts:[], contextTooltipIndex:-1, contextsExpanded:false });
+  toggleContextsExpanded = () => this.setState(s => ({ contextsExpanded: !s.contextsExpanded, contextTooltipIndex:-1 }));
+  toggleContextTooltip(index){ this.setState(s => ({ contextTooltipIndex: s.contextTooltipIndex === index ? -1 : index })); }
+  closeContextTooltip = () => this.setState({ contextTooltipIndex:-1 });
 
   onAskCurrentChat = () => {
     const text = this.pendingText;
@@ -1178,11 +1209,12 @@ class Component extends DCLogic {
 
   handleSend = () => {
     const text = this.state.chatInput.trim();
-    const ctx = this.state.composerContext;
+    const ctxs = this.state.composerContexts;
     if (!text || this.state.isStreaming) return;
-    const full = ctx ? `\u201C${this.truncate(ctx.text, 300)}\u201D\n\n${text}` : text;
+    const quoted = ctxs.map(c => `\u201C${this.truncate(c.text, 300)}\u201D`).join('\n');
+    const full = quoted ? `${quoted}\n\n${text}` : text;
     this.pushUser(full);
-    this.setState({ chatInput:'', composerContext:null, contextHover:false });
+    this.setState({ chatInput:'', composerContexts:[], contextTooltipIndex:-1, contextsExpanded:false });
     this.resetComposerHeight();
     this.pushLoading();
     setTimeout(() => this.beginStreaming(CANNED.default.a), 700);
@@ -1264,15 +1296,38 @@ class Component extends DCLogic {
     const chatWidth = chatOpen ? openWidth : collapsedWidth;
     const messages = this.state.messages.map(m => ({ ...m, notLoading: !m.loading }));
     const historyList = this.state.history.map(h => ({ title: h.title, onClick: () => this.loadHistory(h.id) }));
-    const composerContext = this.state.composerContext;
-    const contextKind = composerContext ? composerContext.kind : 'selection';
+    const composerContexts = this.state.composerContexts;
     const contextConfigs = {
       selection:{ label:'인용', previewLabel:'선택한 내용', color:'var(--color-text-body)', soft:'var(--color-bg-surface)', border:'var(--color-border)' },
       image:{ label:'이미지', previewLabel:'이미지', color:'var(--color-success)', soft:'color-mix(in srgb,var(--color-success) 17%,var(--color-bg-paper))', border:'color-mix(in srgb,var(--color-success) 48%,var(--color-border))' },
       table:{ label:'표', previewLabel:'표', color:'var(--color-primary)', soft:'color-mix(in srgb,var(--color-primary) 16%,var(--color-bg-paper))', border:'color-mix(in srgb,var(--color-primary) 48%,var(--color-border))' },
       formula:{ label:'수식', previewLabel:'수식', color:'var(--color-accent-brass)', soft:'color-mix(in srgb,var(--color-accent-brass) 19%,var(--color-bg-paper))', border:'color-mix(in srgb,var(--color-accent-brass) 52%,var(--color-border))' }
     };
-    const contextConfig = contextConfigs[contextKind] || contextConfigs.selection;
+    const contextsExpanded = this.state.contextsExpanded;
+    const showAllContexts = contextsExpanded || composerContexts.length <= CONTEXT_COLLAPSE_COUNT;
+    const visibleContexts = showAllContexts ? composerContexts : composerContexts.slice(0, CONTEXT_COLLAPSE_COUNT);
+    const hiddenContextCount = composerContexts.length - visibleContexts.length;
+    const contextChips = visibleContexts.map((ctx, index) => {
+      const cfg = contextConfigs[ctx.kind] || contextConfigs.selection;
+      return {
+        text: ctx.text,
+        label: cfg.label,
+        previewLabel: cfg.previewLabel,
+        removeLabel: `${cfg.label} 제거`,
+        isSelection: ctx.kind === 'selection',
+        isImage: ctx.kind === 'image',
+        isTable: ctx.kind === 'table',
+        isFormula: ctx.kind === 'formula',
+        tooltipOpen: this.state.contextTooltipIndex === index,
+        toggleTooltip: () => this.toggleContextTooltip(index),
+        onRemove: (e) => { e.stopPropagation(); this.removeContext(index); },
+        chipStyle: `display:inline-flex;align-items:center;gap:7px;background:var(--color-bg-paper);border:1px solid ${cfg.border};border-radius:9px;padding:4px 7px 4px 4px;font-family:var(--font-sans);color:${cfg.color};cursor:pointer;box-shadow:0 2px 6px color-mix(in srgb,${cfg.color} 12%,transparent);transition:border-color 150ms ease,box-shadow 150ms ease,transform 150ms ease`,
+        iconStyle: `width:25px;height:25px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:6px;background:${cfg.soft};color:${cfg.color}`,
+        labelStyle: `font-size:12.5px;font-weight:600;line-height:1;color:${cfg.color};letter-spacing:-0.01em`,
+        clearButtonStyle: `width:22px;height:20px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:transparent;border:none;border-left:1px solid ${cfg.border};cursor:pointer;color:${cfg.color};padding:0 0 0 6px;margin-left:1px;opacity:.72`,
+        previewStyle: `max-height:156px;overflow-y:auto;overflow-wrap:anywhere;white-space:pre-wrap;background:var(--color-bg-surface);border-left:2px solid ${cfg.color};border-radius:2px 6px 6px 2px;padding:10px 12px;font-family:var(--font-serif);font-size:13px;line-height:1.65;color:var(--color-text-body)`
+      };
+    });
     return {
       paperTitle: PAPER_CONFIG.title,
       paperMeta: PAPER_CONFIG.meta,
@@ -1350,27 +1405,17 @@ class Component extends DCLogic {
       onAskNewChat: this.onAskNewChat,
       askPopupStyle: `position:fixed;left:${this.state.askPopup.x}px;top:${this.state.askPopup.y}px;transform:translate(-50%, calc(-100% - 10px));width:max-content;box-sizing:border-box;background:var(--color-bg-paper);border:1px solid var(--color-border);border-radius:10px;box-shadow:var(--shadow-menu);padding:4px;display:flex;flex-direction:column;z-index:80`,
       askPopupRowStyle: `display:flex;align-items:center;gap:8px;width:100%;box-sizing:border-box;text-align:left;white-space:nowrap;padding:7px 12px 7px 7px;border:none;background:transparent;border-radius:7px;cursor:pointer;transition:background 150ms ease`,
-      hasContext: !!this.state.composerContext,
-      composerContextText: composerContext ? composerContext.text : '',
-      contextIsSelection: contextKind === 'selection',
-      contextIsImage: contextKind === 'image',
-      contextIsTable: contextKind === 'table',
-      contextIsFormula: contextKind === 'formula',
-      contextLabel: contextConfig.label,
-      contextPreviewLabel: contextConfig.previewLabel,
-      contextRemoveLabel: `${contextConfig.label} 제거`,
-      contextHover: this.state.contextHover,
-      onContextHoverEnter: this.onContextHoverEnter,
-      onContextHoverLeave: this.onContextHoverLeave,
-      toggleContextTooltip: this.toggleContextTooltip,
+      hasContext: composerContexts.length > 0,
+      contextChips,
+      contextOverflowVisible: composerContexts.length > CONTEXT_COLLAPSE_COUNT,
+      contextOverflowText: contextsExpanded ? '접기' : `+${hiddenContextCount}`,
+      contextOverflowLabel: contextsExpanded ? '첨부 접기' : `숨은 첨부 ${hiddenContextCount}개 펼치기`,
+      toggleContextsExpanded: this.toggleContextsExpanded,
       closeContextTooltip: this.closeContextTooltip,
-      onClearContextClick: this.onClearContextClick,
-      clearContext: this.clearContext,
-      contextChipStyle: `display:inline-flex;align-items:center;gap:7px;background:var(--color-bg-paper);border:1px solid ${contextConfig.border};border-radius:9px;padding:4px 7px 4px 4px;font-family:var(--font-sans);color:${contextConfig.color};cursor:pointer;box-shadow:0 2px 6px color-mix(in srgb,${contextConfig.color} 12%,transparent);transition:border-color 150ms ease,box-shadow 150ms ease,transform 150ms ease`,
-      contextChipIconStyle: `width:25px;height:25px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:6px;background:${contextConfig.soft};color:${contextConfig.color}`,
-      contextLabelStyle: `font-size:12.5px;font-weight:600;line-height:1;color:${contextConfig.color};letter-spacing:-0.01em`,
-      contextClearButtonStyle: `width:22px;height:20px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:transparent;border:none;border-left:1px solid ${contextConfig.border};cursor:pointer;color:${contextConfig.color};padding:0 0 0 6px;margin-left:1px;opacity:.72`,
-      contextPreviewStyle: `max-height:156px;overflow-y:auto;overflow-wrap:anywhere;white-space:pre-wrap;background:var(--color-bg-surface);border-left:2px solid ${contextConfig.color};border-radius:2px 6px 6px 2px;padding:10px 12px;font-family:var(--font-serif);font-size:13px;line-height:1.65;color:var(--color-text-body)`,
+      contextLimitNotice: this.state.contextLimitNotice,
+      contextLimitNoticeText: `인용은 최대 ${MAX_COMPOSER_CONTEXTS}개까지 첨부할 수 있어요`,
+      contextLimitNoticeStyle: `margin-bottom:8px;font-family:var(--font-sans);font-size:12px;font-weight:600;color:var(--color-accent-brass)`,
+      contextOverflowBadgeStyle: `display:inline-flex;align-items:center;box-sizing:border-box;height:35px;padding:0 10px;background:transparent;border:1px dashed var(--color-border);border-radius:9px;font-family:var(--font-sans);font-size:12.5px;font-weight:600;color:var(--color-text-muted);cursor:pointer;transition:border-color 150ms ease,color 150ms ease`,
       contextTooltipStyle: `position:absolute;bottom:calc(100% + 8px);left:0;width:320px;max-width:calc(100vw - 48px);box-sizing:border-box;background:var(--color-bg-paper);border:1px solid var(--color-border);border-radius:10px;box-shadow:var(--shadow-menu);overflow:hidden;color:var(--color-text-body);z-index:90`
     };
   }
