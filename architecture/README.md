@@ -8,6 +8,7 @@ Paper Teacher 시스템의 실행 환경, 인프라 구성과 배포 흐름을 �
 |---|---|
 | [AWS Infrastructure](aws-infrastructure.md) | AWS 구성, 컴포넌트 책임과 주요 통신 경로 |
 | [CI/CD](ci-cd.md) | 환경별 배포 흐름, 배포 권한과 Rollback 전략 |
+| [Observability](observability/README.md) | 메트릭·로그·추적·알림의 수집, 저장, 조회 구조 |
 | [Runtime Timeouts](runtime-timeouts.md) | 요청 경로별 timeout/deadline 값과 대소 관계의 SSOT |
 
 `assets/`는 Architecture 문서에서 참조하는 시각 자료를 보관한다.
