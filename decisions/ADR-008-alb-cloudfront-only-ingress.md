@@ -3,7 +3,7 @@
 ## 1. Overview
 
 - Date: 2026-09-02
-- Status: Proposed
+- Status: Accepted
 - Deciders: TBD
 - Tracking: [YMC-303](https://geunhh.atlassian.net/browse/YMC-303)
 - Related: [AWS Infrastructure](../architecture/aws-infrastructure.md)
