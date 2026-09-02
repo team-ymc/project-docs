@@ -30,7 +30,7 @@ Amazon ECS on AWS Fargate, Amazon RDS, Amazon SQS, Amazon S3 등 AWS 관리형 �
 |---|---|---|
 | DNS·TLS | Route 53, ACM | FE·API 도메인 연결과 TLS 인증서 검증 |
 | FE 전달 | CloudFront, Private S3 | React 빌드 결과 제공, SPA 경로 처리, `/api/*`를 ALB로 전달 |
-| 외부 API 진입 | Public ALB | HTTPS 요청을 Backend target group으로 전달하고 health check 수행 |
+| 외부 API 진입 | Public ALB | CloudFront origin-facing 대역에서 온 HTTPS 요청만 받아 Backend target group으로 전달하고 health check 수행 |
 | 외부 통신 | NAT Gateway | Private subnet의 ECS Task가 외부 API·SSM·이미지 저장소로 나가는 경로 |
 | BE API | Backend ECS Service | 인증·권한·제품 데이터, presigned URL 발급, AI 호출 중계, 파싱 요청·결과 처리 |
 | AI API  | AI API ECS Service | Backend의 내부 HTTP·SSE 요청을 받아 AI 응답 생성 |
