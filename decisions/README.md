@@ -10,5 +10,6 @@
 | [ADR-004](ADR-004-chat-streaming-be-relay.md) | 채팅 스트리밍은 BE 경유 SSE로 하고, 대화 원본은 BE에서 관리 | Proposed | 2026-07-22 |
 | [ADR-005](ADR-005-paper-upload-presigned-put-vs-post.md) | 문서 업로드 크기 제한은 Presigned PUT의 서명된 Content-Length로 강제 | Accepted | 2026-08-10 |
 | [ADR-006](ADR-006-usage-reservation.md) | 유한 사용량은 외부 실행 전에 예약하고 성공 시 확정 | Accepted | 2026-08-26 |
+| [ADR-007](ADR-007-observability-platform.md) | 관측 플랫폼은 Grafana Cloud로 시작하고 공개 표준으로 이전 가능성을 유지 | Accepted | 2026-08-31 |
 
 Status: `Proposed`(합의 전) · `Accepted`(확정) · `Superseded`(다른 ADR로 대체) · `Deprecated`(폐기)
