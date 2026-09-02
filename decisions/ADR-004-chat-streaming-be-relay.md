@@ -3,7 +3,7 @@
 ## 1. Overview
 
 - Date: 2026-07-22
-- Status: Proposed
+- Status: Accepted
 - Deciders: 근흐흐
 - Tracking: features/FT-007-ai-튜터-채팅.md (Story 1·2·3)
 - Implements: `contracts/backend-ai/sse/simple-agent-run-stream.yml` / `contracts/frontend-backend/openapi.yaml`
