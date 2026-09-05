@@ -243,7 +243,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "403":
-          description: "소유자가 아님. code: FORBIDDEN"
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -277,7 +277,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "403":
-          description: "소유자가 아님. code: FORBIDDEN"
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -979,6 +979,7 @@ components:
     RenamePaperRequest:
       type: object
       required: [filename]
+      additionalProperties: false
       properties:
         filename:
           type: string
@@ -994,7 +995,7 @@ components:
       properties:
         filename:
           type: string
-          description: 원본 파일명 (표시·참조용). 사용자별 중복 판정의 기준. (FT-003 Story 2)
+          description: 원본 파일명 (표시·참조용). 서재 제목이자 다운로드 저장 파일명. 같은 소유자에게 같은 파일명이 여러 개 있을 수 있다.
           example: attention-is-all-you-need.pdf
         contentType:
           type: string
