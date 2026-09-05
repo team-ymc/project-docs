@@ -137,6 +137,8 @@ Paper 삭제는 서재 항목과 `Paper → Document` 관계만 제거한다. �
 파일명이 다른 동일 파일을 찾지 못하고 같은 이름의 다른 파일을 잘못 판정할 수 있다. 사용자별
 동일 파일명을 `409 DUPLICATE_FILENAME`으로 거절하는 UX 규칙에만 사용한다.
 
+> 2026-09-05: 위 UX 규칙(`409 DUPLICATE_FILENAME`)은 YMC-369로 폐지했다. 파일명 중복은 허용하고 동일 파일 판정은 checksum(Option A)만 쓴다.
+
 ## 5. Consequences
 
 ### Positive
