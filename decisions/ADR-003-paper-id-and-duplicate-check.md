@@ -113,6 +113,8 @@ BE 내부 공유 단위는 `Document`로 바꾸지만 초기 BE↔AI 메시지�
 Paper 삭제는 서재 항목과 `Paper → Document` 관계만 제거한다. 대표 `Paper`가 삭제돼도
 `Document`, 대표 원본, 파싱 산출물과 AI 결과 연결 정보는 유지한다.
 
+> 2026-09-06 (YMC-369): Paper 삭제는 논리 삭제(`deleted_at`)로 구현했고 `document_id`는 그대로 둔다 — 삭제된 Paper의 사용량 정산이 Document 종결 시 함께 이뤄져야 하기 때문이다.
+
 초기 구현에는 사용자가 `Document`를 물리적으로 삭제하는 기능을 두지 않는다. 참조하는 `Paper`가
 없는 `Document`의 보존 기간과 S3 객체 삭제는 후속 정책으로 결정한다.
 
@@ -136,6 +138,8 @@ Paper 삭제는 서재 항목과 `Paper → Document` 관계만 제거한다. �
 
 파일명이 다른 동일 파일을 찾지 못하고 같은 이름의 다른 파일을 잘못 판정할 수 있다. 사용자별
 동일 파일명을 `409 DUPLICATE_FILENAME`으로 거절하는 UX 규칙에만 사용한다.
+
+> 2026-09-05: 위 UX 규칙(`409 DUPLICATE_FILENAME`)은 YMC-369로 폐지했다. 파일명 중복은 허용하고 동일 파일 판정은 checksum(Option A)만 쓴다.
 
 ## 5. Consequences
 

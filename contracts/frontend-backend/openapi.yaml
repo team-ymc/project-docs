@@ -14,7 +14,7 @@ info:
     - BE↔AI API 계약: contracts/backend-ai/openapi.yml
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
 
-  version: 0.3.0
+  version: 0.4.0
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -154,7 +154,7 @@ paths:
         업로드 실패로 표시하고 complete를 호출하지 않는다.
 
         레코드 생성이 업로드보다 먼저다. 이 시점에 BE가 가진 것은 메타데이터뿐이라 내용 기반 유효성 판정은
-        하지 않고 파일명 중복만 판정한다. (FT-003 Story 2)
+        하지 않는다. 파일명 중복은 허용한다 — 같은 이름의 논문이 여러 개 있을 수 있다. (FT-003 Story 2)
 
         동기 검증을 통과한 뒤 문서 등록 사용량 1회를 예약하고 `Paper(UPLOAD_PENDING)`를 같은
         트랜잭션에서 생성한다. 한도 초과면 Paper와 presigned URL을 생성하지 않는다. (ADR-006)
@@ -186,17 +186,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-        "409":
-          description: |
-            파일명 중복 — 같은 파일명의 논문이 이미 있음. code: DUPLICATE_FILENAME
-            레코드를 만들지 않고 거절한다(presigned URL도 발급하지 않음). (FT-003 Story 2)
-
-            주의: 업로드에 실패한 UPLOAD_PENDING 레코드도 중복으로 걸린다 —
-            MVP는 같은 파일명의 재업로드를 지원하지 않는다. (FT-003 Out of Scope)
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
         "413":
           description: >-
             size가 최대 허용 용량을 초과함. code: FILE_TOO_LARGE.
@@ -213,6 +202,90 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
+  /api/papers/{paperId}:
+    patch:
+      operationId: renamePaper
+      summary: 논문 이름 변경
+      description: |
+        서재 제목이자 다운로드 저장 파일명인 `filename`을 바꾼다. 상태와 무관하게 허용한다.
+        `updatedAt`은 상태 변경 시각이므로 갱신하지 않는다. 같은 이름의 다른 논문이 있어도 거절하지 않는다.
+        `.pdf` 접미는 FE가 붙인다 — BE는 공백 여부와 길이만 검증한다.
+      tags: [papers]
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenamePaperRequest"
+      responses:
+        "200":
+          description: 변경된 행. FE는 목록 캐시의 해당 항목만 이 값으로 교체한다.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperListItem"
+        "400":
+          description: "trim 후 비었거나 255자를 넘음. code: VALIDATION_ERROR"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: "없거나 삭제된 논문. code: PAPER_NOT_FOUND"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    delete:
+      operationId: deletePaper
+      summary: 논문 논리 삭제
+      description: |
+        `deletedAt`을 기록해 논리 삭제한다. 이후 목록·status·content·download·chat 경로 전부에서
+        PAPER_NOT_FOUND다. 소속 채팅 세션도 함께 논리 삭제한다.
+        원본 객체와 파싱 결과는 같은 파일을 올린 다른 사용자와 공유하므로 유지한다.
+        진행 중(PROCESSING) 논문도 삭제할 수 있다 — 파싱은 끝까지 진행되고 등록 사용량은 복구하지 않는다(FT-011).
+      tags: [papers]
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: 논리 삭제 완료
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: "없거나 이미 삭제된 논문. code: PAPER_NOT_FOUND"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
 
   /api/papers/{paperId}/complete:
     post:
@@ -884,7 +957,7 @@ components:
           format: uuid
         filename:
           type: string
-          description: 원본 파일명. MVP는 이것을 행의 제목으로 쓴다 (파싱이 추출한 논문 제목이 아니다).
+          description: 원본 파일명. MVP는 이것을 행의 제목으로 쓴다 (파싱이 추출한 논문 제목이 아니다). 사용자가 PATCH로 바꿀 수 있다.
           example: attention-is-all-you-need.pdf
         status:
           $ref: "#/components/schemas/PaperStatus"
@@ -903,6 +976,18 @@ components:
             사용자가 이 논문에 마지막으로 접근한 시각. 학습 페이지 진입(content 조회)과
             채팅 메시지 발송 시 갱신된다. 접근 이력이 없으면 null — FE는 이때 등록일(createdAt)을 표시한다.
 
+    RenamePaperRequest:
+      type: object
+      required: [filename]
+      additionalProperties: false
+      properties:
+        filename:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 새 파일명. BE가 trim한다. FE는 확장자 `.pdf`를 붙여 보낸다.
+          example: attention-is-all-you-need-v2.pdf
+
     CreatePaperRequest:
       type: object
       required: [filename, contentType, size, checksumSha256]
@@ -910,7 +995,7 @@ components:
       properties:
         filename:
           type: string
-          description: 원본 파일명 (표시·참조용). 사용자별 중복 판정의 기준. (FT-003 Story 2)
+          description: 원본 파일명 (표시·참조용). 서재 제목이자 다운로드 저장 파일명. 같은 소유자에게 같은 파일명이 여러 개 있을 수 있다.
           example: attention-is-all-you-need.pdf
         contentType:
           type: string
@@ -1573,7 +1658,6 @@ components:
             - VALIDATION_ERROR      : 필수 필드 누락 등 (400)
             - UNSUPPORTED_FILE_TYPE : contentType이 application/pdf가 아님 (400)
             - FILE_TOO_LARGE        : 신고·업로드된 원본이 최대 허용 용량을 초과함 (413, create·complete)
-            - DUPLICATE_FILENAME    : 같은 파일명의 논문이 이미 있음 (409, create)
             - PAPER_NOT_FOUND       : 존재하지 않는 paperId (404)
             - UPLOAD_NOT_FOUND      : S3에 객체가 없음 (409, complete)
             - UPLOAD_CHECKSUM_MISSING: S3가 검증한 SHA-256 checksum이 없음 (409, complete)
@@ -1594,7 +1678,6 @@ components:
               VALIDATION_ERROR,
               UNSUPPORTED_FILE_TYPE,
               FILE_TOO_LARGE,
-              DUPLICATE_FILENAME,
               PAPER_NOT_FOUND,
               UPLOAD_NOT_FOUND,
               UPLOAD_CHECKSUM_MISSING,
