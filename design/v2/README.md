@@ -32,6 +32,16 @@ Paper Teacher v2의 화면 디자인과 디자인 시스템 산출물 인덱스�
 | 토큰 | `tokens/colors.css` | `--brass-on-dark: #E8C98F`, `--color-accent-brass-on-dark` — 다크 바 위 Pro 배지 색. |
 | 아이콘 | Phosphor | 새로 쓰는 이름: `user`, `seal-check`, `warning-circle`, `books`, `file-text`, `magnifying-glass`, `squares-four`, `arrow-left`. FE `icons.ts`에 등록 필요. |
 
+## Screen States — 글로벌 상단 바 메뉴 (YMC-358)
+
+로고 오른쪽에 `플랜 | 기능` 메뉴를 둔 글로벌 상단 바와, 두 메뉴가 여는 준비 중 페이지다. 학습 페이지 상단 바는 논문 제목·야간 모드가 있어 그대로 둔다. 메뉴 항목은 14px/500, 현재 페이지 항목은 `--color-on-dark` 글자색에 `--color-accent-brass-on-dark` 2px 밑줄이다. 비로그인 상단 바 오른쪽은 로그인 버튼(테두리 `rgba(255,253,247,0.35)` 필), 로그인 상태는 기존 플랜 배지·프로필 버튼이다.
+
+| 상태 | 파일 | 요약 |
+|---|---|---|
+| 랜딩 · 비로그인 + 상단 바 메뉴 | [Paper Landing Page - GNB](Paper%20Landing%20Page%20-%20GNB.dc.html) | 히어로는 그대로, 상단 바에 메뉴와 로그인 버튼을 얹는다. |
+| 서재 · 로그인 + 상단 바 메뉴 | [Paper Bookshelf Page - GNB](Paper%20Bookshelf%20Page%20-%20GNB.dc.html) | 상단 바 왼쪽에 메뉴, 오른쪽은 플랜 배지·프로필 버튼. |
+| 준비 중 페이지 | [Paper Coming Soon Page](Paper%20Coming%20Soon%20Page.dc.html) | 플랜·기능 공용. 섹션 라벨(`Plans`/`Features`)과 강조 메뉴만 다르고, 돌아가기 링크는 로그인 시 서재·비로그인 시 랜딩. |
+
 ## Design System
 
 - [Paper Teacher Design System](_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/readme.md)
