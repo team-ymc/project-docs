@@ -1,13 +1,21 @@
-version: 1
+version: 2
 id: universal-pdf-agent-run-stream
 status: current
 summary: 논문 전체 또는 여러 선택 영역을 기반으로 생성한 assistant 응답을 SSE로 전송하는 endpoint이다.
+
+sources:
+  router: app/modules/universal_pdf_agent/router.py
+  schemas: app/modules/universal_pdf_agent/schemas.py
+  errors: app/modules/universal_pdf_agent/errors.py
+  selection_builder: app/modules/universal_pdf_agent/context_builder.py
+  implementation_repository: team-ymc/ai
 
 transport:
   type: sse
   method: POST
   path: /api/v1/agents/universal-pdf-agent/runs/stream
   response_content_type: text/event-stream
+  validation_error_status: 422
 
 request:
   content_type: application/json
@@ -76,11 +84,14 @@ request:
                   minimum: 0
                 description: text block 내 UTF-16 code unit 기준 exclusive 종료 offset
   selection_rules:
+    - selections는 structure/document.json schema version 2를 기준으로 server가 context를 구성한다.
     - 각 selection의 start와 end는 structure/document.json의 document-wide block 순서를 따른다.
     - selections는 request 배열 순서대로 각각 독립적인 context로 처리한다.
     - text block offset은 UTF-16 code unit 기준이며 start는 inclusive, end는 exclusive이다.
-    - image, table, formula block은 atomic하므로 offset을 보내면 안 된다.
+    - text block의 offset을 생략하거나 null로 보내면 해당 boundary block 전체를 포함한다.
+    - image, table, formula block은 atomic하므로 offset을 생략하거나 null로 보내야 한다.
     - 각 selection은 최대 150 blocks, 각 선택에서 렌더링된 content는 최대 30000 characters이다.
+    - selections의 각 항목은 겹치거나 같은 범위를 반복해도 독립적으로 유지된다.
   example:
     thread_id: conversation_123
     paper_id: 1706.03762v7
@@ -113,6 +124,7 @@ event_sequences:
       - run.completed
     notes:
       - message.delta는 0개, 1개, 또는 여러 개가 올 수 있다.
+      - message.completed.message는 전송된 delta를 순서대로 이어 붙인 값이다.
   failure:
     description: 논문 package, 선택 영역 확인 또는 응답 생성 중 오류가 발생한 경우
     events:
@@ -244,8 +256,11 @@ backend_handling:
   - run.failed를 실패 종료로 처리하고 error.code로 오류를 분기한다.
   - run.failed 이전에 받은 partial delta는 최종 assistant message로 확정하지 않는다.
   - stream 연결 자체가 실패하면 HTTP 오류로 처리한다.
+  - 선택 영역 오류는 error.code로 사용자 재선택이 필요한 경우를 구분한다.
 
 limitations:
   - stream resume은 지원하지 않는다.
   - SSE event id는 전송하지 않는다.
   - 각 selection 제한을 넘는 요청은 content를 자르지 않고 SELECTION_TOO_LARGE로 실패한다.
+  - selections, asset 내용과 model variant는 checkpoint나 event payload에 포함되지 않는다.
+  - run.completed에는 비용이나 token usage field가 없다.

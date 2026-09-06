@@ -2,6 +2,13 @@ openapi: 3.1.0
 info:
   title: AI Server
   version: 0.1.0
+  description: >-
+    Backend에서 AI FastAPI server를 호출할 때 사용하는 HTTP 계약이다. `/stream`
+    endpoint의 event 이름, 순서와 payload는 `contracts/backend-ai/sse/`의 endpoint별
+    계약을 함께 따른다. SQS document parser worker는 이 OpenAPI 범위에 포함되지 않는다.
+x-contract-source: team-ymc/ai app.main:app
+x-contract-source-revision: 153462a
+x-contract-synced-at: '2026-09-06'
 paths:
   /api/v1/agents/base-pdf-agent/runs:
     post:
@@ -22,12 +29,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BasePdfAgentRunResponse'
+        '400':
+          $ref: '#/components/responses/AI400Error'
+        '404':
+          $ref: '#/components/responses/AI404Error'
+        '500':
+          $ref: '#/components/responses/AI500Error'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      x-error-codes:
+        '400': [PAPER_ID_INVALID]
+        '404': [PAPER_DOCUMENT_NOT_FOUND]
+        '500': [INTERNAL_SERVER_ERROR]
   /api/v1/agents/base-pdf-agent/runs/stream:
     post:
       tags:
@@ -43,6 +60,11 @@ paths:
       responses:
         '200':
           description: Successful Response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          x-sse-contract: sse/base-pdf-agent-run-stream.yml
         '422':
           description: Validation Error
           content:
@@ -68,12 +90,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentParseResponse'
+        '400':
+          $ref: '#/components/responses/AI400Error'
+        '404':
+          $ref: '#/components/responses/AI404Error'
+        '500':
+          $ref: '#/components/responses/AI500Error'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      x-error-codes:
+        '400': [PAPER_ID_INVALID, PADDLEOCR_TOKEN_MISSING, TRANSLATION_API_KEY_MISSING]
+        '404': [DOCUMENT_SOURCE_NOT_FOUND]
+        '500': [INTERNAL_SERVER_ERROR]
   /api/v1/document-parser/parse/stream:
     post:
       tags:
@@ -89,6 +121,11 @@ paths:
       responses:
         '200':
           description: Successful Response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          x-sse-contract: sse/document-parser-parse-stream.yml
         '422':
           description: Validation Error
           content:
@@ -114,12 +151,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InlinePdfAgentRunResponse'
+        '400':
+          $ref: '#/components/responses/AI400Error'
+        '404':
+          $ref: '#/components/responses/AI404Error'
+        '500':
+          $ref: '#/components/responses/AI500Error'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      x-error-codes:
+        '400': [PAPER_ID_INVALID, SELECTION_BLOCK_NOT_FOUND, SELECTION_RANGE_INVALID, SELECTION_OFFSET_INVALID, SELECTION_TOO_LARGE]
+        '404': [PAPER_DOCUMENT_NOT_FOUND, PAPER_STRUCTURE_NOT_FOUND, PAPER_ASSET_NOT_FOUND]
+        '500': [PAPER_STRUCTURE_INVALID, INTERNAL_SERVER_ERROR]
   /api/v1/agents/inline-pdf-agent/runs/stream:
     post:
       tags:
@@ -135,6 +182,75 @@ paths:
       responses:
         '200':
           description: Successful Response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          x-sse-contract: sse/inline-pdf-agent-run-stream.yml
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/inline-translate-agent/runs:
+    post:
+      tags:
+      - inline-translate-agent
+      summary: Run
+      operationId: inline-translate-agent-run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InlineTranslateAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InlineTranslateAgentRunResponse'
+        '400':
+          $ref: '#/components/responses/AI400Error'
+        '404':
+          $ref: '#/components/responses/AI404Error'
+        '500':
+          $ref: '#/components/responses/AI500Error'
+        '502':
+          $ref: '#/components/responses/AI502Error'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      x-error-codes:
+        '400': [PAPER_ID_INVALID, SELECTION_BLOCK_NOT_FOUND, SELECTION_RANGE_INVALID, SELECTION_OFFSET_INVALID, SELECTION_TOO_LARGE]
+        '404': [PAPER_STRUCTURE_NOT_FOUND]
+        '500': [PAPER_STRUCTURE_INVALID, INTERNAL_SERVER_ERROR]
+        '502': [TRANSLATION_OUTPUT_INVALID]
+  /api/v1/agents/inline-translate-agent/runs/stream:
+    post:
+      tags:
+      - inline-translate-agent
+      summary: Run Stream
+      operationId: inline-translate-agent-run_stream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InlineTranslateAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          x-sse-contract: sse/inline-translate-agent-run-stream.yml
         '422':
           description: Validation Error
           content:
@@ -160,12 +276,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UniversalPdfAgentRunResponse'
+        '400':
+          $ref: '#/components/responses/AI400Error'
+        '404':
+          $ref: '#/components/responses/AI404Error'
+        '500':
+          $ref: '#/components/responses/AI500Error'
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+      x-error-codes:
+        '400': [PAPER_ID_INVALID, SELECTION_BLOCK_NOT_FOUND, SELECTION_RANGE_INVALID, SELECTION_OFFSET_INVALID, SELECTION_TOO_LARGE]
+        '404': [PAPER_DOCUMENT_NOT_FOUND, PAPER_STRUCTURE_NOT_FOUND, PAPER_ASSET_NOT_FOUND]
+        '500': [PAPER_STRUCTURE_INVALID, INTERNAL_SERVER_ERROR]
   /api/v1/agents/universal-pdf-agent/runs/stream:
     post:
       tags:
@@ -181,6 +307,11 @@ paths:
       responses:
         '200':
           description: Successful Response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          x-sse-contract: sse/universal-pdf-agent-run-stream.yml
         '422':
           description: Validation Error
           content:
@@ -227,6 +358,11 @@ paths:
       responses:
         '200':
           description: Successful Response
+          content:
+            text/event-stream:
+              schema:
+                type: string
+          x-sse-contract: sse/simple-agent-run-stream.yml
         '422':
           description: Validation Error
           content:
@@ -234,7 +370,53 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
 components:
+  responses:
+    AI400Error:
+      description: Invalid identifier, selection, or required server configuration
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AIErrorResponse'
+    AI404Error:
+      description: Required paper document, structure, source, or asset not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AIErrorResponse'
+    AI500Error:
+      description: Invalid stored package or unexpected server failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AIErrorResponse'
+    AI502Error:
+      description: Upstream translation output could not preserve the selected content
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AIErrorResponse'
   schemas:
+    AIErrorDetail:
+      properties:
+        code:
+          type: string
+          title: Code
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - code
+      - message
+      title: AIErrorDetail
+    AIErrorResponse:
+      properties:
+        detail:
+          $ref: '#/components/schemas/AIErrorDetail'
+      type: object
+      required:
+      - detail
+      title: AIErrorResponse
     BasePdfAgentRunRequest:
       properties:
         thread_id:
@@ -379,6 +561,68 @@ components:
       required:
       - block_id
       title: InlinePdfSelectionAnchor
+    InlineTranslateAgentRunRequest:
+      properties:
+        thread_id:
+          type: string
+          minLength: 1
+          title: Thread Id
+        paper_id:
+          type: string
+          minLength: 1
+          title: Paper Id
+        selection:
+          $ref: '#/components/schemas/InlineTranslateSelection'
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - selection
+      title: InlineTranslateAgentRunRequest
+    InlineTranslateAgentRunResponse:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        paper_id:
+          type: string
+          title: Paper Id
+        translation:
+          type: string
+          title: Translation
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - translation
+      title: InlineTranslateAgentRunResponse
+    InlineTranslateSelection:
+      properties:
+        start:
+          $ref: '#/components/schemas/InlineTranslateSelectionAnchor'
+        end:
+          $ref: '#/components/schemas/InlineTranslateSelectionAnchor'
+      type: object
+      required:
+      - start
+      - end
+      title: InlineTranslateSelection
+    InlineTranslateSelectionAnchor:
+      properties:
+        block_id:
+          type: string
+          minLength: 1
+          title: Block Id
+        offset:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Offset
+      type: object
+      required:
+      - block_id
+      title: InlineTranslateSelectionAnchor
     SimpleAgentRunRequest:
       properties:
         thread_id:

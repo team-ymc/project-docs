@@ -1,103 +1,83 @@
-version: 1
+version: 2
 kind: sse-contract-guidance
 title: BE-AI SSE Contract
 language: ko
 
 purpose: >
-  AI 서버와 Backend 서버 사이의 Server-Sent Events(SSE) 계약을 endpoint별 YAML 파일로
-  일관되게 작성하기 위한 가이드이다.
+  AI 서버와 Backend 서버 사이의 POST 기반 Server-Sent Events(SSE) wire contract를
+  endpoint별 YAML 파일로 일관되게 정의한다.
 
 scope:
   includes:
-    - SSE 기반 HTTP streaming endpoint
+    - SSE HTTP handshake와 framing
     - endpoint별 request body
-    - endpoint별 event 순서
-    - endpoint별 event payload
-    - Backend 처리 규칙
+    - event 이름, 순서와 payload
+    - terminal event와 Backend 처리 규칙
   excludes:
-    - 일반 request/response HTTP API
-    - SQS, Kafka 같은 message queue 계약
+    - 일반 request/response HTTP API의 상세 오류 목록
+    - SQS document parser worker 계약
+    - model provider, prompt와 server-owned variant
 
-relationship_to_openapi:
-  openapi_file: contracts/backend-ai/openapi.yml
-  note: >
-    OpenAPI는 SSE endpoint의 path와 request body는 표현할 수 있지만,
-    SSE event 이름, event 순서, data payload는 충분히 표현하지 못한다.
-    따라서 SSE 상세 계약은 contracts/backend-ai/sse 디렉토리에 endpoint별 YAML 파일로 작성한다.
+sources_of_truth:
+  implementation_repository: team-ymc/ai
+  implementation_revision: 153462a
+  http_schema: contracts/backend-ai/openapi.yml
+  endpoint_index: contracts/backend-ai/sse/README.md
+  notes:
+    - OpenAPI는 /stream path의 HTTP request와 validation response를 정의한다.
+    - stream 내부 event는 이 문서와 endpoint별 SSE 파일이 정의한다.
+    - endpoint별 파일과 구현이 충돌하면 배포 전에 둘을 함께 수정한다.
 
-global_rules:
-  - event 이름과 payload schema는 반드시 endpoint별 파일에 명시한다.
-  - 하나의 HTTP stream 안에서 event는 전송 순서를 보장한다.
-  - Backend는 endpoint별 파일에 정의된 terminal event를 기준으로 stream 종료를 판단한다.
-  - Backend는 partial event payload를 최종 응답으로 확정하면 안 된다.
+handshake:
+  method: POST
+  request_content_type: application/json
+  success_status: 200
+  response_content_type: text/event-stream
+  rules:
+    - request body가 Pydantic schema validation을 통과하지 못하면 stream을 시작하지 않고 HTTP 422를 반환한다.
+    - 유효한 request가 HTTP 200으로 시작된 뒤의 실행 오류는 HTTP status가 아니라 endpoint별 failure terminal event로 전달한다.
+    - client 연결 취소는 server가 terminal event를 전송하지 못한 채 stream을 끝낼 수 있다.
 
 sse_format:
-  response_content_type: text/event-stream
+  encoding: UTF-8
   frame:
     event_line: "event: <event_name>"
     data_line: "data: <json_object>"
-    separator: "blank line"
+    separator: blank line
+  omitted_fields:
+    - id
+    - retry
   data_rules:
-    - data는 JSON object 문자열이어야 한다.
-    - data.type을 사용하는 endpoint에서는 data.type이 event 이름과 같아야 한다.
+    - data는 한 줄 JSON object 문자열이다.
+    - data.type은 SSE event 이름과 반드시 같다.
+    - 모든 event는 요청의 correlation field(thread_id, paper_id)를 endpoint 계약에 정의된 대로 반복한다.
+
+ordering_and_termination:
+  - 하나의 HTTP stream 안에서 event 전송 순서를 보장한다.
+  - success와 failure terminal event는 상호 배타적이며 한 stream에서 최대 하나만 전송한다.
+  - terminal event를 받으면 Backend는 stream 처리를 종료한다.
+  - terminal event 전에 연결이 끊기면 outcome은 불확정이며 성공으로 확정하지 않는다.
+  - message.delta와 parse.progress는 0개 이상 전송될 수 있다.
+  - partial delta나 progress는 terminal success의 증거가 아니다.
+  - stream resume과 Last-Event-ID replay는 지원하지 않는다.
 
 endpoint_file_format:
   required_top_level_keys:
     - version
     - id
     - status
+    - sources
     - transport
     - request
     - event_sequences
     - events
     - backend_handling
+    - limitations
   recommended_path: contracts/backend-ai/sse/<endpoint-id>.yml
   notes:
     - endpoint별 파일 하나가 SSE endpoint 하나를 설명한다.
-    - 새 SSE endpoint를 추가하면 이 파일의 endpoints 목록에도 추가한다.
-    - event 이름은 endpoint별 파일 안에서만 확정한다.
-
-endpoint_template:
-  version: 1
-  id: "<endpoint-id>"
-  status: current
-  summary: "<이 endpoint가 제공하는 SSE 기능>"
-  transport:
-    type: sse
-    method: POST
-    path: /api/v1/...
-    response_content_type: text/event-stream
-  request:
-    content_type: application/json
-    body_fields:
-      - name: "<field_name>"
-        type: string
-        required: true
-        description: "<field description>"
-  event_sequences:
-    success:
-      description: "<성공 시 event 순서 설명>"
-      events:
-        - "<event-name>"
-    failure:
-      description: "<실패 시 event 순서 설명>"
-      events:
-        - "<event-name>"
-      notes:
-        - "<failure sequence note>"
-  events:
-    - name: "<event-name>"
-      terminal: false
-      description: "<event description>"
-      payload_fields:
-        - name: type
-          type: string
-          required: true
-          description: "SSE event 이름과 같은 값"
-  backend_handling:
-    - "<Backend 처리 규칙>"
-  limitations:
-    - "<현재 제한사항>"
+    - 새 SSE endpoint를 추가하면 endpoints 목록과 sse/README.md에도 추가한다.
+    - allowed error code와 공개 message는 AI router/error model에 맞춰 갱신한다.
 
 endpoints:
   - id: simple-agent-run-stream
@@ -112,6 +92,10 @@ endpoints:
   - id: universal-pdf-agent-run-stream
     file: contracts/backend-ai/sse/universal-pdf-agent-run-stream.yml
     status: current
+  - id: inline-translate-agent-run-stream
+    file: contracts/backend-ai/sse/inline-translate-agent-run-stream.yml
+    status: current
   - id: document-parser-parse-stream
     file: contracts/backend-ai/sse/document-parser-parse-stream.yml
-    status: current
+    status: legacy
+    note: 비동기 운영 경로는 SQS document parser worker이며 이 endpoint는 migration 기간에 유지된다.
