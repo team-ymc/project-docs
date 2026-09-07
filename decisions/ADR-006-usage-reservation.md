@@ -21,10 +21,11 @@ Free와 Pro의 유한한 사용량 정책은 AI 질의와 문서 등록의 성�
 |---|---|---|---|
 | AI 질의 | 동기 검증 후 외부 AI 호출 전 | 최종 답변 저장과 `ASSISTANT: GENERATING → COMPLETED` 전이가 commit됨 | AI 실행이 `FAILED`로 확정됨 |
 | 문서 등록ㆍ파싱 | `POST /api/papers`의 동기 검증 후, `Paper(UPLOAD_PENDING)` 생성과 presigned URL 발급 전 | `Paper → COMPLETED` 전이가 commit됨 | 문서 처리가 `FAILED` 또는 `EXPIRED`로 확정됨 |
+| 인라인 번역 | 동기 검증 후 `translation_run(GENERATING)` 생성과 같은 트랜잭션, 외부 AI 호출 전 | `translation_run: GENERATING → COMPLETED` 전이가 commit됨 | 번역 실행이 `FAILED`로 확정됨 |
 
 문서 등록은 예약과 `Paper(UPLOAD_PENDING)` 생성을 같은 트랜잭션으로 처리한다. 한도 초과 시 Paper와 presigned URL을 생성하지 않는다.
 
-사용량은 기간별 `usage_bucket`과 실행별 `usage_record`로 저장하며 버킷에는 집계 카운터를 두지 않는다. 유한한 정책의 예약 트랜잭션은 버킷 행을 잠근 뒤 같은 버킷의 `RESERVED + CONFIRMED` 원장을 집계하고, 한도 미만일 때 `(usageType, sourceId)`가 유일한 `RESERVED` 원장을 추가한다. AI 질의의 `sourceId`는 `clientMessageId`, 문서 등록의 `sourceId`는 `paperId`를 사용한다.
+사용량은 기간별 `usage_bucket`과 실행별 `usage_record`로 저장하며 버킷에는 집계 카운터를 두지 않는다. 유한한 정책의 예약 트랜잭션은 버킷 행을 잠근 뒤 같은 버킷의 `RESERVED + CONFIRMED` 원장을 집계하고, 한도 미만일 때 `(usageType, sourceId)`가 유일한 `RESERVED` 원장을 추가한다. AI 질의의 `sourceId`는 `clientMessageId`, 인라인 번역은 `translationId`, 문서 등록은 `paperId`를 사용한다. 원장 행은 `source_type`으로 종류를 구분한다.
 
 실행 주체가 종료되어 terminal 판정이 남지 않은 경우는 주기적으로 도는 정체 레코드 정리가 회수한다. deadline이 지난 채팅 `GENERATING`은 `FAILED`로, 문서의 비종결 상태는 `EXPIRED` 또는 `FAILED`로 내리고 예약을 해제한다(ADR-001 §5).
 
@@ -64,3 +65,4 @@ MVP에서는 `usage_record`를 직접 집계한다. 버킷 카운터를 함께 �
 
 - **2026-08-27** — deadline 초과 정체를 종결 상태로 내리고 예약을 해제하는 **정체 레코드 정리를 MVP로 확정**했다
 - **2026-08-28** — 정리 대상에 채팅 `GENERATING` 정체를 명시했다. BE가 실행 중 종료되면 실행을 감시하던 타이머도 함께 사라지므로, terminal 판정과 예약 해제를 정체 레코드 정리가 대신한다.
+- **2026-09-07** — 인라인 번역(FT-006)을 AI 질의 예약 대상에 추가했다. `sourceId = translationId`, 정체 정리는 `translation_run GENERATING`도 대상이다. 종류별 집계를 위해 `usage_record.source_type`을 도입했다(YMC-375).
