@@ -1,0 +1,236 @@
+version: 1
+id: inline-translate-agent-run-stream
+status: current
+summary: 논문의 필수 선택 영역을 한국어로 번역한 결과를 SSE로 전송하는 endpoint이다.
+
+transport:
+  type: sse
+  method: POST
+  path: /api/v1/agents/inline-translate-agent/runs/stream
+  response_content_type: text/event-stream
+
+request:
+  content_type: application/json
+  body_fields:
+    - name: thread_id
+      type: string
+      required: true
+      constraints:
+        min_length: 1
+      description: 요청 상관관계와 trace metadata에 사용하는 client thread 식별자
+    - name: paper_id
+      type: string
+      required: true
+      constraints:
+        min_length: 1
+      description: 번역할 structure/document.json이 포함된 논문 package 식별자
+    - name: selection
+      type: object
+      required: true
+      description: 번역할 단일 영역을 지정하는 start/end block anchor
+      fields:
+        - name: start
+          type: object
+          required: true
+          fields:
+            - name: block_id
+              type: string
+              required: true
+              constraints:
+                min_length: 1
+            - name: offset
+              type:
+                - integer
+                - 'null'
+              required: false
+              constraints:
+                minimum: 0
+              description: text block 내 UTF-16 code unit 기준 inclusive 시작 offset
+        - name: end
+          type: object
+          required: true
+          fields:
+            - name: block_id
+              type: string
+              required: true
+              constraints:
+                min_length: 1
+            - name: offset
+              type:
+                - integer
+                - 'null'
+              required: false
+              constraints:
+                minimum: 0
+              description: text block 내 UTF-16 code unit 기준 exclusive 종료 offset
+  selection_rules:
+    - start와 end는 structure/document.json의 document-wide block 순서를 따른다.
+    - text block offset은 UTF-16 code unit 기준이며 start는 inclusive, end는 exclusive이다.
+    - image, table, formula block은 atomic하므로 offset을 보내면 안 된다.
+    - selection은 최대 150 blocks, 선택된 렌더링 content는 최대 30000 characters이다.
+    - 선택된 영어 text만 한국어로 번역하며 선택된 component는 정해진 한국어 label로 치환한다.
+  example:
+    thread_id: translation_123
+    paper_id: 1706.03762v7
+    selection:
+      start:
+        block_id: p0002-b0000
+        offset: 0
+      end:
+        block_id: p0002-b0003
+        offset: 42
+
+sse_format:
+  data_type_matches_event: true
+  example_frame: |
+    event: message.delta
+    data: {"type":"message.delta","thread_id":"translation_123","paper_id":"1706.03762v7","delta":"선택한 논문 내용은"}
+
+event_sequences:
+  success:
+    description: 정상적으로 선택 영역의 한국어 번역이 완료된 경우
+    events:
+      - run.started
+      - message.delta
+      - message.completed
+      - run.completed
+    notes:
+      - message.delta는 0개, 1개, 또는 여러 개가 올 수 있다.
+      - 선택 영역에 번역할 영어가 없으면 LLM을 호출하지 않아도 같은 성공 순서를 사용한다.
+  failure:
+    description: 논문 구조, 선택 영역 확인 또는 번역 중 오류가 발생한 경우
+    events:
+      - run.failed
+    notes:
+      - run.failed 이전에 run.started가 전송된다.
+      - run.failed 이전에 일부 message.delta가 이미 전송되었을 수 있다.
+      - stream 처리가 시작된 뒤의 오류는 HTTP 오류가 아니라 run.failed event로 전달된다.
+
+events:
+  - name: run.started
+    terminal: false
+    description: AI 서버가 inline translation 처리를 시작했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.started
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+
+  - name: message.delta
+    terminal: false
+    description: 번역 결과의 부분 chunk를 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: message.delta
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: delta
+        type: string
+        required: true
+        description: 번역 결과의 부분 문자열
+    backend_notes:
+      - delta를 받은 순서대로 누적한다.
+      - delta 하나가 완전한 단어, 문장, Markdown block이라고 가정하지 않는다.
+
+  - name: message.completed
+    terminal: false
+    description: 번역 결과 전체가 완성되었을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: message.completed
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: message
+        type: string
+        required: true
+        description: Markdown을 보존한 최종 한국어 번역 결과
+    backend_notes:
+      - 직접 누적한 delta보다 message.completed.message를 우선한다.
+      - non-streaming endpoint의 translation 필드와 의미가 같지만 SSE payload field 이름은 message이다.
+
+  - name: run.completed
+    terminal: true
+    outcome: success
+    description: translation run이 성공적으로 종료되었을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.completed
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+
+  - name: run.failed
+    terminal: true
+    outcome: failure
+    description: 논문 구조, 선택 영역 확인 또는 번역에 실패했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.failed
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: error
+        type: object
+        required: true
+        fields:
+          - name: code
+            type: string
+            required: true
+            allowed_values:
+              - PAPER_ID_INVALID
+              - PAPER_STRUCTURE_NOT_FOUND
+              - PAPER_STRUCTURE_INVALID
+              - SELECTION_BLOCK_NOT_FOUND
+              - SELECTION_RANGE_INVALID
+              - SELECTION_OFFSET_INVALID
+              - SELECTION_TOO_LARGE
+              - TRANSLATION_OUTPUT_INVALID
+              - INTERNAL_SERVER_ERROR
+          - name: message
+            type: string
+            required: true
+            description: 클라이언트에 노출 가능한 안정적인 오류 메시지
+
+backend_handling:
+  - 모든 event의 thread_id와 paper_id가 요청 값과 일치하는지 확인한다.
+  - inline translate agent는 stateless이므로 thread_id를 대화 이력 식별자로 사용하지 않는다.
+  - message.delta는 순서대로 누적한다.
+  - message.completed.message를 최종 translation으로 사용한다.
+  - run.completed를 성공 종료로 처리한다.
+  - run.failed를 실패 종료로 처리하고 error.code로 오류를 분기한다.
+  - run.failed 이전에 받은 partial delta는 최종 translation으로 확정하지 않는다.
+  - stream 연결 자체가 실패하면 HTTP 오류로 처리한다.
+
+limitations:
+  - stream resume은 지원하지 않는다.
+  - SSE event id는 전송하지 않는다.
+  - selection은 필수이며 논문 전체 번역 요청은 지원하지 않는다.
+  - selection 제한을 넘는 요청은 content를 자르지 않고 SELECTION_TOO_LARGE로 실패한다.

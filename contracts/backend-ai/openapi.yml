@@ -141,6 +141,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/inline-translate-agent/runs:
+    post:
+      tags:
+      - inline-translate-agent
+      summary: Run
+      operationId: inline-translate-agent-run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InlineTranslateAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InlineTranslateAgentRunResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/inline-translate-agent/runs/stream:
+    post:
+      tags:
+      - inline-translate-agent
+      summary: Run Stream
+      operationId: inline-translate-agent-run_stream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InlineTranslateAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/agents/universal-pdf-agent/runs:
     post:
       tags:
@@ -379,6 +425,68 @@ components:
       required:
       - block_id
       title: InlinePdfSelectionAnchor
+    InlineTranslateAgentRunRequest:
+      properties:
+        thread_id:
+          type: string
+          minLength: 1
+          title: Thread Id
+        paper_id:
+          type: string
+          minLength: 1
+          title: Paper Id
+        selection:
+          $ref: '#/components/schemas/InlineTranslateSelection'
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - selection
+      title: InlineTranslateAgentRunRequest
+    InlineTranslateAgentRunResponse:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        paper_id:
+          type: string
+          title: Paper Id
+        translation:
+          type: string
+          title: Translation
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - translation
+      title: InlineTranslateAgentRunResponse
+    InlineTranslateSelection:
+      properties:
+        start:
+          $ref: '#/components/schemas/InlineTranslateSelectionAnchor'
+        end:
+          $ref: '#/components/schemas/InlineTranslateSelectionAnchor'
+      type: object
+      required:
+      - start
+      - end
+      title: InlineTranslateSelection
+    InlineTranslateSelectionAnchor:
+      properties:
+        block_id:
+          type: string
+          minLength: 1
+          title: Block Id
+        offset:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Offset
+      type: object
+      required:
+      - block_id
+      title: InlineTranslateSelectionAnchor
     SimpleAgentRunRequest:
       properties:
         thread_id:
