@@ -30,7 +30,7 @@ schemas:
     properties:
       paper_id:
         type: string
-        format: uuid
+        minLength: 1
         description: >-
           이 파싱 작업과 Paper를 연결하는 BE 도메인 식별자이자 요청·결과의
           상관관계 키. AI worker가 안전하게 처리할 수 있도록 빈 문자열, 절대 경로,
@@ -55,7 +55,7 @@ schemas:
     properties:
       paper_id:
         type: string
-        format: uuid
+        minLength: 1
         description: 대응하는 ParseRequest의 paper_id.
       status:
         const: completed
@@ -77,7 +77,7 @@ schemas:
     properties:
       paper_id:
         type: string
-        format: uuid
+        minLength: 1
         description: 대응하는 ParseRequest의 paper_id.
       status:
         const: failed

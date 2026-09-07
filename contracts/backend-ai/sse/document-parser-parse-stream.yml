@@ -158,6 +158,7 @@ events:
               - PAPER_ID_INVALID
               - DOCUMENT_SOURCE_NOT_FOUND
               - PADDLEOCR_TOKEN_MISSING
+              - TRANSLATION_API_KEY_MISSING
               - INTERNAL_SERVER_ERROR
           - name: message
             type: string
