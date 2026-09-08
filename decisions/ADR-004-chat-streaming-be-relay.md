@@ -170,3 +170,4 @@ BE가 사용자 질문을 저장하고 AI가 assistant 답변을 저장하는 �
 ## 6. Updates
 
 - **2026-07-22** — YMC-255에서 FE↔BE `POST /api/papers/{paperId}/chat/messages`와 SSE event 계약을 OpenAPI 3.2의 `text/event-stream.itemSchema`로 추가했다. FE 완료 기준은 AI `message.completed` + `run.completed` 수신 후 BE의 최종 답변 저장 commit으로 고정했다.
+- **2026-09-07** — 인라인 번역(FT-006, YMC-375)이 같은 BE 경유 SSE 릴레이를 재사용한다. FE↔BE operation은 `POST /api/papers/{paperId}/inline-translations`, upstream은 `inline-translate-agent`다. 대화 원본과 달리 번역 결과는 `translation_run`에 실행 기록으로만 남고 이력 조회 API는 없다.

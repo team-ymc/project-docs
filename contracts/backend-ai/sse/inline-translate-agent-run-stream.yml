@@ -181,6 +181,12 @@ events:
       - name: paper_id
         type: string
         required: true
+      - name: estimated_cost_usd
+        type:
+          - number
+          - 'null'
+        required: false
+        description: 이 run의 추정 비용(USD). AI 미구현 — TBD. BE는 값이 있으면 사용량 원장에 저장하고 없거나 형식이 다르면 무시한다.
 
   - name: run.failed
     terminal: true
@@ -228,6 +234,7 @@ backend_handling:
   - run.failed를 실패 종료로 처리하고 error.code로 오류를 분기한다.
   - run.failed 이전에 받은 partial delta는 최종 translation으로 확정하지 않는다.
   - stream 연결 자체가 실패하면 HTTP 오류로 처리한다.
+  - run.completed.estimated_cost_usd가 있으면 사용량 원장의 estimated_cost_usd로 저장한다. 없거나 숫자가 아니면 비용 없이 성공 처리한다.
 
 limitations:
   - stream resume은 지원하지 않는다.

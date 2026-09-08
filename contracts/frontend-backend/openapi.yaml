@@ -5,16 +5,17 @@ info:
     FE↔BE HTTP API contract. REST와 SSE를 함께 정의하는 SSOT다.
 
     - Source: features/FT-002-서재.md, features/FT-003-논문-등록-분석.md,
-      features/FT-004-논문-학습-뷰어.md, features/FT-007-ai-튜터-채팅.md,
-      features/FT-011-플랜-사용량-제한.md
+      features/FT-004-논문-학습-뷰어.md, features/FT-006-인라인-액션.md,
+      features/FT-007-ai-튜터-채팅.md, features/FT-011-플랜-사용량-제한.md
     - ADR: decisions/ADR-001-pdf-upload-presigned-url.md,
       decisions/ADR-003-paper-id-and-duplicate-check.md,
       decisions/ADR-004-chat-streaming-be-relay.md,
       decisions/ADR-006-usage-reservation.md
     - BE↔AI API 계약: contracts/backend-ai/openapi.yml
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
+    - BE↔AI 인라인 번역 스트림: contracts/backend-ai/sse/inline-translate-agent-run-stream.yml
 
-  version: 0.4.0
+  version: 0.5.0
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -628,10 +629,10 @@ paths:
             terminal event 없이 EOF가 오면 FE는 완료로 간주하지 않는다.
           headers:
             Cache-Control:
-              description: 중간 계층의 응답 변형·캐싱 방지
+              description: 저장 금지(no-store)·중간 계층 변형 금지(no-transform)
               schema:
                 type: string
-                example: no-cache, no-transform
+                example: no-store, no-transform
           content:
             text/event-stream:
               itemSchema:
@@ -848,6 +849,183 @@ paths:
           description: |
             paperId가 없으면 PAPER_NOT_FOUND. sessionId가 없거나 삭제됐거나 현재 사용자·paperId에
             속하지 않으면 CHAT_SESSION_NOT_FOUND.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /api/papers/{paperId}/inline-translations:
+    post:
+      operationId: createInlineTranslationStream
+      summary: 선택 영역의 한국어 번역을 SSE로 수신
+      description: |
+        인증된 사용자가 소유한 COMPLETED 논문의 선택 영역 하나를 AI가 한국어로 번역한 결과를
+        스트리밍한다. 채팅과 같은 BE 경유 SSE 릴레이(ADR-004)이며 FE는 fetch ReadableStream으로
+        `text/event-stream`을 소비한다.
+
+        BE는 `translation_run(GENERATING)` row와 AI 질의 사용량 예약을 한 transaction으로
+        commit한 뒤 `translation.started`를 보낸다. 인라인 번역은 채팅과 같은 AI 질의
+        월간 버킷을 1회 소비한다(FT-011). 사용자당 동시에 GENERATING인 번역은 1개다.
+
+        FE가 연결을 끊어도 BE는 AI 수신·저장을 완주한다. 사용자 취소 API는 없다.
+        전체 본문 번역(FT-005)은 이 operation의 대상이 아니다.
+      tags: [translation]
+      x-sse-lifecycle:
+        charset: UTF-8
+        frame: "event: <event-name> + data: <JSON object> + blank line"
+        eventId: unsupported
+        retryLine: unsupported
+        heartbeatIntervalSeconds: 15
+        heartbeatRule: translation.started 이후 outbound event가 15초 동안 없으면 BE가 생성한다.
+        successSequence:
+          - "translation.started (exactly one)"
+          - "translation.delta (zero or more)"
+          - "heartbeat (zero or more, interleaved)"
+          - "translation.completed (exactly one, terminal)"
+        failureSequence:
+          - "translation.started (exactly one)"
+          - "translation.delta (zero or more)"
+          - "heartbeat (zero or more, interleaved)"
+          - "error (exactly one, terminal)"
+        rules:
+          - data.type은 SSE event 이름과 같아야 한다.
+          - translation.completed와 error 중 최대 하나만 보낸다.
+          - terminal event를 보낸 뒤 BE는 stream을 정상 종료한다.
+          - terminal event 없는 EOF를 FE는 성공으로 간주하지 않는다.
+          - heartbeat는 상태를 바꾸거나 application deadline을 연장하지 않는다.
+        frontendDisconnect:
+          - BE는 FE 방향 전송만 중단하고 application deadline 안에서 AI 수신과 최종 저장을 계속한다.
+          - FE disconnect만으로 translation_run을 FAILED로 바꾸지 않는다.
+          - stream resume과 Last-Event-ID는 지원하지 않는다. 번역 결과 재조회 API는 없다.
+      x-upstream-event-mapping:
+        contract: ../backend-ai/sse/inline-translate-agent-run-stream.yml
+        endpoint: "POST /api/v1/agents/inline-translate-agent/runs/stream"
+        request:
+          path.paperId: BE 권한·상태 검증에 사용한다. AI body.paper_id에는 이 값이 아니라 연결된 Document의 requestPaperId(파싱 요청 식별자)를 보낸다.
+          body.selection: AI body.selection에 snake_case로 그대로 전달한다.
+          translationId: BE가 생성한 translation_run id를 AI body.thread_id에 문자열로 전달한다. AI는 이를 대화 이력으로 쓰지 않는다.
+        events:
+          translation.started: BE가 translation_run GENERATING row와 사용량 예약을 commit한 뒤 자체 생성한다.
+          run.started: BE 내부 확인에만 사용하고 FE에는 보내지 않는다.
+          message.delta: 같은 순서의 FE translation.delta로 전달하고 bounded memory에 누적한다.
+          message.completed: 최종 translation 후보로 보관하고 이 event만으로 FE 성공을 보내지 않는다.
+          run.completed: AI message.completed 수신과 COMPLETED DB commit(사용량 확정 포함) 뒤 FE translation.completed로 변환한다. estimated_cost_usd가 있으면 사용량 원장에 저장한다.
+          run.failed: FAILED DB commit(사용량 해제 포함) 뒤 error.code에 따라 FE error로 변환한다 — SELECTION_BLOCK_NOT_FOUND·SELECTION_RANGE_INVALID·SELECTION_OFFSET_INVALID → SELECTION_INVALID, SELECTION_TOO_LARGE → SELECTION_TOO_LARGE, 그 외 → AI_RUN_FAILED.
+          heartbeat: FE outbound 침묵 시간을 기준으로 BE가 자체 생성한다.
+        protocolFailures:
+          - AI message.completed 없이 run.completed를 받으면 AI_PROTOCOL_ERROR다.
+          - AI message.completed 뒤 run.completed 없이 EOF가 오면 AI_PROTOCOL_ERROR다.
+          - upstream terminal event 없이 EOF가 오면 AI_STREAM_DISCONNECTED다.
+          - application deadline 전에 upstream terminal event가 없으면 AI_TIMEOUT이다.
+      x-stream-handling:
+        backend:
+          - stream 시작 전 인증·권한·논문 상태·사용자별 동시 번역·사용량을 검증한다.
+          - translation_run GENERATING row와 사용량 예약을 한 transaction으로 저장한 뒤 translation.started를 보낸다.
+          - delta를 즉시 전달하고 bounded memory에 누적한다. 누적 상한 초과는 AI_RESPONSE_TOO_LARGE다.
+          - 성공은 AI message.completed와 run.completed 수신 및 COMPLETED DB commit 뒤 확정한다.
+          - 실패 시 partial delta를 저장하지 않고 FAILED DB commit 뒤 연결된 FE에 error를 보낸다.
+          - application timeout 시 AI 연결 취소를 전파한다.
+        frontend:
+          - streaming TextDecoder를 사용하고 SSE frame 경계를 chunk 경계와 같다고 가정하지 않는다.
+          - translation.delta는 순서대로 append해 팝업에 표시하고 translation.completed에서 전체 translation으로 replace한다.
+          - HTTP 오류·terminal error·terminal 없는 EOF는 완료로 처리하지 않는다.
+          - 요청 전에 선택 영역의 블록 수·글자 수 제한을 검증하고 anchor를 만들 수 없는 선택은 번역 액션을 비활성화한다.
+      x-contract-test-cases:
+        - run.started → message.delta* → message.completed → run.completed를 성공 stream으로 변환하고 사용량을 CONFIRMED로 확정한다.
+        - AI run.failed SELECTION_TOO_LARGE를 FAILED 저장·사용량 RELEASED 후 retryable=false인 SELECTION_TOO_LARGE로 변환한다.
+        - 사용자의 다른 번역이 GENERATING이면 409 TRANSLATION_IN_PROGRESS로 거절하고 row·예약을 만들지 않는다.
+        - 월간 AI 질의 한도에 도달하면 429 CHAT_USAGE_LIMIT_EXCEEDED로 거절한다.
+        - application timeout 시 AI 취소를 전파하고 FAILED 저장 후 AI_TIMEOUT으로 끝낸다.
+        - FE 연결을 중간에 종료해도 upstream을 한 번만 소비하고 최종 상태를 저장한다.
+      x-contract-limitations:
+        - stream resume, SSE event id와 retry line은 지원하지 않는다.
+        - 사용자 취소 API와 재시도 UI는 지원하지 않는다.
+        - 번역 결과 이력 조회 API는 없다.
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: 번역 대상 논문의 BE 식별자. BE가 소유권과 COMPLETED 상태를 검증한다.
+        - name: Accept
+          in: header
+          required: true
+          schema:
+            const: text/event-stream
+          description: SSE 응답을 요청한다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InlineTranslationStreamRequest"
+            example:
+              selection:
+                start: { blockId: p0002-b0000, offset: 0 }
+                end: { blockId: p0002-b0003, offset: 42 }
+      responses:
+        "200":
+          description: |
+            SSE 스트림이 시작됨. `translation.completed` 또는 `error` event가 terminal이다.
+          headers:
+            Cache-Control:
+              description: 저장 금지(no-store)·중간 계층 변형 금지(no-transform)
+              schema:
+                type: string
+                example: no-store, no-transform
+          content:
+            text/event-stream:
+              itemSchema:
+                $ref: "#/components/schemas/TranslationSseEvent"
+              examples:
+                success:
+                  summary: 정상 완료
+                  value: |
+                    event: translation.started
+                    data: {"type":"translation.started","paperId":"550e8400-e29b-41d4-a716-446655440000","translationId":"0d7c2f9e-6b7a-4f2e-9a1c-3f5e8d2b1c44","status":"GENERATING"}
+
+                    event: translation.delta
+                    data: {"type":"translation.delta","paperId":"550e8400-e29b-41d4-a716-446655440000","translationId":"0d7c2f9e-6b7a-4f2e-9a1c-3f5e8d2b1c44","delta":"어텐션 함수는"}
+
+                    event: translation.completed
+                    data: {"type":"translation.completed","paperId":"550e8400-e29b-41d4-a716-446655440000","translationId":"0d7c2f9e-6b7a-4f2e-9a1c-3f5e8d2b1c44","translation":"어텐션 함수는 **query**와 key-value 쌍을 출력에 대응시키는 것으로 설명할 수 있다.","contentFormat":"markdown","status":"COMPLETED"}
+                selectionTooLarge:
+                  summary: 선택 영역 초과
+                  value: |
+                    event: translation.started
+                    data: {"type":"translation.started","paperId":"550e8400-e29b-41d4-a716-446655440000","translationId":"0d7c2f9e-6b7a-4f2e-9a1c-3f5e8d2b1c44","status":"GENERATING"}
+
+                    event: error
+                    data: {"type":"error","paperId":"550e8400-e29b-41d4-a716-446655440000","translationId":"0d7c2f9e-6b7a-4f2e-9a1c-3f5e8d2b1c44","status":"FAILED","error":{"code":"SELECTION_TOO_LARGE","message":"선택 영역이 너무 큽니다.","retryable":false}}
+        "400":
+          description: "잘못된 요청 (selection 누락·형식 오류). code: VALIDATION_ERROR"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: "존재하지 않는 paperId. code: PAPER_NOT_FOUND"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: |
+            논문이 COMPLETED가 아니면 PAPER_NOT_READY. 사용자의 다른 번역이 아직 GENERATING이면
+            TRANSLATION_IN_PROGRESS — 그 번역이 끝난 뒤 같은 요청을 다시 보낼 수 있다.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: "월간 AI 질의 사용량 초과. code: CHAT_USAGE_LIMIT_EXCEEDED (채팅과 같은 버킷)"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -1622,6 +1800,214 @@ components:
             retryable:
               const: false
 
+    InlineTranslationStreamRequest:
+      type: object
+      required: [selection]
+      additionalProperties: false
+      properties:
+        selection:
+          $ref: "#/components/schemas/ChatSelection"
+          description: |
+            번역할 단일 선택 영역. FE는 요청 전 블록 수·글자 수 제한(ChatSelection 참고)을 검증한다.
+            BE는 BE↔AI 요청의 selection(snake_case)으로 그대로 전달한다.
+
+    TranslationSseEvent:
+      type: object
+      description: |
+        인라인 번역 stream의 SSE event. `event`는 SSE event line, `data`는 JSON 문자열인 data line이다.
+      required: [event, data]
+      additionalProperties: false
+      properties:
+        event:
+          type: string
+          enum: [translation.started, translation.delta, heartbeat, translation.completed, error]
+        data:
+          type: string
+      oneOf:
+        - title: translation.started
+          properties:
+            event:
+              const: translation.started
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/TranslationStartedEventData"
+        - title: translation.delta
+          properties:
+            event:
+              const: translation.delta
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/TranslationDeltaEventData"
+        - title: heartbeat
+          properties:
+            event:
+              const: heartbeat
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/TranslationHeartbeatEventData"
+        - title: translation.completed
+          properties:
+            event:
+              const: translation.completed
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/TranslationCompletedEventData"
+        - title: error
+          properties:
+            event:
+              const: error
+            data:
+              type: string
+              contentMediaType: application/json
+              contentSchema:
+                $ref: "#/components/schemas/TranslationStreamErrorEventData"
+
+    TranslationStartedEventData:
+      type: object
+      description: translation_run GENERATING row와 사용량 예약이 commit되어 translationId가 확정됐음을 알린다.
+      required: [type, paperId, translationId, status]
+      additionalProperties: false
+      properties:
+        type:
+          const: translation.started
+        paperId:
+          type: string
+          format: uuid
+        translationId:
+          type: string
+          format: uuid
+        status:
+          const: GENERATING
+
+    TranslationDeltaEventData:
+      type: object
+      description: 번역 결과 Markdown source의 부분 문자열. 단어·문장·Markdown block 경계를 보장하지 않는다.
+      required: [type, paperId, translationId, delta]
+      additionalProperties: false
+      properties:
+        type:
+          const: translation.delta
+        paperId:
+          type: string
+          format: uuid
+        translationId:
+          type: string
+          format: uuid
+        delta:
+          type: string
+
+    TranslationHeartbeatEventData:
+      type: object
+      description: 침묵 구간 연결 유지용. 상태를 바꾸거나 deadline을 연장하지 않는다.
+      required: [type, paperId, translationId, emittedAt]
+      additionalProperties: false
+      properties:
+        type:
+          const: heartbeat
+        paperId:
+          type: string
+          format: uuid
+        translationId:
+          type: string
+          format: uuid
+        emittedAt:
+          type: string
+          format: date-time
+
+    TranslationCompletedEventData:
+      type: object
+      description: |
+        AI message.completed와 run.completed를 모두 받고 translation_run COMPLETED와 사용량 확정을
+        commit한 뒤 보내는 성공 terminal event다. FE는 누적 delta를 translation으로 replace한다.
+        translation은 Markdown source다 — 렌더 시 raw HTML을 비활성화한다.
+      required: [type, paperId, translationId, translation, contentFormat, status]
+      additionalProperties: false
+      x-sse-terminal: success
+      properties:
+        type:
+          const: translation.completed
+        paperId:
+          type: string
+          format: uuid
+        translationId:
+          type: string
+          format: uuid
+        translation:
+          type: string
+        contentFormat:
+          const: markdown
+        status:
+          const: COMPLETED
+
+    TranslationStreamErrorEventData:
+      type: object
+      description: stream 시작 뒤 실행을 성공으로 확정할 수 없고 FAILED 저장·사용량 해제까지 끝났을 때 보내는 실패 terminal event다.
+      required: [type, paperId, translationId, status, error]
+      additionalProperties: false
+      x-sse-terminal: failure
+      properties:
+        type:
+          const: error
+        paperId:
+          type: string
+          format: uuid
+        translationId:
+          type: string
+          format: uuid
+        status:
+          const: FAILED
+        error:
+          $ref: "#/components/schemas/TranslationStreamErrorDetail"
+
+    TranslationStreamErrorDetail:
+      type: object
+      description: |
+        AI raw exception을 포함하지 않는 안정된 FE 오류다. 이 code들은 stream 안에서만 쓰이며
+        HTTP `Error.code` enum에는 속하지 않는다. `retryable`은 같은 선택을 다시 요청할 수 있는지를 뜻한다.
+      required: [code, message, retryable]
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          enum:
+            - AI_RUN_FAILED
+            - AI_STREAM_DISCONNECTED
+            - AI_TIMEOUT
+            - AI_PROTOCOL_ERROR
+            - AI_RESPONSE_TOO_LARGE
+            - SELECTION_INVALID
+            - SELECTION_TOO_LARGE
+            - TRANSLATION_PERSISTENCE_FAILED
+        message:
+          type: string
+        retryable:
+          type: boolean
+      oneOf:
+        - title: AI run 실패
+          properties: { code: { const: AI_RUN_FAILED }, retryable: { const: true } }
+        - title: AI stream 단절
+          properties: { code: { const: AI_STREAM_DISCONNECTED }, retryable: { const: true } }
+        - title: AI 응답 제한 시간 초과
+          properties: { code: { const: AI_TIMEOUT }, retryable: { const: true } }
+        - title: AI protocol 위반
+          properties: { code: { const: AI_PROTOCOL_ERROR }, retryable: { const: false } }
+        - title: AI 응답 길이 상한 초과
+          properties: { code: { const: AI_RESPONSE_TOO_LARGE }, retryable: { const: false } }
+        - title: 선택 영역이 문서와 맞지 않음 (AI SELECTION_BLOCK_NOT_FOUND·SELECTION_RANGE_INVALID·SELECTION_OFFSET_INVALID)
+          properties: { code: { const: SELECTION_INVALID }, retryable: { const: false } }
+        - title: 선택 영역 크기 초과 (AI SELECTION_TOO_LARGE)
+          properties: { code: { const: SELECTION_TOO_LARGE }, retryable: { const: false } }
+        - title: 최종 translation 저장 실패
+          properties: { code: { const: TRANSLATION_PERSISTENCE_FAILED }, retryable: { const: true } }
+
     ChatDuplicateMessageError:
       type: object
       description: |
@@ -1672,6 +2058,7 @@ components:
             - DUPLICATE_MESSAGE     : 같은 clientMessageId·같은 content 재전송 (409, 기존 실행 상태 반환)
             - CHAT_USAGE_LIMIT_EXCEEDED: 채팅 사용량 제한 초과 (429)
             - CHAT_CONCURRENCY_LIMIT_EXCEEDED: 사용자 전체 동시 AI 실행 상한 초과 (429)
+            - TRANSLATION_IN_PROGRESS  : 사용자의 다른 인라인 번역이 아직 생성 중 (409)
             - PAPER_USAGE_LIMIT_EXCEEDED: 문서 등록 사용량 제한 초과 (429)
           enum:
             [
@@ -1692,6 +2079,7 @@ components:
               DUPLICATE_MESSAGE,
               CHAT_USAGE_LIMIT_EXCEEDED,
               CHAT_CONCURRENCY_LIMIT_EXCEEDED,
+              TRANSLATION_IN_PROGRESS,
               PAPER_USAGE_LIMIT_EXCEEDED,
             ]
         message:
