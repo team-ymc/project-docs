@@ -629,10 +629,10 @@ paths:
             terminal event 없이 EOF가 오면 FE는 완료로 간주하지 않는다.
           headers:
             Cache-Control:
-              description: 중간 계층의 응답 변형·캐싱 방지
+              description: 저장 금지(no-store)·중간 계층 변형 금지(no-transform)
               schema:
                 type: string
-                example: no-cache, no-transform
+                example: no-store, no-transform
           content:
             text/event-stream:
               itemSchema:
@@ -969,10 +969,10 @@ paths:
             SSE 스트림이 시작됨. `translation.completed` 또는 `error` event가 terminal이다.
           headers:
             Cache-Control:
-              description: 중간 계층의 응답 변형·캐싱 방지
+              description: 저장 금지(no-store)·중간 계층 변형 금지(no-transform)
               schema:
                 type: string
-                example: no-cache, no-transform
+                example: no-store, no-transform
           content:
             text/event-stream:
               itemSchema:
