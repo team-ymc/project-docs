@@ -32,6 +32,20 @@ Paper Teacher v2의 화면 디자인과 디자인 시스템 산출물 인덱스�
 | 토큰 | `tokens/colors.css` | `--brass-on-dark: #E8C98F`, `--color-accent-brass-on-dark` — 다크 바 위 Pro 배지 색. |
 | 아이콘 | Phosphor | 새로 쓰는 이름: `user`, `seal-check`, `warning-circle`, `books`, `file-text`, `magnifying-glass`, `squares-four`, `arrow-left`. FE `icons.ts`에 등록 필요. |
 
+## Screen States — 전체 번역 (FT-005 / YMC-383)
+
+논문 원문을 갈아끼우지 않고 옆이나 아래에 한국어 번역을 함께 보여주는 상태다. 별도 아트보드를 두지 않고 [Paper Study Page](Paper%20Study%20Page.dc.html)의 트윅 `translationMode`(`off`/`below`/`side`) · `sourceLanguage`(`en`/`ko`/`und`) · `chat`(`open`/`collapsed`)로 상태를 바꾼다. 기본값은 `off` · `en` · `open`이라 트윅을 건드리지 않으면 기존 학습 화면 그대로다. 툴바의 `번역` 버튼은 안 보기 → 아래 → 옆 → 안 보기로 순환하고 현재 배치를 라벨(`번역` / `번역 · 아래` / `번역 · 옆`)과 `aria-pressed`로 드러낸다. 번역 셀은 muted 글자색에 왼쪽 `--color-primary-subtle` 규칙선을 두고 크기는 줄이지 않으며 선택할 수 없다. 제목 계열·이미지·표·수식·참고문헌은 번역을 붙이지 않고 원문만 전폭으로 둔다. 전체 번역이 켜져 있으면 선택 팝업에서 번역 항목을 숨기고 질문하기만 남긴다.
+
+| 상태 | 파일 | 요약 |
+|---|---|---|
+| 학습 · 옆 배치, 채팅 닫힘 | [Paper Study Page](Paper%20Study%20Page.dc.html) (`translationMode: side`, `chat: collapsed`) | 시트를 1320px(본문 1240 + 좌우 여백 40)로 넓혀 원문 \| 번역 두 열로 둔다. 열 간격 32, 열 사이 1px 규칙선은 번역 쌍 행에만 그린다. 1440px 창에서 열당 약 603px. |
+| 학습 · 옆 배치, 채팅 열림 | [Paper Study Page](Paper%20Study%20Page.dc.html) (`translationMode: side`, `chat: open`) | 채팅을 열어도 두 열을 유지한다. 옆 배치로 들어갈 때 채팅 기본 폭을 400 → 320px로 맞추고, 이후 폭은 스플리터 조작을 따른다. 1440px 창에서 열당 약 460px. |
+| 학습 · 번역 없는 논문 | [Paper Study Page](Paper%20Study%20Page.dc.html) (`sourceLanguage: ko` 또는 `und`) | `번역` 버튼이 비활성이고 본문은 원문 한 열 그대로다. 툴팁은 `ko`면 "한국어 논문은 번역하지 않습니다", 그 외에는 "이 논문은 번역이 준비되지 않았습니다". |
+
+`아래` 배치(`translationMode: below`)는 시트 폭을 그대로 두고 원문 바로 아래에 번역을 붙인다. 쌍 안쪽은 8px, 쌍 사이는 34px로 문단 간격(24px)보다 넓혀 어떤 원문의 번역인지 구분한다.
+
+데이터는 `GET /api/papers/{paperId}/content`(`contracts/frontend-backend/openapi.yaml`)를 따른다. 번역 존재는 `PaperTextContent.textKor` 유무로 판단하고, `PaperContentResponse.sourceLanguage`는 비활성 툴팁 문구를 고르는 데만 쓴다. 아트보드는 `sourceLanguage` 트윅으로 이 판단을 대신한다.
+
 ## Screen States — 글로벌 상단 바 메뉴 (YMC-358)
 
 로고 오른쪽에 `플랜 | 기능` 메뉴를 둔 글로벌 상단 바와, 두 메뉴가 여는 준비 중 페이지다. 학습 페이지 상단 바는 논문 제목·야간 모드가 있어 그대로 둔다. 메뉴 항목은 14px/500, 현재 페이지 항목은 `--color-on-dark` 글자색에 `--color-accent-brass-on-dark` 2px 밑줄이다. 비로그인 상단 바 오른쪽은 로그인 버튼(테두리 `rgba(255,253,247,0.35)` 필), 로그인 상태는 기존 플랜 배지·프로필 버튼이다.
@@ -54,3 +68,4 @@ Paper Teacher v2의 화면 디자인과 디자인 시스템 산출물 인덱스�
 - 화면 구조와 상태: [Wireframes](../../wireframes/README.md)
 - 사용자 행동 흐름: [Userflows](../../userflows/README.md)
 - 플랜·사용량 제한 기능: [FT-011](../../features/FT-011-플랜-사용량-제한.md)
+- 전체 번역 기능: [FT-005](../../features/FT-005-전체-번역.md)

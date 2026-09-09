@@ -74,6 +74,16 @@
     .pt-paper-content .pt-paper-table tr:last-child td{border-bottom:2px solid var(--color-text-heading)}
     .pt-paper-content .pt-equation{overflow-x:auto;text-align:center}
     .pt-paper-content .pt-equation .katex-display{margin:.25em 0 !important}
+    /* 전체 번역 표시 — 원문을 갈아끼우지 않고 옆·아래에 덧붙인다 */
+    /* 옆 배치에서만 시트를 1320px(본문 1240 + 좌우 여백 40)로 넓힌다 */
+    .pt-paper-wrap.pt-sheet-wide article{padding:28px 40px !important;max-width:1240px !important}
+    .pt-paper-content .pt-tr-cell{-webkit-user-select:none;user-select:none;cursor:default}
+    .pt-paper-content .pt-tr-cell p{margin:0;color:var(--color-text-muted)}
+    .pt-paper-content .pt-caption-translation{display:block;margin-top:4px;color:var(--color-text-muted);-webkit-user-select:none;user-select:none;cursor:default}
+    .pt-tr-side .pt-tr-pair{display:grid;grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr);column-gap:16px;align-items:start}
+    .pt-tr-side .pt-tr-rule{width:1px;align-self:stretch;background:var(--color-border)}
+    .pt-tr-below .pt-tr-rule{display:none}
+    .pt-tr-below .pt-tr-cell{border-left:2px solid var(--color-primary-subtle);padding-left:18px;margin-top:8px}
     .pt-student-msg div{background:var(--color-bg-surface) !important;color:var(--color-text-body) !important;border:none !important;border-radius:14px 14px 4px 14px !important;padding:11px 15px !important}
     @media(max-width:800px){.pt-paper-content .pt-author-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
   </style>
@@ -107,9 +117,9 @@
           </svg>
           <span>지식 그래프</span>
         </a>
-        <button type="button" onClick="{{ toggleTranslate }}" aria-label="{{ translationButtonLabel }}" title="{{ translationButtonLabel }}" aria-pressed="{{ translationActive }}" style="{{ translationTopBarStyle }}" style-hover="{{ translationTopBarHoverStyle }}">
+        <button type="button" onClick="{{ cycleTranslationMode }}" disabled="{{ translationDisabled }}" aria-label="{{ translationButtonLabel }}" title="{{ translationButtonTitle }}" aria-pressed="{{ translationActive }}" style="{{ translationTopBarStyle }}" style-hover="{{ translationTopBarHoverStyle }}">
           <i class="ph ph-translate" style="font-size:17px"></i>
-          <span>번역</span>
+          <span>{{ translationButtonLabel }}</span>
         </button>
       </div>
     </div>
@@ -138,9 +148,9 @@
 
     <!-- R4 Paper viewer -->
     <div ref="{{ paperViewerRef }}" onClick="{{ handlePaperClick }}" onMouseUp="{{ handlePaperMouseUp }}" onScroll="{{ handleViewerScroll }}" style="flex:1;min-width:0;overflow-y:auto;background:var(--color-bg-canvas);padding:8px 8px 24px;display:flex;justify-content:center">
-      <div class="pt-paper-wrap" style="width:100%;max-width:1000px">
-      <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.PaperSheet" title="{{ paperTitle }}" hint-size="100%,9200px" style="width:100%;max-width:1000px">
-        <div class="pt-paper-content" style="display:flex;flex-direction:column;gap:24px">
+      <div class="pt-paper-wrap {{ sheetWideClass }}" style="{{ paperSheetStyle }}">
+      <x-import component-from-global-scope="PaperTeacherDesignSystem_1a53a7.PaperSheet" title="{{ paperTitle }}" hint-size="100%,9200px" style="{{ paperSheetStyle }}">
+        <div class="pt-paper-content {{ translationModeClass }}" style="{{ paperContentStyle }}">
           <sc-if value="{{ paperLoading }}">
             <div style="padding:64px 0;text-align:center;font-family:var(--font-sans);font-size:14px;color:var(--color-text-muted)">논문을 불러오는 중입니다.</div>
           </sc-if>
@@ -148,74 +158,80 @@
             <div style="padding:64px 0;text-align:center;font-family:var(--font-sans);font-size:14px;color:var(--color-text-muted)">{{ paperError }}</div>
           </sc-if>
           <sc-for list="{{ blocks }}" as="block" hint-placeholder-count="14">
-            <sc-if value="{{ block.isHeading }}">
-              <h2 id="{{ block.id }}" data-block-id="{{ block.blockId }}" style="font-family:var(--font-serif);font-size:var(--heading-size);font-weight:var(--heading-weight);line-height:var(--heading-line);letter-spacing:var(--heading-tracking);color:var(--color-text-heading);margin:0;scroll-margin-top:24px"><span class="pt-study-heading-label">{{ block.text }}</span></h2>
-            </sc-if>
-            <sc-if value="{{ block.isSubheading }}">
-              <h3 id="{{ block.id }}" data-block-id="{{ block.blockId }}" style="font-family:var(--font-serif);font-size:var(--subheading-size);font-weight:var(--subheading-weight);line-height:var(--subheading-line);letter-spacing:var(--subheading-tracking);color:var(--color-text-heading);margin:0;scroll-margin-top:24px"><span class="pt-study-heading-label">{{ block.text }}</span></h3>
-            </sc-if>
-            <sc-if value="{{ block.isMinorHeading }}">
-              <h4 id="{{ block.id }}" class="pt-minor-heading" data-block-id="{{ block.blockId }}"><span class="pt-study-heading-label">{{ block.text }}</span></h4>
-            </sc-if>
-            <sc-if value="{{ block.isPara }}">
-              <p style="margin:0"><sc-for list="{{ block.segments }}" as="segment"><span data-block-id="{{ segment.blockId }}">{{ segment.text }}</span></sc-for></p>
-            </sc-if>
-            <sc-if value="{{ block.isList }}">
-              <ul class="pt-paper-list">
-                <sc-for list="{{ block.items }}" as="item" hint-placeholder-count="3">
-                  <li data-block-id="{{ item.blockId }}">{{ item.text }}</li>
-                </sc-for>
-              </ul>
-            </sc-if>
-            <sc-if value="{{ block.isAuthors }}">
-              <div class="pt-author-grid" data-block-id="{{ block.blockId }}">
-                <sc-for list="{{ block.authors }}" as="author" hint-placeholder-count="8">
-                  <div>
-                    <div class="pt-author-name">{{ author.name }}</div>
-                    <div class="pt-author-meta">{{ author.affiliation }}<br>{{ author.email }}</div>
-                  </div>
-                </sc-for>
-              </div>
-            </sc-if>
-            <sc-if value="{{ block.isReference }}">
-              <p class="pt-reference" data-block-id="{{ block.blockId }}" style="margin:0">{{ block.text }}</p>
-            </sc-if>
-            <sc-if value="{{ block.isImage }}">
-              <figure id="{{ block.id }}" class="pt-content-frame pt-figure-frame pt-context-target" data-block-id="{{ block.blockId }}" data-context-kind="image" style="{{ block.figureStyle }}">
-                <div class="pt-paper-image" role="img" aria-label="{{ block.alt }}" style="{{ block.imageStyle }}"></div>
-                <sc-if value="{{ block.hasCaption }}">
-                  <figcaption class="pt-figure-caption" data-block-id="{{ block.captionBlockId }}"><span class="pt-caption-label">{{ block.captionLabel }}.</span> {{ block.captionText }}</figcaption>
-                </sc-if>
-              </figure>
-            </sc-if>
-            <sc-if value="{{ block.isEquation }}">
-              <div id="{{ block.id }}" class="pt-content-frame pt-equation pt-context-target" data-block-id="{{ block.blockId }}" data-context-kind="formula">
-                <div style="font-family:var(--font-serif);font-size:16px;color:var(--color-text-heading)">{{ block.text }}</div>
-              </div>
-            </sc-if>
-            <sc-if value="{{ block.isTable }}">
-              <div id="{{ block.id }}" class="pt-content-frame pt-table-wrap pt-context-target" data-block-id="{{ block.blockId }}" data-context-kind="table">
-                <sc-if value="{{ block.hasCaption }}">
-                  <div class="pt-table-caption" data-block-id="{{ block.captionBlockId }}"><span class="pt-caption-label">{{ block.captionLabel }}.</span> {{ block.captionText }}</div>
-                </sc-if>
-                <div class="pt-table-scroll">
-                  <table class="pt-paper-table {{ block.tableClass }}" style="{{ block.tableStyle }}">
-                    <sc-for list="{{ block.rows }}" as="row" hint-placeholder-count="4">
-                      <tr class="{{ row.rowClass }}">
-                        <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="4">
-                          <sc-if value="{{ cell.isHeader }}">
-                            <th colSpan="{{ cell.colSpan }}" rowSpan="{{ cell.rowSpan }}" style="{{ cell.alignStyle }}">{{ cell.text }}</th>
-                          </sc-if>
-                          <sc-if value="{{ cell.isBody }}">
-                            <td colSpan="{{ cell.colSpan }}" rowSpan="{{ cell.rowSpan }}" style="{{ cell.alignStyle }}">{{ cell.text }}</td>
-                          </sc-if>
-                        </sc-for>
-                      </tr>
-                    </sc-for>
-                  </table>
+            <div class="{{ block.rowClass }}">
+              <sc-if value="{{ block.isHeading }}">
+                <h2 id="{{ block.id }}" data-block-id="{{ block.blockId }}" style="font-family:var(--font-serif);font-size:var(--heading-size);font-weight:var(--heading-weight);line-height:var(--heading-line);letter-spacing:var(--heading-tracking);color:var(--color-text-heading);margin:0;scroll-margin-top:24px"><span class="pt-study-heading-label">{{ block.text }}</span></h2>
+              </sc-if>
+              <sc-if value="{{ block.isSubheading }}">
+                <h3 id="{{ block.id }}" data-block-id="{{ block.blockId }}" style="font-family:var(--font-serif);font-size:var(--subheading-size);font-weight:var(--subheading-weight);line-height:var(--subheading-line);letter-spacing:var(--subheading-tracking);color:var(--color-text-heading);margin:0;scroll-margin-top:24px"><span class="pt-study-heading-label">{{ block.text }}</span></h3>
+              </sc-if>
+              <sc-if value="{{ block.isMinorHeading }}">
+                <h4 id="{{ block.id }}" class="pt-minor-heading" data-block-id="{{ block.blockId }}"><span class="pt-study-heading-label">{{ block.text }}</span></h4>
+              </sc-if>
+              <sc-if value="{{ block.isPara }}">
+                <p style="margin:0"><sc-for list="{{ block.segments }}" as="segment"><span data-block-id="{{ segment.blockId }}">{{ segment.text }}</span></sc-for></p>
+              </sc-if>
+              <sc-if value="{{ block.isList }}">
+                <ul class="pt-paper-list">
+                  <sc-for list="{{ block.items }}" as="item" hint-placeholder-count="3">
+                    <li data-block-id="{{ item.blockId }}">{{ item.text }}</li>
+                  </sc-for>
+                </ul>
+              </sc-if>
+              <sc-if value="{{ block.isAuthors }}">
+                <div class="pt-author-grid" data-block-id="{{ block.blockId }}">
+                  <sc-for list="{{ block.authors }}" as="author" hint-placeholder-count="8">
+                    <div>
+                      <div class="pt-author-name">{{ author.name }}</div>
+                      <div class="pt-author-meta">{{ author.affiliation }}<br>{{ author.email }}</div>
+                    </div>
+                  </sc-for>
                 </div>
-              </div>
-            </sc-if>
+              </sc-if>
+              <sc-if value="{{ block.isReference }}">
+                <p class="pt-reference" data-block-id="{{ block.blockId }}" style="margin:0">{{ block.text }}</p>
+              </sc-if>
+              <sc-if value="{{ block.isImage }}">
+                <figure id="{{ block.id }}" class="pt-content-frame pt-figure-frame pt-context-target" data-block-id="{{ block.blockId }}" data-context-kind="image" style="{{ block.figureStyle }}">
+                  <div class="pt-paper-image" role="img" aria-label="{{ block.alt }}" style="{{ block.imageStyle }}"></div>
+                  <sc-if value="{{ block.hasCaption }}">
+                    <figcaption class="pt-figure-caption" data-block-id="{{ block.captionBlockId }}"><span class="pt-caption-label">{{ block.captionLabel }}.</span> {{ block.captionText }}<sc-if value="{{ block.hasCaptionTranslation }}"><span class="pt-caption-translation">{{ block.captionTranslation }}</span></sc-if></figcaption>
+                  </sc-if>
+                </figure>
+              </sc-if>
+              <sc-if value="{{ block.isEquation }}">
+                <div id="{{ block.id }}" class="pt-content-frame pt-equation pt-context-target" data-block-id="{{ block.blockId }}" data-context-kind="formula">
+                  <div style="font-family:var(--font-serif);font-size:16px;color:var(--color-text-heading)">{{ block.text }}</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ block.isTable }}">
+                <div id="{{ block.id }}" class="pt-content-frame pt-table-wrap pt-context-target" data-block-id="{{ block.blockId }}" data-context-kind="table">
+                  <sc-if value="{{ block.hasCaption }}">
+                    <div class="pt-table-caption" data-block-id="{{ block.captionBlockId }}"><span class="pt-caption-label">{{ block.captionLabel }}.</span> {{ block.captionText }}<sc-if value="{{ block.hasCaptionTranslation }}"><span class="pt-caption-translation">{{ block.captionTranslation }}</span></sc-if></div>
+                  </sc-if>
+                  <div class="pt-table-scroll">
+                    <table class="pt-paper-table {{ block.tableClass }}" style="{{ block.tableStyle }}">
+                      <sc-for list="{{ block.rows }}" as="row" hint-placeholder-count="4">
+                        <tr class="{{ row.rowClass }}">
+                          <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="4">
+                            <sc-if value="{{ cell.isHeader }}">
+                              <th colSpan="{{ cell.colSpan }}" rowSpan="{{ cell.rowSpan }}" style="{{ cell.alignStyle }}">{{ cell.text }}</th>
+                            </sc-if>
+                            <sc-if value="{{ cell.isBody }}">
+                              <td colSpan="{{ cell.colSpan }}" rowSpan="{{ cell.rowSpan }}" style="{{ cell.alignStyle }}">{{ cell.text }}</td>
+                            </sc-if>
+                          </sc-for>
+                        </tr>
+                      </sc-for>
+                    </table>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ block.hasTranslation }}">
+                <div class="pt-tr-rule"></div>
+                <aside class="pt-tr-cell" aria-label="한국어 번역"><p>{{ block.translation }}</p></aside>
+              </sc-if>
+            </div>
           </sc-for>
         </div>
       </x-import>
@@ -443,7 +459,7 @@
 </div>
 
 </x-dc>
-<script type="text/x-dc" data-dc-script>
+<script type="text/x-dc" data-dc-script data-props='{"translationMode":{"editor":"enum","options":["off","below","side"],"default":"off","section":"전체 번역"},"sourceLanguage":{"editor":"enum","options":["en","ko","und"],"default":"en","section":"전체 번역"},"chat":{"editor":"enum","options":["open","collapsed"],"default":"open","section":"레이아웃"},"$preview":{"width":1440,"height":900}}'>
 const MAX_COMPOSER_CONTEXTS = 5;
 const CONTEXT_COLLAPSE_COUNT = 2;
 
@@ -521,7 +537,7 @@ class Component extends DCLogic {
   pendingRange = null;
   pendingText = '';
   pendingContextKind = 'selection';
-  state = { tocOpen:false, activeSection:'', translated:false, chatOpen:true, chatWidthOpen:400, historyOpen:false, messages:[], chatInput:'', isStreaming:false, history: HISTORY.slice(), composerFocused:false, paperBlocks:[], translations:{ title:'', blocks:{} }, paperLoading:true, paperError:'', selectionToolbar:{ visible:false, x:0, y:0 }, translationPopup:{ visible:false, x:0, y:0, original:'', translated:'', baseScrollTop:0, scrollDelta:0, dx:0, dy:0 }, headingStudyAction:{ visible:false, x:0, y:0, targetId:'', title:'', placement:'right' }, studySession:{ visible:false, sectionTitle:'', progress:0, stage:'' }, contentAskAction:{ visible:false, x:0, y:0, targetId:'', kind:'', text:'' }, composerContexts:[], contextTooltipIndex:-1, contextsExpanded:false, contextLimitNotice:false };
+  state = { tocOpen:false, activeSection:'', translationMode:null, chatOpen:null, chatWidthOpen:null, historyOpen:false, messages:[], chatInput:'', isStreaming:false, history: HISTORY.slice(), composerFocused:false, paperBlocks:[], translations:{ title:'', blocks:{} }, paperLoading:true, paperError:'', selectionToolbar:{ visible:false, x:0, y:0 }, translationPopup:{ visible:false, x:0, y:0, original:'', translated:'', baseScrollTop:0, scrollDelta:0, dx:0, dy:0 }, headingStudyAction:{ visible:false, x:0, y:0, targetId:'', title:'', placement:'right' }, studySession:{ visible:false, sectionTitle:'', progress:0, stage:'' }, contentAskAction:{ visible:false, x:0, y:0, targetId:'', kind:'', text:'' }, composerContexts:[], contextTooltipIndex:-1, contextsExpanded:false, contextLimitNotice:false };
 
   componentDidMount(){
     document.addEventListener('mousedown', this.handleDocMouseDown, true);
@@ -1061,7 +1077,7 @@ class Component extends DCLogic {
       window.getSelection().removeAllRanges();
     }
     if (this.state.contentAskAction.targetId) this.clearContentAskTarget();
-    if (!this.state.chatOpen) this.setState({ chatOpen:true });
+    if (!this.chatIsOpen()) this.setState({ chatOpen:true });
     this.attachContext(text, kind);
   };
 
@@ -1096,11 +1112,38 @@ class Component extends DCLogic {
   };
 
   toggleToc = () => this.setState(s => ({ tocOpen: !s.tocOpen }));
-  toggleTranslate = () => this.setState(s => ({
-    translated:!s.translated,
-    translationPopup:{ visible:false, x:0, y:0, original:'', translated:'', baseScrollTop:0, scrollDelta:0, dx:0, dy:0 }
-  }), this.typesetPaper);
-  toggleChat = () => this.setState(s => ({ chatOpen: !s.chatOpen }));
+  // 트윅(props)이 초기값을 주고, 사용자가 한 번이라도 조작하면 state가 이긴다.
+  translationMode(){
+    if (this.state.translationMode) return this.state.translationMode;
+    const fromProps = String(this.props.translationMode || 'off');
+    return ['off','below','side'].indexOf(fromProps) >= 0 ? fromProps : 'off';
+  }
+
+  // 계약상 번역 존재는 textKor 유무로 판단한다. 이 목업은 sourceLanguage로 대신한다.
+  hasTranslation(){ return String(this.props.sourceLanguage) === 'en'; }
+
+  effectiveTranslationMode(){ return this.hasTranslation() ? this.translationMode() : 'off'; }
+
+  chatIsOpen(){
+    if (this.state.chatOpen !== null) return this.state.chatOpen;
+    return String(this.props.chat || 'open') !== 'collapsed';
+  }
+
+  chatWidth(){
+    if (this.state.chatWidthOpen !== null) return this.state.chatWidthOpen;
+    return this.effectiveTranslationMode() === 'side' ? 320 : 400;
+  }
+
+  cycleTranslationMode = () => {
+    const next = { off:'below', below:'side', side:'off' }[this.translationMode()];
+    this.setState({
+      translationMode:next,
+      chatWidthOpen: next === 'side' ? 320 : this.state.chatWidthOpen,
+      translationPopup:{ visible:false, x:0, y:0, original:'', translated:'', baseScrollTop:0, scrollDelta:0, dx:0, dy:0 }
+    }, this.typesetPaper);
+  };
+
+  toggleChat = () => this.setState({ chatOpen: !this.chatIsOpen() });
   toggleHistory = () => this.setState(s => ({ historyOpen: !s.historyOpen }));
 
   handleInputChange = (e) => {
@@ -1136,7 +1179,7 @@ class Component extends DCLogic {
   startResize = (e) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startWidth = this.state.chatWidthOpen;
+    const startWidth = this.chatWidth();
     const onMove = (ev) => {
       let w = startWidth + (startX - ev.clientX);
       w = Math.max(280, Math.min(640, w));
@@ -1217,15 +1260,28 @@ class Component extends DCLogic {
   };
 
   renderVals(){
-    const t = this.state.translated;
     const sourceBlocks = this.state.paperBlocks;
     const translationBlocks = (this.state.translations && this.state.translations.blocks) || {};
-    const translatedText = (blockId, fallback) => t && blockId && translationBlocks[blockId] ? translationBlocks[blockId] : fallback;
-    const blockText = (block) => {
-      if (block.type === 'heading' || block.type === 'subheading' || block.type === 'minorHeading') return block.text || '';
-      return translatedText(block.blockId, block.text || '');
-    };
-    const blocks = sourceBlocks.map(b => ({
+    const sourceLanguage = String(this.props.sourceLanguage);
+    const hasTranslation = this.hasTranslation();
+    const mode = this.effectiveTranslationMode();
+    const sideMode = mode === 'side';
+    const showTranslation = mode !== 'off';
+    const trOf = (blockId) => (blockId && translationBlocks[blockId]) || '';
+    // 한 문단이 여러 원문 블록에서 합쳐질 수 있어 조각별 번역을 이어 붙인다.
+    const paraTranslation = (block) => (block.segments && block.segments.length ? block.segments : [{ blockId:block.blockId }])
+      .map(segment => trOf(segment.blockId)).filter(Boolean).join(' ');
+    const blockText = (block) => block.text || '';
+    const blocks = sourceBlocks.map(b => {
+      // 제목 계열·참고문헌·이미지·표·수식은 번역을 붙이지 않고 원문만 전폭으로 둔다.
+      const translation = showTranslation && b.type === 'para' ? paraTranslation(b) : '';
+      const captionTranslation = showTranslation ? trOf(b.captionBlockId) : '';
+      return {
+      translation,
+      hasTranslation: !!translation,
+      rowClass: translation ? 'pt-tr-pair' : '',
+      captionTranslation,
+      hasCaptionTranslation: !!captionTranslation,
       isHeading: b.type === 'heading', isSubheading: b.type === 'subheading', isMinorHeading: b.type === 'minorHeading', isPara: b.type === 'para', isList: b.type === 'list', isAuthors: b.type === 'authors',
       isReference: b.type === 'reference', isImage: b.type === 'image',
       isEquation: b.type === 'equation', isTable: b.type === 'table',
@@ -1234,11 +1290,8 @@ class Component extends DCLogic {
       text: b.type === 'table' ? '' : blockText(b),
       assetUrl: b.assetUrl || '',
       alt: b.alt || '',
-      segments: b.type === 'para' ? b.segments.map(segment => {
-        const leadingSpace = (segment.text.match(/^\s*/) || [''])[0];
-        return { ...segment, text:leadingSpace + translatedText(segment.blockId, segment.text).trimStart() };
-      }) : [],
-      items: b.type === 'list' ? b.items.map(item => ({ ...item, text:translatedText(item.blockId, item.text) })) : [],
+      segments: b.type === 'para' ? b.segments : [],
+      items: b.type === 'list' ? b.items : [],
       hasCaption: Boolean(b.captionText),
       captionBlockId: b.captionBlockId || '',
       captionLabel: b.captionLabel || '',
@@ -1259,7 +1312,8 @@ class Component extends DCLogic {
           alignStyle: `text-align:${c.align}`
         }))
       })) : null
-    }));
+      };
+    });
     const toc = sourceBlocks.filter(b => b.type === 'heading' || b.type === 'subheading' || b.type === 'minorHeading').map(b => {
       const active = b.id === this.state.activeSection;
       const sub = b.type === 'subheading';
@@ -1271,9 +1325,9 @@ class Component extends DCLogic {
       };
     });
     const tocOpen = this.state.tocOpen;
-    const chatOpen = this.state.chatOpen;
+    const chatOpen = this.chatIsOpen();
     const collapsedWidth = 44;
-    const openWidth = this.state.chatWidthOpen;
+    const openWidth = this.chatWidth();
     const chatWidth = chatOpen ? openWidth : collapsedWidth;
     const messages = this.state.messages.map(m => ({ ...m, notLoading: !m.loading }));
     const historyList = this.state.history.map(h => ({ title: h.title, onClick: () => this.loadHistory(h.id) }));
@@ -1284,6 +1338,10 @@ class Component extends DCLogic {
       table:{ label:'표', previewLabel:'표', color:'var(--color-primary)', soft:'color-mix(in srgb,var(--color-primary) 16%,var(--color-bg-paper))', border:'color-mix(in srgb,var(--color-primary) 48%,var(--color-border))' },
       formula:{ label:'수식', previewLabel:'수식', color:'var(--color-accent-brass)', soft:'color-mix(in srgb,var(--color-accent-brass) 19%,var(--color-bg-paper))', border:'color-mix(in srgb,var(--color-accent-brass) 52%,var(--color-border))' }
     };
+    const translationButtonLabel = mode === 'side' ? '번역 · 옆' : (mode === 'below' ? '번역 · 아래' : '번역');
+    const translationBtnBg = !hasTranslation ? 'rgba(255,253,247,0.05)' : (showTranslation ? 'var(--color-bg-paper)' : 'rgba(255,253,247,0.08)');
+    const translationBtnBorder = !hasTranslation ? 'rgba(255,253,247,0.12)' : (showTranslation ? 'var(--color-bg-paper)' : 'rgba(255,253,247,0.18)');
+    const translationBtnColor = showTranslation && hasTranslation ? 'var(--color-primary)' : 'rgba(255,253,247,0.88)';
     const contextsExpanded = this.state.contextsExpanded;
     const showAllContexts = contextsExpanded || composerContexts.length <= CONTEXT_COLLAPSE_COUNT;
     const visibleContexts = showAllContexts ? composerContexts : composerContexts.slice(0, CONTEXT_COLLAPSE_COUNT);
@@ -1327,11 +1385,19 @@ class Component extends DCLogic {
       tocIcon: tocOpen ? 'x' : 'list',
       tocLabel: tocOpen ? '목차 닫기' : '목차 열기',
       toggleToc: this.toggleToc,
-      toggleTranslate: this.toggleTranslate,
-      translationActive: t,
-      translationButtonLabel: t ? '영문 원문 보기' : '논문 번역',
-      translationTopBarStyle: `height:32px;display:flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;background:${t ? 'var(--color-bg-paper)' : 'rgba(255,253,247,0.08)'};border:1px solid ${t ? 'var(--color-bg-paper)' : 'rgba(255,253,247,0.18)'};border-radius:8px;color:${t ? 'var(--color-primary)' : 'rgba(255,253,247,0.88)'};padding:0 10px 0 8px;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:600;white-space:nowrap;transition:background 150ms ease,color 150ms ease,border-color 150ms ease`,
-      translationTopBarHoverStyle: t ? `background:var(--color-bg-surface);border-color:var(--color-bg-surface);color:var(--color-primary)` : `background:rgba(255,253,247,0.16);border-color:rgba(255,253,247,0.32);color:var(--color-on-dark)`,
+      cycleTranslationMode: this.cycleTranslationMode,
+      translationActive: showTranslation,
+      translationDisabled: !hasTranslation,
+      translationButtonLabel: translationButtonLabel,
+      translationButtonTitle: hasTranslation ? translationButtonLabel : (sourceLanguage === 'ko' ? '한국어 논문은 번역하지 않습니다' : '이 논문은 번역이 준비되지 않았습니다'),
+      translationTopBarStyle: `height:32px;display:flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;background:${translationBtnBg};border:1px solid ${translationBtnBorder};border-radius:8px;color:${translationBtnColor};opacity:${hasTranslation ? 1 : 0.42};padding:0 10px 0 8px;cursor:${hasTranslation ? 'pointer' : 'not-allowed'};font-family:var(--font-sans);font-size:12px;font-weight:600;white-space:nowrap;transition:background 150ms ease,color 150ms ease,border-color 150ms ease`,
+      translationTopBarHoverStyle: !hasTranslation
+        ? `background:${translationBtnBg};border-color:${translationBtnBorder};color:${translationBtnColor}`
+        : (showTranslation ? `background:var(--color-bg-surface);border-color:var(--color-bg-surface);color:var(--color-primary)` : `background:rgba(255,253,247,0.16);border-color:rgba(255,253,247,0.32);color:var(--color-on-dark)`),
+      sheetWideClass: sideMode ? 'pt-sheet-wide' : '',
+      paperSheetStyle: `width:100%;max-width:${sideMode ? 1320 : 1000}px`,
+      translationModeClass: sideMode ? 'pt-tr-side' : (mode === 'below' ? 'pt-tr-below' : ''),
+      paperContentStyle: `display:flex;flex-direction:column;gap:${mode === 'below' ? 34 : 24}px`,
       topBarRightStyle: `box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 20px;border-left:1px solid rgba(255,253,247,0.14)`,
       chatPanelStyle: `width:${chatWidth}px;box-sizing:border-box;flex-shrink:0;display:flex;flex-direction:column;background:var(--color-bg-paper);border-left:1px solid var(--color-border);overflow:hidden`,
       toggleChat: this.toggleChat,
@@ -1367,7 +1433,7 @@ class Component extends DCLogic {
       onContentAskAction: this.onContentAskAction,
       selectionToolbarRef: this.selectionToolbarRef,
       selectionToolbarVisible: this.state.selectionToolbar.visible,
-      showSelectionTranslate: !this.state.translated,
+      showSelectionTranslate: !showTranslation,
       selectionToolbarStyle: `position:fixed;left:${this.state.selectionToolbar.x}px;top:${this.state.selectionToolbar.y}px;transform:translate(-50%, calc(-100% - 10px));display:inline-flex;background:var(--color-bg-walnut);border-radius:var(--radius-control);box-shadow:var(--shadow-menu);padding:4px;gap:2px;z-index:80`,
       selToolbarBtnStyle: `display:flex;align-items:center;gap:6px;background:transparent;border:none;cursor:pointer;color:var(--color-on-dark);font-family:var(--font-sans);font-size:13px;font-weight:600;padding:8px 12px;border-radius:var(--radius-structural);white-space:nowrap;transition:background 150ms ease`,
       selToolbarBtnHoverStyle: `background:rgba(255,253,247,0.14)`,
