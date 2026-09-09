@@ -1270,7 +1270,7 @@ components:
 
     PaperContentResponse:
       type: object
-      required: [paperId, title, schemaVersion, blocks, assets]
+      required: [paperId, title, sourceLanguage, schemaVersion, blocks, assets]
       description: |
         파싱 본문. 파서 frontend projection이 원본이며, BE는 storage-free 구조를 유지한 채
         수식·표 내용 인라인과 이미지 presigned URL 해석만 더한다 — 뷰어 모델의 소유권은 파서 스키마에 있다.
@@ -1281,6 +1281,10 @@ components:
         title:
           type: [string, "null"]
           description: doc_title 블록의 텍스트. 파서가 제목을 못 찾은 문서는 null — FE는 첫 heading 폴백.
+        sourceLanguage:
+          type: [string, "null"]
+          pattern: '^(?:[a-z]{2}|und)$'
+          description: BE가 검증한 문서 언어. 없거나 무효면 null.
         schemaVersion:
           type: integer
           description: 파서 frontend projection의 schema version.
@@ -1314,7 +1318,8 @@ components:
           description: |
             파서 블록 분류. enum은 닫혀 있다 — 파서 schema 진화로 새 label이 생기면 여기부터 PR로 추가한다.
             - doc_title / paragraph_title: 제목 계열 (headingLevel 존재). TOC 파생 대상
-            - abstract / text / reference_content: 본문 텍스트 계열 (인라인 $...$ LaTeX 포함 가능)
+            - abstract / text / reference_content: 본문 텍스트 계열 (인라인 $...$ LaTeX 포함 가능).
+              reference_content는 참고문헌 항목이라 파서가 번역하지 않으므로 textKor가 오지 않는다
             - figure_title: 그림·표 캡션 텍스트
             - display_formula: 블록 수식 (content.tex)
             - table: 표 (content.html)
@@ -1355,6 +1360,11 @@ components:
         text:
           type: string
           description: 본문 텍스트. 인라인 수식은 $...$ LaTeX로 들어 있을 수 있다.
+        textKor:
+          type: string
+          minLength: 1
+          description: >-
+            영어 문서의 text 블록(참고문헌 제외)에만 존재한다. FE는 이 필드 유무로 번역 존재를 판단한다.
 
     PaperFormulaContent:
       type: object
