@@ -1,18 +1,21 @@
 # BE ↔ AI SQS 메시지 계약
 #
-# - 채널 토폴로지(큐 2개)와 전달 의미론(at-least-once, visibility timeout, DLQ)은
+# - SQS 선택과 전달 의미론(at-least-once, visibility timeout, DLQ)은
 #   decisions/ADR-002-be-ai-messaging-sqs.md가 소유한다.
+# - 파싱과 지식 번들 생성의 채널·payload 계약은 이 문서가 소유한다.
 # - ACK, heartbeat, 재시도와 애플리케이션·인프라 책임은
 #   contracts/backend-ai/sqs/README.md가 설명한다.
 #
 # 이 파일은 OpenAPI/AsyncAPI 문서가 아니다. schemas의 각 항목은 JSON Schema다.
 
-version: 0.2.0
+version: 0.3.0
 
 # wire 규칙
 # - 송신 측과 계약 검증 테스트는 additionalProperties: false를 따른다.
 # - 수신 측은 forward compatibility를 위해 모르는 필드를 관대하게 무시할 수 있다.
-# - 중간 progress 메시지는 없으며 parse-results에는 최종 결과만 발행한다.
+# - 중간 progress 메시지는 없으며 각 result 큐에는 해당 단계의 최종 결과만 발행한다.
+# - 파싱 성공 결과를 BE가 반영한 뒤 knowledge-compile-requests를 발행한다.
+#   지식 번들 생성은 이미 완료된 파싱 결과의 사용 가능 상태를 되돌리지 않는다.
 
 channels:
   parse-requests:
@@ -21,6 +24,12 @@ channels:
   parse-results:
     direction: 파싱 결과 producer → BE
     message: "#/schemas/ParseResult"
+  knowledge-compile-requests:
+    direction: BE → AI
+    message: "#/schemas/KnowledgeCompileRequest"
+  knowledge-compile-results:
+    direction: 지식 번들 생성 결과 producer → BE
+    message: "#/schemas/KnowledgeCompileResult"
 
 schemas:
   ParseRequest:
@@ -96,6 +105,89 @@ schemas:
           - PAPER_ID_INVALID
           - DOCUMENT_SOURCE_NOT_FOUND
           - PARSE_RETRIES_EXHAUSTED
+      message:
+        type: string
+        minLength: 1
+        description: 사람이 읽을 수 있는 실패 설명. 분기에는 code를 사용한다.
+
+  KnowledgeCompileRequest:
+    type: object
+    required: [paper_id, manifest_key]
+    additionalProperties: false
+    properties:
+      paper_id:
+        type: string
+        minLength: 1
+        description: >-
+          원본 ParseRequest와 KnowledgeCompileResult를 같은 Paper에 연결하는
+          상관관계 키. AI worker가 안전하게 처리할 수 있도록 빈 문자열, 절대 경로,
+          슬래시, 역슬래시, 단일 점(.)과 이중 점(..)은 허용하지 않는다.
+      manifest_key:
+        type: string
+        minLength: 1
+        description: >-
+          ParseCompletedResult.manifest_key로 받은 파싱 패키지 manifest의 불투명한
+          S3 object key. AI는 이 값을 그대로 GetObject에 사용하며 paper_id로
+          키를 재조합하지 않는다. URL이나 bucket 이름을 포함하지 않는다.
+
+  KnowledgeCompileResult:
+    oneOf:
+      - $ref: "#/schemas/KnowledgeCompileCompletedResult"
+      - $ref: "#/schemas/KnowledgeCompileFailedResult"
+
+  KnowledgeCompileCompletedResult:
+    type: object
+    required: [paper_id, status, message, manifest_key]
+    additionalProperties: false
+    properties:
+      paper_id:
+        type: string
+        minLength: 1
+        description: 대응하는 KnowledgeCompileRequest의 paper_id.
+      status:
+        const: completed
+      message:
+        type: string
+        minLength: 1
+        description: 사람이 읽을 수 있는 완료 설명. 상태 판정에는 사용하지 않는다.
+      manifest_key:
+        type: string
+        minLength: 1
+        description: >-
+          KnowledgeCompileRequest.manifest_key로 받은 중앙 document package
+          manifest.json의 S3 object key. ParseCompletedResult와 같은 필드명을
+          사용하며 별도의 지식 번들 manifest를 가리키지 않는다. URL이나 bucket
+          이름을 포함하지 않는다. completed 결과가 발행된 시점에는 모든 compile
+          산출물 저장과 compile artifact가 추가된 중앙 manifest의 재발행이 완료되어
+          있으므로, 이 key를 지식 번들 준비 완료의 publication marker로 사용한다.
+
+  KnowledgeCompileFailedResult:
+    type: object
+    required: [paper_id, status, error]
+    additionalProperties: false
+    properties:
+      paper_id:
+        type: string
+        minLength: 1
+        description: 대응하는 KnowledgeCompileRequest의 paper_id.
+      status:
+        const: failed
+      error:
+        $ref: "#/schemas/KnowledgeCompileError"
+
+  KnowledgeCompileError:
+    type: object
+    required: [code, message]
+    additionalProperties: false
+    properties:
+      code:
+        type: string
+        enum:
+          - MANIFEST_KEY_INVALID
+          - PAPER_ID_INVALID
+          - PARSED_DOCUMENT_NOT_FOUND
+          - PARSED_DOCUMENT_INVALID
+          - KNOWLEDGE_COMPILE_RETRIES_EXHAUSTED
       message:
         type: string
         minLength: 1
