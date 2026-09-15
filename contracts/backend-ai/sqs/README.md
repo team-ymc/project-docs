@@ -23,7 +23,8 @@
    같은 `paper_id`와 받은 `manifest_key`로 `knowledge-compile-requests`를 발행한다.
 4. knowledge compile worker는 지식 번들 산출물을 모두 저장한 뒤, 요청으로 받은
    중앙 `manifest_key`를 포함해 `knowledge-compile-results`를 발행하고 요청을 ACK한다.
-5. BE는 knowledge compile 완료 결과를 반영한 뒤에만 지식 번들 기능을 활성화한다.
+5. BE는 knowledge compile 완료 결과를 반영한 뒤에만 전체 번역과 지식 번들 기능을
+   활성화한다. 전체 번역 사이드카는 파싱이 아니라 이 단계의 산출물이다.
 
 knowledge compile 성공 결과의 `manifest_key`는 최초 파싱 성공 결과와 같은 중앙
 `manifest.json`을 가리킨다. 별도의 지식 번들 manifest는 생성하지 않는다. 모든
@@ -34,7 +35,13 @@ compile 산출물을 저장한 뒤 중앙 manifest를 마지막으로 다시 발
 
 지식 번들 생성은 기존 파싱의 후속 작업이지만 별도의 요청·결과·재시도
 주기를 갖는다. 지식 번들 생성이 진행 중이거나 실패해도 이미 완료된
-파싱 패키지의 사용 가능 상태를 되돌리지 않는다.
+파싱 패키지의 사용 가능 상태를 되돌리지 않는다. 파싱 패키지를 다시 생성하면
+사이드카와 지식 번들이 함께 제거되므로, BE는 재파싱 완료 뒤
+`knowledge-compile-requests`를 다시 발행한다.
+
+BE는 컴파일 `failed` 결과를 받으면 컴파일 상태와 실패 코드를 기록하고 전체 번역과
+지식 번들을 비활성으로 둔다. 문서의 파싱 상태는 바꾸지 않는다. 같은 `manifest_key`로
+자동 재요청하지 않으며, 다시 시도하려면 재파싱 경로를 탄다.
 
 ### 클라이언트와 QueueUrl
 
@@ -115,5 +122,6 @@ SQS가 재시도 소진 요청을 request DLQ로 이동시키면 Lambda가 해�
 | 주체 | 권한 |
 |---|---|
 | BE | `GetQueueUrl`, 두 요청 큐 `SendMessage`, 두 결과 큐 `ReceiveMessage`·`DeleteMessage` |
-| AI | `GetQueueUrl`, 두 요청 큐 `ReceiveMessage`·`DeleteMessage`·`ChangeMessageVisibility`, 두 결과 큐 `SendMessage` |
+| 파서 워커 | `GetQueueUrl`, `parse-requests` `ReceiveMessage`·`DeleteMessage`·`ChangeMessageVisibility`, `parse-results` `SendMessage` |
+| 컴파일 워커 | `GetQueueUrl`, `knowledge-compile-requests` `ReceiveMessage`·`DeleteMessage`·`ChangeMessageVisibility`, `knowledge-compile-results` `SendMessage` |
 | Lambda | 두 request DLQ 소비, 해당 결과 큐 `SendMessage` |
