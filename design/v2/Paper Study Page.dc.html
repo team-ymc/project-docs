@@ -459,7 +459,7 @@
 </div>
 
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"translationMode":{"editor":"enum","options":["off","below","side"],"default":"off","section":"전체 번역"},"sourceLanguage":{"editor":"enum","options":["en","ko","und"],"default":"en","section":"전체 번역"},"chat":{"editor":"enum","options":["open","collapsed"],"default":"open","section":"레이아웃"},"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"translationMode":{"editor":"enum","options":["off","below","side"],"default":"off","section":"전체 번역"},"translationStatus":{"editor":"enum","options":["not_applicable","pending","ready","failed"],"default":"ready","section":"전체 번역"},"chat":{"editor":"enum","options":["open","collapsed"],"default":"open","section":"레이아웃"},"$preview":{"width":1440,"height":900}}'>
 const MAX_COMPOSER_CONTEXTS = 5;
 const CONTEXT_COLLAPSE_COUNT = 2;
 
@@ -1119,8 +1119,8 @@ class Component extends DCLogic {
     return ['off','below','side'].indexOf(fromProps) >= 0 ? fromProps : 'off';
   }
 
-  // 계약상 번역 존재는 textKor 유무로 판단한다. 이 목업은 sourceLanguage로 대신한다.
-  hasTranslation(){ return String(this.props.sourceLanguage) === 'en'; }
+  // 계약의 translationStatus가 ready일 때만 번역이 있다.
+  hasTranslation(){ return String(this.props.translationStatus) === 'ready'; }
 
   effectiveTranslationMode(){ return this.hasTranslation() ? this.translationMode() : 'off'; }
 
@@ -1262,7 +1262,8 @@ class Component extends DCLogic {
   renderVals(){
     const sourceBlocks = this.state.paperBlocks;
     const translationBlocks = (this.state.translations && this.state.translations.blocks) || {};
-    const sourceLanguage = String(this.props.sourceLanguage);
+    const translationStatus = String(this.props.translationStatus);
+    const translationUnavailableTitle = { not_applicable: '한국어 논문은 번역하지 않습니다', pending: '번역을 준비하고 있습니다', failed: '번역 생성에 실패했습니다' }[translationStatus] || '이 논문은 번역이 준비되지 않았습니다';
     const hasTranslation = this.hasTranslation();
     const mode = this.effectiveTranslationMode();
     const sideMode = mode === 'side';
@@ -1389,7 +1390,7 @@ class Component extends DCLogic {
       translationActive: showTranslation,
       translationDisabled: !hasTranslation,
       translationButtonLabel: translationButtonLabel,
-      translationButtonTitle: hasTranslation ? translationButtonLabel : (sourceLanguage === 'ko' ? '한국어 논문은 번역하지 않습니다' : '이 논문은 번역이 준비되지 않았습니다'),
+      translationButtonTitle: hasTranslation ? translationButtonLabel : translationUnavailableTitle,
       translationTopBarStyle: `height:32px;display:flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;background:${translationBtnBg};border:1px solid ${translationBtnBorder};border-radius:8px;color:${translationBtnColor};opacity:${hasTranslation ? 1 : 0.42};padding:0 10px 0 8px;cursor:${hasTranslation ? 'pointer' : 'not-allowed'};font-family:var(--font-sans);font-size:12px;font-weight:600;white-space:nowrap;transition:background 150ms ease,color 150ms ease,border-color 150ms ease`,
       translationTopBarHoverStyle: !hasTranslation
         ? `background:${translationBtnBg};border-color:${translationBtnBorder};color:${translationBtnColor}`
