@@ -6,7 +6,7 @@
 - Status: Accepted
 - Deciders: 근흐흐
 - Tracking: FT-003 논문 등록 · 분석 (Story 3·5) / YMC-182
-- Implements: SQS 채널 토폴로지와 전달 의미론은 이 ADR이 소유한다. BE↔AI HTTP API와 그 request/response schema는 `contracts/backend-ai/openapi.yml`을 따른다.
+- Implements: SQS 선택과 전달 의미론은 이 ADR이 소유한다. 채널 목록과 payload는 `contracts/backend-ai/sqs/messaging.yml`을 따르고, BE↔AI HTTP API와 그 request/response schema는 `contracts/backend-ai/openapi.yml`을 따른다.
 - Related: ADR-001 (PDF 업로드 presigned URL)
 
 ## 2. Context
@@ -232,6 +232,12 @@ SQS와 같은 큐 의미론(1 메시지 → 1 컨슈머, ack · 재전달)을 �
 - **워커 오토스케일링 트리거는 큐 길이로 한다** (오토스케일링 도입 시).
 
 ## 6. Updates
+
+- **2026-09-14** — 파싱 후속으로 지식 컴파일 단계가 생겨 `knowledge-compile-requests`·
+  `knowledge-compile-results`와 각 DLQ가 추가됐다. 채널 목록 소유를
+  `contracts/backend-ai/sqs/messaging.yml`로 옮기고 이 ADR은 SQS 선택과 전달
+  의미론만 소유한다. 컴파일 요청 DLQ의 최종 실패도 같은 Lambda가
+  `KNOWLEDGE_COMPILE_RETRIES_EXHAUSTED`로 발행한다. 결정(§3)은 변경 없음.
 
 - **2026-07-30** — DLQ에 연결된 Lambda가 `PARSE_RETRIES_EXHAUSTED` 결과를
   `parse-results`에 발행하도록 결정했다.
