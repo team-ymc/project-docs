@@ -18,14 +18,13 @@ Paper Teacher의 제품 역량을 독립적으로 개발·검증 가능한 featu
 
 ### Source Of Truth
 
-- Userflow: `userflows/userflow-spec.md`
-- Wireframe: `wireframes/wireframe-spec.md`
+- 화면 구조와 상태: `design/v2/README.md`
 - Feature 양식: `features/features_format.md`
 
 ### Authoring Rule
 
-- UF가 있는 feature는 해당 UF Step을 `Source Userflows`로 추적해 작성한다.
-- UF가 아직 없는 feature는 `Not Started`로 틀만 두고 `Source Userflows: TBD`로 둔다. (feature 선행, UF는 추후 보강)
+- `Source Userflows`는 Userflow가 유지되던 시기의 참조 기록이다. Userflow는 `deprecated/userflows/`로 옮겼고 새로 쓰지 않는다.
+- 새 feature는 `Source Userflows`를 `-`로 두고 Story 근거를 `design/v2` 아트보드로 적는다.
 
 ## 3. Feature Registry
 

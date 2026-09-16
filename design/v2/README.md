@@ -65,7 +65,5 @@ Paper Teacher v2의 화면 디자인과 디자인 시스템 산출물 인덱스�
 ## Related Documentation
 
 - 디자인 버전 인덱스: [Design](../README.md)
-- 화면 구조와 상태: [Wireframes](../../wireframes/README.md)
-- 사용자 행동 흐름: [Userflows](../../userflows/README.md)
 - 플랜·사용량 제한 기능: [FT-011](../../features/FT-011-플랜-사용량-제한.md)
 - 전체 번역 기능: [FT-005](../../features/FT-005-전체-번역.md)

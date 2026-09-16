@@ -34,13 +34,14 @@
 
 - <제외 역량> → FT-XXX / 후속(post-MVP)
 
-## 3. Userflow References
+## 3. Screen References
 
-> **역할:** 이 feature가 직접 구현하는 Userflow를 추적한다. UF가 아직 없으면 행을 `TBD`로 둔다.
+> **역할:** 이 feature의 Story가 근거로 삼는 `design/v2` 아트보드와 상태. 화면이 없는 feature는 표를 비우고 `-`로 둔다.
+> 기존 문서의 `3. Userflow References`는 그대로 둔다.
 
-| Userflow | Relation |
-|---|---|
-| UF-XXX <Flow Name> | 이 Feature가 직접 구현하는 flow |
+| 화면 | 상태 · 트윅 | Relation |
+|---|---|---|
+| Paper Study Page | `translationMode=side` | 이 Feature가 구현하는 상태 |
 
 ## 4. Stories
 
@@ -53,8 +54,8 @@
 > 제목 옆 `MVP` 태그 = MVP 범위에 포함되는 Story.
 
 - type: USER / SYSTEM
-- Source Userflows: <UF-XXX Step N, UF-YYY Step N-M>
-  > 이 Story의 근거가 되는 UF Step. UF 없으면 `TBD`.
+- Source: <화면> (<트윅>=<값>)
+  > 3장 표에 있는 항목만 쓴다. 예: `Paper Study Page (translationMode=below)`. 화면 없는 SYSTEM Story는 `-`.
 - Acceptance Criteria:
   - <관찰 가능한 동작·상태·룰>
   > 이 Story가 "완료됐다"고 인정할 **관찰 가능한 조건**으로 테스트/QA 케이스가 될 수 있다.
