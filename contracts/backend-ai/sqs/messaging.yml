@@ -3,12 +3,12 @@
 # - SQS 선택과 전달 의미론(at-least-once, visibility timeout, DLQ)은
 #   decisions/ADR-002-be-ai-messaging-sqs.md가 소유한다.
 # - 파싱과 지식 번들 생성의 채널·payload 계약은 이 문서가 소유한다.
-# - ACK, heartbeat, 재시도와 애플리케이션·인프라 책임은
+# - 요청 삭제, heartbeat, 재시도와 애플리케이션·인프라 책임은
 #   contracts/backend-ai/sqs/README.md가 설명한다.
 #
 # 이 파일은 OpenAPI/AsyncAPI 문서가 아니다. schemas의 각 항목은 JSON Schema다.
 
-version: 0.3.0
+version: 0.4.0
 
 # wire 규칙
 # - 송신 측과 계약 검증 테스트는 additionalProperties: false를 따른다.
@@ -104,6 +104,10 @@ schemas:
           - FILE_KEY_INVALID
           - PAPER_ID_INVALID
           - DOCUMENT_SOURCE_NOT_FOUND
+          - PADDLEOCR_REQUEST_REJECTED
+          - PADDLEOCR_PARSING_FAILED
+          - PADDLEOCR_TEMPORARILY_UNAVAILABLE
+          - PADDLEOCR_DAILY_QUOTA_EXHAUSTED
           - PARSE_RETRIES_EXHAUSTED
       message:
         type: string
