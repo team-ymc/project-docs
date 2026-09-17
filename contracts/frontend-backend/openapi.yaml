@@ -1547,7 +1547,7 @@ components:
         - READY: viz.html을 열 수 있다. GET /api/papers/{paperId}/knowledge-graph가 URL을 준다
         - FAILED: 컴파일 실패 또는 산출물 없음. 자동으로 다시 요청하지 않는다
 
-        FE는 학습 화면에서 PENDING일 때만 status를 폴링한다. 서재에는 이 값을 표시하지 않는다.
+        FE는 학습·지식 그래프 화면에서 PENDING일 때만 status를 폴링한다. 서재에는 이 값을 표시하지 않는다.
       enum: [PENDING, READY, FAILED]
 
     ChatMessageStreamRequest:
