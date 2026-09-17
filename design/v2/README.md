@@ -9,6 +9,7 @@ Paper Teacher v2의 화면 디자인과 디자인 시스템 산출물 인덱스�
 | Landing Page | [Paper Landing Page](Paper%20Landing%20Page.dc.html) |
 | Bookshelf Page | [Paper Bookshelf Page](Paper%20Bookshelf%20Page.dc.html) |
 | Study Page | [Paper Study Page](Paper%20Study%20Page.dc.html) |
+| Knowledge Graph Page | [Paper Knowledge Graph Page](Paper%20Knowledge%20Graph%20Page.dc.html) |
 
 ## Screen States — 플랜·사용량 (FT-011 / YMC-348)
 
@@ -55,6 +56,17 @@ Paper Teacher v2의 화면 디자인과 디자인 시스템 산출물 인덱스�
 | 랜딩 · 비로그인 + 상단 바 메뉴 | [Paper Landing Page - GNB](Paper%20Landing%20Page%20-%20GNB.dc.html) | 히어로는 그대로, 상단 바에 메뉴와 로그인 버튼을 얹는다. |
 | 서재 · 로그인 + 상단 바 메뉴 | [Paper Bookshelf Page - GNB](Paper%20Bookshelf%20Page%20-%20GNB.dc.html) | 상단 바 왼쪽에 메뉴, 오른쪽은 플랜 배지·프로필 버튼. |
 | 준비 중 페이지 | [Paper Coming Soon Page](Paper%20Coming%20Soon%20Page.dc.html) | 플랜·기능 공용. 섹션 라벨(`Plans`/`Features`)과 강조 메뉴만 다르고, 돌아가기 링크는 로그인 시 서재·비로그인 시 랜딩. |
+
+## Screen States — 지식 그래프 (FT-009 / YMC-394)
+
+학습 화면 상단 바의 `본문 | 지식 그래프` 쌍으로 여는 별도 화면이다. 상단 바 아래 전체가 AI 컴파일 워커가 만든 단독 HTML(`knowledge-bundle/viz.html`)의 iframe이고, 그래프·섹션 리더·번역 토글은 viz.html 자체 기능이다. 아트보드의 iframe은 YMC-372 산출물 사본 `knowledge-graph/ymc372/viz.html`을 가리킨다. 옛 `knowledge-graph/0.0v3/`는 자체 상단 바가 있는 구 디자인이라 더 이상 참조하지 않는다.
+
+| 상태 | 파일 | 요약 |
+|---|---|---|
+| 지식 그래프 화면 | [Paper Knowledge Graph Page](Paper%20Knowledge%20Graph%20Page.dc.html) | 상단 바는 학습 화면과 같되 `지식 그래프`가 눌린 상태(`aria-current="page"`, `--color-on-dark` 배경)이고 `번역`·야간 모드 버튼은 없다. |
+| 학습 · 상단 바 쌍 | [Paper Study Page](Paper%20Study%20Page.dc.html) | 제목 오른쪽 `본문(눌림) | 지식 그래프` 쌍. `지식 그래프`는 컴파일 완료 전 비활성이며 툴팁은 준비 중 "지식 그래프를 준비하고 있습니다", 실패 "지식 그래프를 준비하지 못했습니다". |
+
+데이터는 `GET /api/papers/{paperId}/status`의 `knowledgeGraphStatus`(PENDING/READY/FAILED/null)와 `GET /api/papers/{paperId}/knowledge-graph`(`contracts/frontend-backend/openapi.yaml` 0.7.0)를 따른다. READY일 때만 URL을 받아 iframe `src`로 넣는다. 준비되지 않은 상태로 URL 진입하면 캔버스 자리에 툴팁과 같은 문구와 `본문으로` 링크를 보여준다.
 
 ## Design System
 
