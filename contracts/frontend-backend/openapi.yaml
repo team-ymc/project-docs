@@ -6,7 +6,8 @@ info:
 
     - Source: features/FT-002-서재.md, features/FT-003-논문-등록-분석.md,
       features/FT-004-논문-학습-뷰어.md, features/FT-006-인라인-액션.md,
-      features/FT-007-ai-튜터-채팅.md, features/FT-011-플랜-사용량-제한.md
+      features/FT-007-ai-튜터-채팅.md, features/FT-011-플랜-사용량-제한.md,
+      features/FT-009-구조-맵.md
     - ADR: decisions/ADR-001-pdf-upload-presigned-url.md,
       decisions/ADR-003-paper-id-and-duplicate-check.md,
       decisions/ADR-004-chat-streaming-be-relay.md,
@@ -15,7 +16,7 @@ info:
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
     - BE↔AI 인라인 번역 스트림: contracts/backend-ai/sse/inline-translate-agent-run-stream.yml
 
-  version: 0.6.0
+  version: 0.7.0
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -444,6 +445,52 @@ paths:
               schema: { $ref: "#/components/schemas/Error" }
         "409":
           description: 연결된 Document의 대표 원본을 확인할 수 없음(UPLOAD_PENDING/EXPIRED). code UPLOAD_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/papers/{paperId}/knowledge-graph:
+    get:
+      operationId: getKnowledgeGraphView
+      summary: 지식 그래프 viz.html을 여는 presigned GET URL 발급
+      description: |
+        컴파일이 만든 지식 그래프 HTML(knowledge-bundle/viz.html)을 여는 presigned GET URL을 발급한다 (FT-009 Story 2).
+        BE는 paperId의 소유권과 준비 상태만 검증하고 HTML 본문은 S3에서 직접 받는다 — 파일 바이트는 BE를 거치지 않는다
+        (ADR-001, 다운로드와 대칭). Content-Disposition을 싣지 않아 브라우저가 인라인으로 렌더한다.
+        FE는 이 URL을 iframe src로 쓴다. 만료 전에 로드가 끝나면 이후 만료는 표시에 영향이 없고, 화면에 다시 들어오면
+        새로 호출한다.
+
+        가용 조건은 `knowledgeGraphStatus`가 READY다. 그 외(PENDING·FAILED·Document 연결 전)는 409.
+        FE는 학습 화면 상단 바의 `지식 그래프` 버튼을 READY일 때만 활성으로 두므로 이 409는 방어선이다.
+      tags: [papers]
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: presigned GET URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KnowledgeGraphView" }
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: 존재하지 않는 paperId. code PAPER_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: knowledgeGraphStatus가 READY가 아님(PENDING·FAILED·Document 연결 전). code KNOWLEDGE_GRAPH_NOT_READY
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -1268,6 +1315,20 @@ components:
           format: date-time
           description: presigned URL 만료 시각.
 
+    KnowledgeGraphView:
+      type: object
+      required: [url, expiresAt]
+      description: 지식 그래프 viz.html을 여는 presigned GET URL. FE는 iframe src로 쓴다.
+      properties:
+        url:
+          type: string
+          format: uri
+          description: S3 presigned GET URL. Content-Disposition을 싣지 않아 인라인으로 렌더된다.
+        expiresAt:
+          type: string
+          format: date-time
+          description: presigned URL 만료 시각. 로드가 끝난 뒤의 만료는 표시에 영향이 없다.
+
     PaperContentResponse:
       type: object
       required: [paperId, title, sourceLanguage, translationStatus, schemaVersion, blocks, assets]
@@ -1417,7 +1478,7 @@ components:
 
     PaperStatusResponse:
       type: object
-      required: [paperId, status, updatedAt, translationStatus]
+      required: [paperId, status, updatedAt, translationStatus, knowledgeGraphStatus]
       properties:
         paperId:
           type: string
@@ -1427,10 +1488,17 @@ components:
           $ref: "#/components/schemas/PaperStatus"
         translationStatus:
           $ref: "#/components/schemas/TranslationStatus"
+        knowledgeGraphStatus:
+          oneOf:
+            - $ref: "#/components/schemas/KnowledgeGraphStatus"
+            - type: "null"
+          description: |
+            Document 연결 전(UPLOAD_PENDING·EXPIRED)에는 null. 컴파일 상태를 판단할 근거가 아직 없다는 뜻이며
+            FE는 null이면 폴링하지 않는다.
         updatedAt:
           type: string
           format: date-time
-          description: 파싱 상태가 마지막으로 바뀐 시각. 번역 상태 변화는 반영하지 않는다.
+          description: 파싱 상태가 마지막으로 바뀐 시각. 번역·지식 그래프 상태 변화는 반영하지 않는다.
 
     PaperStatus:
       type: string
@@ -1468,6 +1536,19 @@ components:
         FE는 학습 화면에서 PENDING일 때만 status를 폴링하고, READY가 되면 content를 다시 조회한다.
         서재에는 이 값을 표시하지 않는다.
       enum: [NOT_APPLICABLE, PENDING, READY, FAILED]
+
+    KnowledgeGraphStatus:
+      type: string
+      description: |
+        지식 그래프(viz.html) 준비 상태. 파싱 `status`·`translationStatus`와 별개다 — 컴파일이 만드는 산출물 중
+        번역과 지식 그래프는 같은 결과 메시지로 오지만 한국어 논문처럼 번역은 NOT_APPLICABLE이어도 지식 그래프는 있다.
+
+        - PENDING: 컴파일 요청 전이거나 진행 중
+        - READY: viz.html을 열 수 있다. GET /api/papers/{paperId}/knowledge-graph가 URL을 준다
+        - FAILED: 컴파일 실패 또는 산출물 없음. 자동으로 다시 요청하지 않는다
+
+        FE는 학습·지식 그래프 화면에서 PENDING일 때만 status를 폴링한다. 서재에는 이 값을 표시하지 않는다.
+      enum: [PENDING, READY, FAILED]
 
     ChatMessageStreamRequest:
       type: object
@@ -2090,6 +2171,7 @@ components:
             - CHAT_CONCURRENCY_LIMIT_EXCEEDED: 사용자 전체 동시 AI 실행 상한 초과 (429)
             - TRANSLATION_IN_PROGRESS  : 사용자의 다른 인라인 번역이 아직 생성 중 (409)
             - PAPER_USAGE_LIMIT_EXCEEDED: 문서 등록 사용량 제한 초과 (429)
+            - KNOWLEDGE_GRAPH_NOT_READY: 지식 그래프가 아직 준비되지 않음 (409, knowledge-graph)
           enum:
             [
               VALIDATION_ERROR,
@@ -2111,6 +2193,7 @@ components:
               CHAT_CONCURRENCY_LIMIT_EXCEEDED,
               TRANSLATION_IN_PROGRESS,
               PAPER_USAGE_LIMIT_EXCEEDED,
+              KNOWLEDGE_GRAPH_NOT_READY,
             ]
         message:
           type: string

@@ -38,7 +38,7 @@ Paper Teacher의 제품 역량을 독립적으로 개발·검증 가능한 featu
 | FT-006 | 인라인 액션 | FT-004 | UF-005 | In Progress | features/FT-006-인라인-액션.md |
 | FT-007 | AI 튜터 채팅 | FT-004 | UF-003 | In Progress | features/FT-007-ai-튜터-채팅.md |
 | FT-008 | 위키 생성 | FT-003 | TBD | Not Started | features/FT-008-위키-생성.md |
-| FT-009 | 구조 맵 | FT-003 | TBD | Not Started | features/FT-009-구조-맵.md |
+| FT-009 | 구조 맵 | FT-003, FT-004 | - | In Progress | features/FT-009-구조-맵.md |
 | FT-010 | 학습 기록 저장 | FT-001, FT-004 | TBD | Not Started | features/FT-010-학습-기록.md |
 | FT-011 | 플랜·사용량 제한 | FT-001, FT-003, FT-007 | UF-002, UF-003 | In Progress | features/FT-011-플랜-사용량-제한.md |
 

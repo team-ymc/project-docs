@@ -86,6 +86,9 @@
     .pt-tr-below .pt-tr-cell{border-left:2px solid var(--color-primary-subtle);padding-left:18px;margin-top:8px}
     .pt-student-msg div{background:var(--color-bg-surface) !important;color:var(--color-text-body) !important;border:none !important;border-radius:14px 14px 4px 14px !important;padding:11px 15px !important}
     @media(max-width:800px){.pt-paper-content .pt-author-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    .pt-topbar-btn{height:32px;display:flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;background:rgba(255,253,247,0.08);border:1px solid rgba(255,253,247,0.22);border-radius:8px;color:var(--color-on-dark);padding:0 10px 0 8px;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
+    .pt-topbar-btn:hover{background:rgba(255,253,247,0.14)}
+    .pt-topbar-btn[aria-current="page"]{background:var(--color-on-dark);color:var(--color-bg-walnut);border-color:var(--color-on-dark)}
   </style>
 </helmet>
 
@@ -105,7 +108,11 @@
       <div style="width:1px;height:18px;background:rgba(255,253,247,0.18);flex-shrink:0"></div>
       <div style="font-family:var(--font-serif);font-size:15px;font-weight:600;color:var(--color-on-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;opacity:0.92">{{ paperTitle }}</div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
-        <a href="./knowledge-graph/0.0v3/viz.html" aria-label="지식 그래프" title="지식 그래프" style="height:32px;display:flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;background:rgba(255,253,247,0.08);border:1px solid rgba(255,253,247,0.18);border-radius:8px;color:rgba(255,253,247,0.88);padding:0 10px 0 8px;cursor:pointer;font-family:var(--font-sans);font-size:12px;font-weight:600;white-space:nowrap;text-decoration:none;transition:background 150ms ease,color 150ms ease,border-color 150ms ease" style-hover="background:rgba(255,253,247,0.16);border-color:rgba(255,253,247,0.32);color:var(--color-on-dark)">
+        <a href="#" class="pt-topbar-btn" aria-current="page" aria-label="본문" title="본문">
+          <i class="ph ph-book-open" style="font-size:17px"></i>
+          <span>본문</span>
+        </a>
+        <a href="./Paper%20Knowledge%20Graph%20Page.dc.html" class="pt-topbar-btn" aria-label="지식 그래프" title="지식 그래프">
           <svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.45;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0">
             <path d="M5.2 6.6 10.7 4M13.2 4.4l5 3.1M5.5 8.7l2.2 6M10 15.8l6.1 1M18.4 9.5l-.9 5M9 14.6l2.5-8.4M12.9 6.2l3.9 1.9M9.7 16.8l2.3 2.1M16.1 17.8l-2.2 1.4"></path>
             <circle cx="4.5" cy="7.6" r="2"></circle>
