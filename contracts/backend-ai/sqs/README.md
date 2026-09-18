@@ -18,11 +18,11 @@
 
 1. BE가 `parse-requests`를 발행한다.
 2. 파싱 worker는 기존 파싱 패키지와 `manifest.json`을 완성하고
-   `parse-results`를 발행한 뒤 요청을 ACK한다.
+   `parse-results`를 발행한 뒤 원본 SQS 요청을 삭제한다.
 3. BE는 파싱 완료 결과를 반영해 기존 문서 기능을 사용 가능하게 한 뒤,
    같은 `paper_id`와 받은 `manifest_key`로 `knowledge-compile-requests`를 발행한다.
 4. knowledge compile worker는 지식 번들 산출물을 모두 저장한 뒤, 요청으로 받은
-   중앙 `manifest_key`를 포함해 `knowledge-compile-results`를 발행하고 요청을 ACK한다.
+   중앙 `manifest_key`를 포함해 `knowledge-compile-results`를 발행하고 원본 SQS 요청을 삭제한다.
 5. BE는 knowledge compile 완료 결과를 반영한 뒤에만 전체 번역과 지식 번들 기능을
    활성화한다. 전체 번역 사이드카는 파싱이 아니라 이 단계의 산출물이다.
 
@@ -84,8 +84,8 @@ endpoint를 지정하지 않고 ECS task role이나 EKS workload role을 사용�
 | `GetQueueUrl` | queue name으로 QueueUrl을 조회하는 SQS API다. 최초 한 번 조회한 뒤 캐시한다. |
 | `QueueUrl` | `SendMessage`, `ReceiveMessage`, `DeleteMessage`, `ChangeMessageVisibility`의 대상 큐를 지정한다. |
 | `SendMessage` | 계약 형식의 요청 또는 결과를 대상 큐에 발행한다. |
-| `ReceiveMessage` | 메시지를 수신한다. 수신만으로 ACK되거나 삭제되지는 않는다. |
-| `DeleteMessage` | 처리가 끝난 메시지를 ACK한다. AI는 결과 발행 후, BE는 결과 반영 후 호출한다. |
+| `ReceiveMessage` | 메시지를 수신한다. 수신만으로 처리 완료되거나 삭제되지는 않는다. |
+| `DeleteMessage` | 처리가 끝난 원본 SQS 요청을 삭제한다. AI는 결과 발행 후, BE는 결과 반영 후 호출한다. |
 | `ChangeMessageVisibility` | 장기 작업의 visibility를 연장하는 heartbeat로 사용한다. |
 | `ReceiptHandle` | `DeleteMessage`와 `ChangeMessageVisibility`에 가장 최근 수신 값을 사용한다. |
 | `WaitTimeSeconds` | long polling 대기 시간이다. HTTP read timeout은 이 값보다 길게 둔다. |
@@ -94,12 +94,14 @@ endpoint를 지정하지 않고 ECS task role이나 EKS workload role을 사용�
 
 ### 실패·재시도 처리 원칙
 
-1. 일시 실패에서는 결과를 발행하거나 원본 요청을 삭제하지 않는다.
-2. 확정 실패는 해당 단계의 result 큐에 `failed` 결과 발행을 성공한 뒤 원본
+1. worker 또는 인프라의 일시 실패에서는 결과를 발행하거나 원본 요청을 삭제하지 않는다.
+2. provider 실패는 worker 내부 재시도와 credential fallback을 소진하면, 이후 새 요청이
+   성공할 수 있는 실패라도 해당 요청의 확정 실패로 처리할 수 있다.
+3. 확정 실패는 해당 단계의 result 큐에 `failed` 결과 발행을 성공한 뒤 원본
    요청을 삭제한다. Consumer는 결과 발행 주체와 관계없이 `completed`와 `failed`를
    해당 result consumer에서 처리한다.
-3. 앱은 재시도 횟수나 마지막 시도를 판단하지 않는다. `ApproximateReceiveCount`, DLQ
-URL·ARN과 `maxReceiveCount`도 애플리케이션 설정으로 받지 않는다.
+4. 앱은 SQS 재시도 횟수나 마지막 시도를 판단하지 않는다. `ApproximateReceiveCount`, DLQ
+   URL·ARN과 `maxReceiveCount`도 애플리케이션 설정으로 받지 않는다.
     - 즉 DLQ의 존재를 애플리케이션은 모른다.
 
 ## 인프라
