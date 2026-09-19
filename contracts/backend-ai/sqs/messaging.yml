@@ -8,7 +8,7 @@
 #
 # 이 파일은 OpenAPI/AsyncAPI 문서가 아니다. schemas의 각 항목은 JSON Schema다.
 
-version: 0.4.0
+version: 0.5.0
 
 # wire 규칙
 # - 송신 측과 계약 검증 테스트는 additionalProperties: false를 따른다.
@@ -141,7 +141,12 @@ schemas:
 
   KnowledgeCompileCompletedResult:
     type: object
-    required: [paper_id, status, message, manifest_key]
+    required:
+      - paper_id
+      - status
+      - message
+      - manifest_key
+      - estimated_cost_usd
     additionalProperties: false
     properties:
       paper_id:
@@ -164,10 +169,16 @@ schemas:
           이름을 포함하지 않는다. completed 결과가 발행된 시점에는 모든 compile
           산출물 저장과 compile artifact가 추가된 중앙 manifest의 재발행이 완료되어
           있으므로, 이 key를 지식 번들 준비 완료의 publication marker로 사용한다.
+      estimated_cost_usd:
+        $ref: "#/schemas/KnowledgeCompileEstimatedCostUsd"
 
   KnowledgeCompileFailedResult:
     type: object
-    required: [paper_id, status, error]
+    required:
+      - paper_id
+      - status
+      - error
+      - estimated_cost_usd
     additionalProperties: false
     properties:
       paper_id:
@@ -178,6 +189,8 @@ schemas:
         const: failed
       error:
         $ref: "#/schemas/KnowledgeCompileError"
+      estimated_cost_usd:
+        $ref: "#/schemas/KnowledgeCompileEstimatedCostUsd"
 
   KnowledgeCompileError:
     type: object
@@ -191,8 +204,16 @@ schemas:
           - PAPER_ID_INVALID
           - PARSED_DOCUMENT_NOT_FOUND
           - PARSED_DOCUMENT_INVALID
+          - LLM_RATE_LIMITED
           - KNOWLEDGE_COMPILE_RETRIES_EXHAUSTED
       message:
         type: string
         minLength: 1
         description: 사람이 읽을 수 있는 실패 설명. 분기에는 code를 사용한다.
+
+  KnowledgeCompileEstimatedCostUsd:
+    type: [string, "null"]
+    pattern: "^[0-9]+\\.[0-9]{8}$"
+    description: >-
+      현재 SQS delivery attempt의 예상 USD 비용. 사용량이나 가격을
+      완전하게 확인할 수 없으면 부분 합계 대신 null이다.

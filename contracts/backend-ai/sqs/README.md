@@ -33,6 +33,12 @@ compile 산출물을 저장한 뒤 중앙 manifest를 마지막으로 다시 발
 `structure_prerequisite_highlights`, `frontend_prerequisite_highlights`,
 `knowledge_bundle_viz`를 기록한다.
 
+모든 knowledge compile `completed`·`failed` 결과는 해당 SQS delivery attempt의
+예상 비용을 포함한다. 비용을 완전하게 계산할 수 없으면 부분 합계
+대신 해당 `estimated_cost_usd`를 `null`로 보낸다. 재시도 가능한 실패는 결과를 발행하지
+않으며, 다음 delivery attempt의 비용은 이전 attempt와 합산하지 않는다.
+
+
 지식 번들 생성은 기존 파싱의 후속 작업이지만 별도의 요청·결과·재시도
 주기를 갖는다. 지식 번들 생성이 진행 중이거나 실패해도 이미 완료된
 파싱 패키지의 사용 가능 상태를 되돌리지 않는다. 파싱 패키지를 다시 생성하면
@@ -95,8 +101,9 @@ endpoint를 지정하지 않고 ECS task role이나 EKS workload role을 사용�
 ### 실패·재시도 처리 원칙
 
 1. worker 또는 인프라의 일시 실패에서는 결과를 발행하거나 원본 요청을 삭제하지 않는다.
-2. provider 실패는 worker 내부 재시도와 credential fallback을 소진하면, 이후 새 요청이
-   성공할 수 있는 실패라도 해당 요청의 확정 실패로 처리할 수 있다.
+2. 모델 provider의 HTTP 429는 `LLM_RATE_LIMITED` 확정 실패로 처리한다. 그 외 재시도
+   가능한 provider 호출 실패는 worker 내부 재시도를 소진하면 원본 요청을 삭제하지 않아
+   SQS가 다시 전달하게 한다.
 3. 확정 실패는 해당 단계의 result 큐에 `failed` 결과 발행을 성공한 뒤 원본
    요청을 삭제한다. Consumer는 결과 발행 주체와 관계없이 `completed`와 `failed`를
    해당 result consumer에서 처리한다.
