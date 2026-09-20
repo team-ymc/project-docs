@@ -187,6 +187,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/prerequisite-knowledge-agent/runs:
+    post:
+      tags:
+      - prerequisite-knowledge-agent
+      summary: Run
+      operationId: prerequisite-knowledge-agent-run
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrerequisiteKnowledgeAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrerequisiteKnowledgeAgentRunResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/agents/prerequisite-knowledge-agent/runs/stream:
+    post:
+      tags:
+      - prerequisite-knowledge-agent
+      summary: Run Stream
+      operationId: prerequisite-knowledge-agent-run_stream
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrerequisiteKnowledgeAgentRunRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/agents/universal-pdf-agent/runs:
     post:
       tags:
@@ -493,6 +539,73 @@ components:
       required:
       - block_id
       title: InlineTranslateSelectionAnchor
+    PrerequisiteKnowledgeAgentRunRequest:
+      properties:
+        thread_id:
+          type: string
+          minLength: 1
+          title: Thread Id
+        paper_id:
+          type: string
+          minLength: 1
+          title: Paper Id
+        selection:
+          $ref: '#/components/schemas/PrerequisiteKnowledgeSelection'
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - selection
+      title: PrerequisiteKnowledgeAgentRunRequest
+    PrerequisiteKnowledgeAgentRunResponse:
+      properties:
+        thread_id:
+          type: string
+          title: Thread Id
+        paper_id:
+          type: string
+          title: Paper Id
+        definition:
+          type: string
+          title: Definition
+        estimated_cost_usd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Estimated Cost Usd
+      type: object
+      required:
+      - thread_id
+      - paper_id
+      - definition
+      - estimated_cost_usd
+      title: PrerequisiteKnowledgeAgentRunResponse
+    PrerequisiteKnowledgeSelection:
+      properties:
+        start:
+          $ref: '#/components/schemas/PrerequisiteKnowledgeSelectionAnchor'
+        end:
+          $ref: '#/components/schemas/PrerequisiteKnowledgeSelectionAnchor'
+      type: object
+      required:
+      - start
+      - end
+      title: PrerequisiteKnowledgeSelection
+    PrerequisiteKnowledgeSelectionAnchor:
+      properties:
+        block_id:
+          type: string
+          minLength: 1
+          title: Block Id
+        offset:
+          type: integer
+          minimum: 0.0
+          title: Offset
+      type: object
+      required:
+      - block_id
+      - offset
+      title: PrerequisiteKnowledgeSelectionAnchor
     SimpleAgentRunRequest:
       properties:
         thread_id:

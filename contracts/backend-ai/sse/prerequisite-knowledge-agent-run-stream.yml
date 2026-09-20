@@ -1,0 +1,249 @@
+version: 1
+id: prerequisite-knowledge-agent-run-stream
+status: current
+summary: compile된 prerequisite highlight를 논문 문맥에 맞는 영문·국문 정의로 설명한 결과를 SSE로 전송하는 endpoint이다.
+
+transport:
+  type: sse
+  method: POST
+  path: /api/v1/agents/prerequisite-knowledge-agent/runs/stream
+  response_content_type: text/event-stream
+
+request:
+  content_type: application/json
+  body_fields:
+    - name: thread_id
+      type: string
+      required: true
+      constraints:
+        min_length: 1
+      description: 요청 상관관계와 trace metadata에 사용하는 client thread 식별자
+    - name: paper_id
+      type: string
+      required: true
+      constraints:
+        min_length: 1
+      description: structure와 prerequisite highlight를 포함한 논문 package 식별자
+    - name: selection
+      type: object
+      required: true
+      description: 설명할 prerequisite highlight를 정확히 지정하는 start/end block anchor
+      fields:
+        - name: start
+          type: object
+          required: true
+          fields:
+            - name: block_id
+              type: string
+              required: true
+              constraints:
+                min_length: 1
+            - name: offset
+              type: integer
+              required: true
+              constraints:
+                minimum: 0
+              description: text block 내 UTF-16 code unit 기준 inclusive 시작 offset
+        - name: end
+          type: object
+          required: true
+          fields:
+            - name: block_id
+              type: string
+              required: true
+              constraints:
+                min_length: 1
+            - name: offset
+              type: integer
+              required: true
+              constraints:
+                minimum: 0
+              description: text block 내 UTF-16 code unit 기준 exclusive 종료 offset
+  selection_rules:
+    - start와 end offset은 모두 필수이며 같은 text block을 가리켜야 한다.
+    - offset은 UTF-16 code unit 기준이며 start는 inclusive, end는 exclusive이다.
+    - selection의 block_id와 offset 범위는 structure/prerequisite-highlights.json의 한 항목과 정확히 일치해야 한다.
+    - highlight text도 structure/document.json의 해당 source 범위와 정확히 일치해야 한다.
+  example:
+    thread_id: prerequisite_123
+    paper_id: 1706.03762v7
+    selection:
+      start:
+        block_id: p0002-b0004
+        offset: 17
+      end:
+        block_id: p0002-b0004
+        offset: 31
+
+sse_format:
+  data_type_matches_event: true
+  example_frame: |
+    event: message.delta
+    data: {"type":"message.delta","thread_id":"prerequisite_123","paper_id":"1706.03762v7","delta":"### Self-attention\n\n**Definition (정의)**\n\nA mechanism  \n메커니즘"}
+
+event_sequences:
+  success:
+    description: 선택 영역과 일치하는 prerequisite의 영문·국문 정의 생성이 완료된 경우
+    events:
+      - run.started
+      - message.delta
+      - message.completed
+      - run.completed
+    notes:
+      - model의 structured output과 최종 Markdown을 먼저 검증한 뒤 전체 결과를 하나의 message.delta로 전송한다.
+  failure:
+    description: 논문 package, prerequisite highlight, 선택 영역 확인 또는 정의 생성 중 오류가 발생한 경우
+    events:
+      - run.failed
+    notes:
+      - run.failed 이전에 run.started가 전송된다.
+      - stream 처리가 시작된 뒤의 오류는 HTTP 오류가 아니라 run.failed event로 전달된다.
+
+events:
+  - name: run.started
+    terminal: false
+    description: AI 서버가 prerequisite 정의 생성을 시작했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.started
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+
+  - name: message.delta
+    terminal: false
+    description: 검증이 완료된 prerequisite 정의 Markdown 전체를 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: message.delta
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: delta
+        type: string
+        required: true
+        description: 고정 형식으로 렌더링된 영문·국문 prerequisite 정의 Markdown
+    backend_notes:
+      - 현재 구현은 검증된 최종 Markdown을 하나의 delta로 전송한다.
+      - delta를 받은 순서대로 누적하되 최종 값은 message.completed.message를 우선한다.
+
+  - name: message.completed
+    terminal: false
+    description: prerequisite 정의 결과 전체가 완성되었을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: message.completed
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: message
+        type: string
+        required: true
+        description: heading과 영문·국문 정의를 포함한 최종 Markdown
+    backend_notes:
+      - non-streaming endpoint의 definition 필드와 의미가 같지만 SSE payload field 이름은 message이다.
+      - Markdown 형식은 prerequisite heading, Definition (정의) label, 영문 한 줄, 국문 한 줄 순서이다.
+
+  - name: run.completed
+    terminal: true
+    outcome: success
+    description: prerequisite definition run이 성공적으로 종료되었을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.completed
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: estimated_cost_usd
+        type:
+          - string
+          - 'null'
+        required: true
+        constraints:
+          pattern: "^[0-9]+\\.[0-9]{8}$"
+        description: 이 run에서 발생한 추정 USD 비용. 사용량이나 가격을 완전하게 확인할 수 없으면 null이다.
+
+  - name: run.failed
+    terminal: true
+    outcome: failure
+    description: 논문 package, prerequisite highlight, 선택 영역 확인 또는 정의 생성에 실패했을 때 전송한다.
+    payload_fields:
+      - name: type
+        type: string
+        required: true
+        value: run.failed
+      - name: thread_id
+        type: string
+        required: true
+      - name: paper_id
+        type: string
+        required: true
+      - name: error
+        type: object
+        required: true
+        fields:
+          - name: code
+            type: string
+            required: true
+            allowed_values:
+              - PAPER_ID_INVALID
+              - PAPER_STRUCTURE_NOT_FOUND
+              - PREREQUISITE_HIGHLIGHTS_NOT_FOUND
+              - PAPER_STRUCTURE_INVALID
+              - PREREQUISITE_HIGHLIGHTS_INVALID
+              - SELECTION_BLOCK_NOT_FOUND
+              - SELECTION_RANGE_INVALID
+              - SELECTION_OFFSET_INVALID
+              - PREREQUISITE_SELECTION_NOT_FOUND
+              - DEFINITION_OUTPUT_INVALID
+              - LLM_RATE_LIMITED
+              - INTERNAL_SERVER_ERROR
+          - name: message
+            type: string
+            required: true
+            description: 클라이언트에 노출 가능한 안정적인 오류 메시지
+      - name: estimated_cost_usd
+        type:
+          - string
+          - 'null'
+        required: true
+        constraints:
+          pattern: "^[0-9]+\\.[0-9]{8}$"
+        description: 실패 전까지 발생한 추정 USD 비용. 사용량이나 가격을 완전하게 확인할 수 없으면 null이다.
+
+backend_handling:
+  - 모든 event의 thread_id와 paper_id가 요청 값과 일치하는지 확인한다.
+  - prerequisite knowledge agent는 stateless이므로 thread_id를 대화 이력 식별자로 사용하지 않는다.
+  - message.delta는 순서대로 누적한다.
+  - message.completed.message를 최종 definition으로 사용한다.
+  - run.completed를 성공 종료로 처리한다.
+  - run.failed를 실패 종료로 처리하고 error.code로 오류를 분기한다.
+  - run.failed 이전에 받은 partial delta는 최종 definition으로 확정하지 않는다.
+  - stream 연결 자체가 실패하면 HTTP 오류로 처리한다.
+  - run.completed 또는 run.failed의 estimated_cost_usd가 문자열이면 사용량 원장에 저장한다. null이면 비용을 완전하게 계산할 수 없는 run으로 처리한다.
+
+limitations:
+  - stream resume은 지원하지 않는다.
+  - SSE event id는 전송하지 않는다.
+  - selection과 start/end offset은 필수이며 임의의 text 범위나 여러 block 범위는 지원하지 않는다.
+  - compile된 prerequisite highlight와 정확히 일치하지 않는 selection은 PREREQUISITE_SELECTION_NOT_FOUND로 실패한다.
