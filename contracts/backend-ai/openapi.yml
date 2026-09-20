@@ -454,11 +454,17 @@ components:
         translation:
           type: string
           title: Translation
+        estimated_cost_usd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Estimated Cost Usd
       type: object
       required:
       - thread_id
       - paper_id
       - translation
+      - estimated_cost_usd
       title: InlineTranslateAgentRunResponse
     InlineTranslateSelection:
       properties:
@@ -552,11 +558,17 @@ components:
         message:
           type: string
           title: Message
+        estimated_cost_usd:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Estimated Cost Usd
       type: object
       required:
       - thread_id
       - paper_id
       - message
+      - estimated_cost_usd
       title: UniversalPdfAgentRunResponse
     UniversalPdfSelection:
       properties:
