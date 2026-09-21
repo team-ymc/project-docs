@@ -13,5 +13,6 @@
 | [ADR-007](ADR-007-observability-platform.md) | 관측 플랫폼은 Grafana Cloud로 시작하고 공개 표준으로 이전 가능성을 유지 | Accepted | 2026-08-31 |
 | [ADR-008](ADR-008-alb-cloudfront-only-ingress.md) | ALB 인바운드는 CloudFront 관리형 prefix list로만 허용 | Accepted | 2026-09-02 |
 | [ADR-009](ADR-009-backend-database-schema-migrations.md) | Backend 데이터베이스 구조 변경은 Flyway로 관리 | Accepted | 2026-09-16 |
+| [ADR-011](ADR-011-prerequisite-definition-redis-cache.md) | 선행지식 설명은 ElastiCache for Valkey에 Document·용어 단위로 30일 캐시 | Accepted | 2026-09-21 |
 
 Status: `Proposed`(합의 전) · `Accepted`(확정) · `Superseded`(다른 ADR로 대체) · `Deprecated`(폐기)
