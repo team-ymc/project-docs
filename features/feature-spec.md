@@ -41,6 +41,7 @@ Paper Teacher의 제품 역량을 독립적으로 개발·검증 가능한 featu
 | FT-009 | 구조 맵 | FT-003, FT-004 | - | In Progress | features/FT-009-구조-맵.md |
 | FT-010 | 학습 기록 저장 | FT-001, FT-004 | TBD | Not Started | features/FT-010-학습-기록.md |
 | FT-011 | 플랜·사용량 제한 | FT-001, FT-003, FT-007 | UF-002, UF-003 | In Progress | features/FT-011-플랜-사용량-제한.md |
+| FT-012 | 선행지식 | FT-003, FT-004 | - | In Progress | features/FT-012-선행지식.md |
 
 ## 4. Feature Dependency Map
 
@@ -58,6 +59,8 @@ FT-001 소셜 인증
 FT-001 + FT-004 → FT-010 학습 기록 저장
 
 FT-001 + FT-003 + FT-007 → FT-011 플랜·사용량 제한
+
+FT-003 + FT-004 → FT-012 선행지식
 ```
 
 ## 5. Status Legend

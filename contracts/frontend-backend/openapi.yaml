@@ -7,16 +7,17 @@ info:
     - Source: features/FT-002-서재.md, features/FT-003-논문-등록-분석.md,
       features/FT-004-논문-학습-뷰어.md, features/FT-006-인라인-액션.md,
       features/FT-007-ai-튜터-채팅.md, features/FT-011-플랜-사용량-제한.md,
-      features/FT-009-구조-맵.md
+      features/FT-009-구조-맵.md, features/FT-012-선행지식.md
     - ADR: decisions/ADR-001-pdf-upload-presigned-url.md,
       decisions/ADR-003-paper-id-and-duplicate-check.md,
       decisions/ADR-004-chat-streaming-be-relay.md,
-      decisions/ADR-006-usage-reservation.md
+      decisions/ADR-006-usage-reservation.md,
+      decisions/ADR-011-prerequisite-definition-redis-cache.md
     - BE↔AI API 계약: contracts/backend-ai/openapi.yml
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
     - BE↔AI 인라인 번역 스트림: contracts/backend-ai/sse/inline-translate-agent-run-stream.yml
 
-  version: 0.9.0
+  version: 0.10.0
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -510,10 +511,12 @@ paths:
       summary: 파싱된 논문 본문 조회
       description: |
         완료(COMPLETED)된 논문의 파싱 본문을 반환한다. 파서 산출물의 frontend projection
-        (`frontend/document.json`, 파서 schema v1)을 기반으로 하되, BE가 두 가지를 채워서 준다:
+        (`frontend/document.json`, 파서 schema v1)을 기반으로 하되, BE가 세 가지를 채워서 준다:
 
         - 수식(`display_formula`)·표(`table`) 블록은 asset 파일 내용(tex·html)을 **응답에 인라인**한다
         - 이미지·차트 asset은 **presigned GET URL**로 준다 (만료되면 operation을 다시 호출)
+        - compile sidecar의 선행지식 범위를 `prerequisiteHighlights`로 투영한다. compile 완료 전과
+          실패 시에는 빈 배열이며, `knowledgeGraphStatus=READY`가 되면 FE가 본문을 다시 조회한다
 
         블록 순서는 `globalOrder` (문서 전체 순서) 오름차순이며, MVP는 페이지네이션이 없다 
         — 필요해지면 `globalOrder`를 정렬 키로 하는 커서 조회를 추가한다.
@@ -548,6 +551,74 @@ paths:
               schema: { $ref: "#/components/schemas/Error" }
         "409":
           description: 논문이 COMPLETED가 아니어서 본문이 없음. code PAPER_NOT_READY
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/papers/{paperId}/prerequisite-highlights/{highlightId}/definition:
+    post:
+      operationId: createPrerequisiteDefinition
+      summary: 선행지식 설명 조회 또는 생성
+      description: |
+        인증된 사용자가 소유한 논문의 현재 선행지식 하이라이트를 `highlightId`로 해석해
+        영문·국문 설명을 한 번에 반환한다. request body는 없다.
+
+        BE는 Paper 접근 권한과 현재 Document의 하이라이트를 먼저 검증하고, 해당 범위의
+        block·UTF-16 offset을 기존 BE↔AI selection 요청으로 변환한다. 공유 Document와 정규화된
+        원문을 기준으로 30일 캐시하며 cache HIT는 AI를 호출하지 않는다. cache MISS만 AI를
+        non-streaming으로 호출하고 실제 추정 비용을 관측한다. 이 operation은 사용자 AI 질의
+        사용량을 차감하지 않는다.
+
+        사용자당 선행지식 설명 생성은 동시에 하나만 허용한다. cache HIT는 동시 생성 상한에
+        포함하지 않으며, 서로 다른 사용자의 동일 cache MISS 중복 생성은 MVP에서 허용한다.
+      tags: [papers]
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: highlightId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: 현재 Document compile sidecar가 부여한 선행지식 하이라이트 식별자.
+      responses:
+        "200":
+          description: 캐시에서 조회했거나 새로 생성한 완성된 설명
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrerequisiteDefinitionResponse" }
+        "401":
+          description: "인증 필요. code: UNAUTHORIZED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "403":
+          description: "논문 접근 권한 없음. code: FORBIDDEN"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: "paperId가 없으면 PAPER_NOT_FOUND, 현재 Document에 highlightId가 없으면 PREREQUISITE_HIGHLIGHT_NOT_FOUND"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: "논문 본문 또는 compile sidecar가 준비되지 않음. code: PREREQUISITE_NOT_READY"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429":
+          description: "사용자의 다른 선행지식 설명이 생성 중. code: PREREQUISITE_CONCURRENCY_LIMIT_EXCEEDED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          description: "AI 설명 생성 실패. code: PREREQUISITE_DEFINITION_FAILED"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
@@ -1344,7 +1415,7 @@ components:
 
     PaperContentResponse:
       type: object
-      required: [paperId, title, sourceLanguage, translationStatus, schemaVersion, blocks, assets]
+      required: [paperId, title, sourceLanguage, translationStatus, schemaVersion, blocks, assets, prerequisiteHighlights]
       description: |
         파싱 본문. 파서 frontend projection이 원본이며, BE는 storage-free 구조를 유지한 채
         수식·표 내용 인라인과 이미지 presigned URL 해석만 더한다 — 뷰어 모델의 소유권은 파서 스키마에 있다.
@@ -1376,6 +1447,55 @@ components:
             인라인되므로 여기 없다. URL 만료 시 FE는 content를 재조회한다.
           additionalProperties:
             $ref: "#/components/schemas/PaperContentAsset"
+        prerequisiteHighlights:
+          type: array
+          description: |
+            compile sidecar가 지정한 선행지식 범위. 아직 준비되지 않았거나 compile이 실패한 경우 빈 배열이다.
+            `knowledgeGraphStatus=READY`가 된 뒤에도 빈 배열이면 표시할 선행지식이 없는 정상 결과다.
+          items:
+            $ref: "#/components/schemas/PrerequisiteHighlight"
+
+    PrerequisiteHighlight:
+      type: object
+      required: [highlightId, blockId, startOffset, endOffset, text]
+      additionalProperties: false
+      description: |
+        한 text block 안의 선행지식 범위. offset은 UTF-16 code unit 기준이며 start는 inclusive,
+        end는 exclusive다. `text`는 현재 Document의 해당 범위와 정확히 일치하는 원문이다.
+      properties:
+        highlightId:
+          type: string
+          minLength: 1
+        blockId:
+          type: string
+          minLength: 1
+        startOffset:
+          type: integer
+          minimum: 0
+        endOffset:
+          type: integer
+          minimum: 1
+        text:
+          type: string
+          minLength: 1
+
+    PrerequisiteDefinitionResponse:
+      type: object
+      required: [term, definitionEn, definitionKo]
+      additionalProperties: false
+      properties:
+        term:
+          type: string
+          minLength: 1
+          description: 현재 하이라이트의 원문. 팝오버 제목에 그대로 사용한다.
+        definitionEn:
+          type: string
+          minLength: 1
+          description: 논문 문맥에 맞춘 간결한 영문 설명.
+        definitionKo:
+          type: string
+          minLength: 1
+          description: 논문 문맥에 맞춘 간결한 국문 설명.
 
     PaperContentBlock:
       type: object
@@ -2204,6 +2324,10 @@ components:
             - TRANSLATION_IN_PROGRESS  : 사용자의 다른 인라인 번역이 아직 생성 중 (409)
             - PAPER_USAGE_LIMIT_EXCEEDED: 문서 등록 사용량 제한 초과 (429)
             - KNOWLEDGE_GRAPH_NOT_READY: 지식 그래프가 아직 준비되지 않음 (409, knowledge-graph)
+            - PREREQUISITE_HIGHLIGHT_NOT_FOUND: 현재 Document에 highlightId가 없음 (404)
+            - PREREQUISITE_NOT_READY: 본문 또는 compile sidecar가 아직 준비되지 않음 (409)
+            - PREREQUISITE_CONCURRENCY_LIMIT_EXCEEDED: 사용자의 다른 선행지식 설명이 생성 중 (429)
+            - PREREQUISITE_DEFINITION_FAILED: AI 설명 생성에 실패함 (502)
           enum:
             [
               VALIDATION_ERROR,
@@ -2227,6 +2351,10 @@ components:
               TRANSLATION_IN_PROGRESS,
               PAPER_USAGE_LIMIT_EXCEEDED,
               KNOWLEDGE_GRAPH_NOT_READY,
+              PREREQUISITE_HIGHLIGHT_NOT_FOUND,
+              PREREQUISITE_NOT_READY,
+              PREREQUISITE_CONCURRENCY_LIMIT_EXCEEDED,
+              PREREQUISITE_DEFINITION_FAILED,
             ]
         message:
           type: string
