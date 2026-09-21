@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paper Study Page · Prerequisite Knowledge</title>
+  <link rel="stylesheet" href="../v2/_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/fonts.css">
+  <link rel="stylesheet" href="../v2/_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/colors.css">
+  <link rel="stylesheet" href="../v2/_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/typography.css">
+  <link rel="stylesheet" href="../v2/_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/tokens/shadows.css">
+  <link rel="stylesheet" href="../v2/vendor/phosphor-regular.css">
+  <style>
+    :root{--topbar-height:58px;--toc-width:260px;--tutor-width:352px;--font-popover-en:Georgia,'Times New Roman',serif}
+    *{box-sizing:border-box}
+    html,body{width:100%;height:100%;margin:0}
+    body{overflow:hidden;background:#f5eee3;color:var(--color-text-body);font-family:var(--font-sans)}
+    button,a{font:inherit}
+    button{border:0}
+    .app{height:100%;display:flex;flex-direction:column}
+    .topbar{height:var(--topbar-height);flex:none;display:flex;align-items:center;padding:0 34px;background:#2b1d16;color:#fffdf7;box-shadow:0 1px 0 rgba(255,255,255,.06);z-index:10}
+    .brand{font-family:var(--font-serif);font-size:27px;font-weight:700;letter-spacing:-.02em;color:#fff7e9}
+    .topnav{height:100%;display:flex;align-items:stretch;gap:30px;margin-left:auto}
+    .topnav button{position:relative;min-width:54px;padding:0 7px;background:transparent;color:rgba(255,253,247,.68);font-size:14px;cursor:pointer}
+    .topnav button.active{color:#fffdf7;font-weight:700}
+    .topnav button.active::after{content:"";position:absolute;left:8px;right:8px;bottom:7px;height:3px;background:#c6a15b}
+    .top-actions{display:flex;align-items:center;gap:22px;margin-left:32px;color:rgba(255,253,247,.7);font-size:14px}
+    .prerequisite-toggle{display:flex;align-items:center;gap:9px;padding:8px 0;background:transparent;color:inherit;cursor:pointer}
+    .prerequisite-toggle[aria-checked="true"]{color:#fffdf7}
+    .switch-track{position:relative;width:34px;height:19px;border-radius:999px;background:#74665e;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);transition:background .16s ease}
+    .switch-thumb{position:absolute;top:3px;left:3px;width:13px;height:13px;border-radius:50%;background:#eee9e1;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .16s ease,background .16s ease}
+    .prerequisite-toggle[aria-checked="true"] .switch-track{background:#b8924e}
+    .prerequisite-toggle[aria-checked="true"] .switch-thumb{transform:translateX(15px);background:#fffdf7}
+    .night{display:flex;align-items:center;gap:10px;padding:8px 0;background:transparent;color:inherit}
+    .night i{font-size:24px;color:#c9c7c4}
+    .workspace{min-height:0;flex:1;display:grid;grid-template-columns:var(--toc-width) minmax(0,1fr) var(--tutor-width)}
+    .toc{overflow:auto;padding:30px 28px;background:#f8f1e6;border-right:1px solid #ded4c4}
+    .doc-title{font-family:var(--font-serif);font-size:20px;font-weight:700;line-height:1.25;color:#2b2926}
+    .doc-meta{margin-top:8px;font-family:var(--font-serif);font-size:14px;color:#5f5a53}
+    .toc-rule{height:1px;margin:26px 0 15px;background:#d8ccbb}
+    .toc-list{display:flex;flex-direction:column;gap:1px}
+    .toc-item{position:relative;display:flex;align-items:baseline;gap:11px;min-height:40px;padding:9px 0;color:#78716a;text-decoration:none;font-family:var(--font-serif);font-size:15px;line-height:1.35}
+    .toc-item.active{color:#282522;font-weight:700}
+    .toc-item.active::before{content:"";position:absolute;left:-14px;top:7px;width:4px;height:31px;border-radius:4px;background:#b99551}
+    .toc-number{width:15px;text-align:right;flex:none;font-size:13px}
+    .toc-item.sub{padding-left:20px}
+    .toc-footer{display:flex;align-items:center;gap:9px;margin-top:28px;color:#827b73;font-size:14px}
+    .toc-footer i{font-size:17px}
+    .viewer{min-width:0;overflow:auto;padding:18px;background:#f5eee3}
+    .paper{position:relative;width:min(840px,100%);min-height:965px;margin:0 auto;padding:46px 70px 65px;background:#fffdf8;border:1px solid #ded5c8;box-shadow:0 2px 8px rgba(48,38,29,.08)}
+    .section-title{display:flex;align-items:baseline;gap:32px;margin:0 0 30px;font-family:var(--font-serif);font-size:41px;font-weight:700;line-height:1.2;letter-spacing:-.02em;color:#132f52}
+    .section-number{font-size:38px}
+    .paper p{margin:0 0 25px;font-family:var(--font-serif);font-size:18px;line-height:1.72;color:#242321}
+    .term-highlight{padding:0 2px;border-radius:3px;background:#dce8f7;color:#1e2e42;box-shadow:inset 0 -1px 0 #8299b5;cursor:pointer;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+    .term-highlight:hover,.term-highlight[aria-expanded="true"]{background:#cfdef0;box-shadow:inset 0 -2px 0 #637f9f}
+    .paper.prerequisite-off .term-highlight{padding:0;background:transparent;color:inherit;box-shadow:none;cursor:text}
+    .popover{position:absolute;left:336px;top:354px;width:430px;border:1px solid #cdbb9d;border-radius:7px;background:#fffdf8;box-shadow:0 5px 14px rgba(66,49,31,.14);z-index:5}
+    .popover[hidden]{display:none}
+    .popover::before{content:"";position:absolute;top:-11px;left:99px;width:20px;height:20px;background:#fffdf8;border-left:1px solid #cdbb9d;border-top:1px solid #cdbb9d;transform:rotate(45deg)}
+    .popover-inner{position:relative;padding:25px 22px 24px}
+    .popover-title{margin:0 0 10px;font-family:var(--font-popover-en);font-size:21px;font-weight:700;line-height:1.25;color:#18385e;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    .paper .definition{margin:0;font-family:var(--font-popover-en);font-size:14px;line-height:1.5;color:#3c3935;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    .popover-rule{height:1px;margin:20px 0 16px;background:#ded3c3}
+    .paper .explanation{margin:0;font-family:var(--font-sans);font-size:16px;line-height:1.65;color:#45413c}
+    .page-number{position:absolute;left:0;right:0;bottom:28px;text-align:center;font-family:var(--font-serif);font-size:12px;color:#77716a}
+    .tutor-wrap{padding:17px 16px 16px 0;background:#f5eee3}
+    .tutor{height:100%;display:flex;flex-direction:column;overflow:hidden;border:1px solid #ded4c5;border-radius:13px;background:#fbf7ef}
+    .tutor-head{height:67px;flex:none;display:flex;align-items:center;gap:14px;margin:0 20px;border-bottom:1px solid #e1d7c8;font-family:var(--font-serif);font-size:19px;font-weight:700;color:#173457}
+    .tutor-head i{font-size:27px;color:#b18d4c}
+    .empty{flex:1;display:grid;place-items:center;padding:25px;text-align:center;font-size:15px;line-height:1.6;color:#6d6861}
+    .composer-area{flex:none;padding:0 12px 14px}
+    .composer{height:60px;display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;border:1px solid #d9cdbc;border-radius:13px;background:#fffdf8}
+    .composer input{min-width:0;flex:1;border:0;outline:0;background:transparent;color:#46413c;font-size:14px}
+    .composer input::placeholder{color:#9a958e}
+    .send{width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:50%;background:#b8924e;color:#fffdf7;cursor:pointer}
+    .send i{font-size:20px}
+    .composer-note{margin:12px 3px 0;font-size:12px;color:#9a948b}
+    @media(max-width:1350px){:root{--toc-width:220px;--tutor-width:320px}.topbar{padding-inline:24px}.paper{padding-inline:52px}.popover{left:250px;width:400px}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">Paper Teacher</div>
+      <nav class="topnav" aria-label="학습 보기">
+        <button class="active" type="button">본문</button>
+        <button type="button">지식 그래프</button>
+        <button type="button">번역</button>
+      </nav>
+      <div class="top-actions">
+        <button class="prerequisite-toggle" id="prerequisiteToggle" type="button" role="switch" aria-checked="true">
+          <span>선행지식</span><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+        </button>
+        <button class="night" type="button"><i class="ph ph-moon"></i><span>야간 모드</span></button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="toc" aria-label="논문 목차">
+        <div class="doc-title">Attention Is All<br>You Need</div>
+        <div class="doc-meta">Vaswani et al. (2017)</div>
+        <div class="toc-rule"></div>
+        <nav class="toc-list">
+          <a class="toc-item" href="#"><span>Abstract</span></a>
+          <a class="toc-item active" href="#introduction"><span class="toc-number">1</span><span>Introduction</span></a>
+          <a class="toc-item" href="#"><span class="toc-number">2</span><span>Related Work</span></a>
+          <a class="toc-item" href="#"><span class="toc-number">3</span><span>Model Architecture</span></a>
+          <a class="toc-item sub" href="#"><span class="toc-number">3.1</span><span>Overall Architecture</span></a>
+          <a class="toc-item sub" href="#"><span class="toc-number">3.2</span><span>Attention Function</span></a>
+          <a class="toc-item sub" href="#"><span class="toc-number">3.3</span><span>Positional Encoding</span></a>
+          <a class="toc-item sub" href="#"><span class="toc-number">3.4</span><span>Training Objectives</span></a>
+          <a class="toc-item" href="#"><span class="toc-number">4</span><span>Training</span></a>
+          <a class="toc-item" href="#"><span class="toc-number">5</span><span>Results</span></a>
+          <a class="toc-item" href="#"><span class="toc-number">6</span><span>Analysis</span></a>
+          <a class="toc-item" href="#"><span class="toc-number">7</span><span>Conclusion</span></a>
+        </nav>
+        <div class="toc-rule" style="margin-top:20px"></div>
+        <nav class="toc-list"><a class="toc-item" href="#"><span>References</span></a><a class="toc-item" href="#"><span>Appendix</span></a></nav>
+        <div class="toc-footer"><i class="ph ph-clock"></i><span>논문 정보</span></div>
+      </aside>
+
+      <section class="viewer" aria-label="논문 본문">
+        <article class="paper" id="introduction">
+          <h1 class="section-title"><span class="section-number">1</span><span>Introduction</span></h1>
+          <p>Sequence transduction such as language translation, parsing and semantic parsing are key problems with many important applications such as conversational agents, question answering and summarization. Models are required to map an input sequence of symbols (e.g., a sentence in English) to an output sequence of symbols (e.g., a sentence in French).</p>
+          <p>The dominant <mark class="term-highlight" id="termHighlight" role="button" tabindex="0" aria-expanded="true">sequence transduction models</mark> are based on complex recurrent or convolutional neural networks.</p>
+          <p>Recurrent models, such as LSTMs and GRUs, have been shown to successfully model such sequential data, but their inherently sequential nature limits parallelization and creates greater memory limitations, especially for longer sequences.</p>
+          <p>Attention, an integral part of sequence modeling and transduction models, allows modeling of dependencies between the input and output entirely by attention, without the need for recurrence and convolutions. The model, which we call the Transformer, is significantly more parallelizable than recurrent models, since all positions in the input and output sequences can be computed in parallel, in contrast to recurrent models, which require sequential computation. We achieve better translation quality while being more parallelizable.</p>
+
+          <section class="popover" id="prerequisitePopover" role="dialog" aria-modal="false" aria-labelledby="popoverTitle">
+            <div class="popover-inner">
+              <h2 class="popover-title" id="popoverTitle">sequence transduction models</h2>
+              <p class="definition">Converting one ordered sequence into another,<br>such as translating a sentence.</p>
+              <div class="popover-rule"></div>
+              <p class="explanation">입력 순서를 다른 출력 순서로 변환하는 문제로,<br>기계 번역이 대표적인 예입니다.</p>
+            </div>
+          </section>
+          <div class="page-number">1</div>
+        </article>
+      </section>
+
+      <div class="tutor-wrap">
+        <aside class="tutor" aria-label="AI 튜터">
+          <div class="tutor-head"><i class="ph ph-star-four"></i><span>AI 튜터</span></div>
+          <div class="empty"><p>논문을 읽으며 궁금한 점이 생기면<br>언제든지 질문해 주세요.</p></div>
+          <div class="composer-area">
+            <div class="composer"><input aria-label="AI 튜터 질문" placeholder="이 논문에 대해 질문해 보세요..."><button class="send" type="button" aria-label="질문 보내기"><i class="ph ph-paper-plane-tilt"></i></button></div>
+            <p class="composer-note">선택한 내용을 바탕으로 답변합니다.</p>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <script>
+    const highlight=document.getElementById('termHighlight');
+    const popover=document.getElementById('prerequisitePopover');
+    const paper=document.querySelector('.paper');
+    const viewer=document.querySelector('.viewer');
+    const toggle=document.getElementById('prerequisiteToggle');
+    const closePopover=()=>{popover.hidden=true;highlight.setAttribute('aria-expanded','false')};
+    const openPopover=()=>{
+      if(toggle.getAttribute('aria-checked')!=='true')return;
+      popover.hidden=false;
+      highlight.setAttribute('aria-expanded','true');
+    };
+    highlight.addEventListener('click',openPopover);
+    highlight.addEventListener('keydown',(event)=>{
+      if(event.key==='Enter'||event.key===' '){event.preventDefault();openPopover()}
+    });
+    toggle.addEventListener('click',()=>{
+      const enabled=toggle.getAttribute('aria-checked')!=='true';
+      toggle.setAttribute('aria-checked',String(enabled));
+      paper.classList.toggle('prerequisite-off',!enabled);
+      highlight.tabIndex=enabled?0:-1;
+      if(!enabled)closePopover();
+    });
+    viewer.addEventListener('click',(event)=>{
+      if(!popover.hidden&&!popover.contains(event.target)&&event.target!==highlight)closePopover();
+    });
+  </script>
+</body>
+</html>
