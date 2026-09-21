@@ -27,3 +27,4 @@ Paper Teacher v3의 화면 디자인 인덱스다. v2 화면과 디자인 시스
 ## Related Documentation
 
 - 디자인 버전 인덱스: [Design](../README.md)
+- 기능 명세: [FT-012 선행지식](../../features/FT-012-선행지식.md)
