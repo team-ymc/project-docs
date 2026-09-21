@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: AI Server
-  version: 0.1.0
+  version: 0.2.0
 paths:
   /api/v1/agents/base-pdf-agent/runs:
     post:
@@ -191,7 +191,8 @@ paths:
     post:
       tags:
       - prerequisite-knowledge-agent
-      summary: Run
+      summary: Generate prerequisite knowledge definition
+      description: 선택 범위의 논문 문맥을 바탕으로 영문·국문 설명을 non-streaming으로 생성한다.
       operationId: prerequisite-knowledge-agent-run
       requestBody:
         content:
@@ -565,9 +566,20 @@ components:
         paper_id:
           type: string
           title: Paper Id
-        definition:
+        definition_en:
           type: string
-          title: Definition
+          minLength: 1
+          maxLength: 160
+          title: Definition En
+        definition_ko:
+          type: string
+          minLength: 1
+          maxLength: 160
+          title: Definition Ko
+        generator_version:
+          type: string
+          minLength: 1
+          title: Generator Version
         estimated_cost_usd:
           anyOf:
           - type: string
@@ -577,7 +589,9 @@ components:
       required:
       - thread_id
       - paper_id
-      - definition
+      - definition_en
+      - definition_ko
+      - generator_version
       - estimated_cost_usd
       title: PrerequisiteKnowledgeAgentRunResponse
     PrerequisiteKnowledgeSelection:

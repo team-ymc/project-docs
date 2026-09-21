@@ -65,3 +65,16 @@ Terraform은 AWS 리소스와 초기 Task Definition을 구성하고, 이후 애
 GitHub Actions가 담당한다.
 
 환경별 배포 흐름과 rollback 전략은 [`CI/CD`](ci-cd.md)에서 관리한다.
+
+## 7. FT-012 예정 캐시 계층
+
+선행지식 설명은 다시 생성할 수 있는 파생 데이터이므로 PostgreSQL에 영구 저장하지 않고
+Backend 전용 캐시 계층에 둔다. 구체적인 선택 근거와 데이터 수명은
+[`ADR-011`](../decisions/ADR-011-prerequisite-definition-redis-cache.md)을 따른다.
+
+- DEV·PROD는 각각 Amazon ElastiCache for Valkey node-based `cache.t4g.micro` 1대로 시작한다.
+- cluster mode는 끄고 전송 구간 TLS를 사용하며, 파생 캐시이므로 백업은 두지 않는다.
+- ElastiCache는 private subnet에서 Backend만 접근한다. AI API는 캐시에 직접 연결하지 않는다.
+- local은 Valkey-compatible container로 같은 protocol과 TTL 동작을 제공한다.
+- 캐시 유실이나 축출은 다음 조회의 AI 재생성으로 복구한다. 가용성 요구가 높아지면 replica 1대와
+  Multi-AZ 자동 failover를 추가한다.
