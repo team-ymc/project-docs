@@ -16,7 +16,7 @@ info:
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
     - BE↔AI 인라인 번역 스트림: contracts/backend-ai/sse/inline-translate-agent-run-stream.yml
 
-  version: 0.8.0
+  version: 0.9.0
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -1584,6 +1584,7 @@ components:
         content:
           type: string
           minLength: 1
+          maxLength: 2000
           description: 사용자가 입력한 질문의 UTF-8 plain text. BE↔AI 요청의 `message`로 전달한다.
         selections:
           type: [array, "null"]
@@ -1607,7 +1608,7 @@ components:
         start/end block anchor로 지정하는 선택 영역. document 블록 순서를 따른다.
         text block offset은 UTF-16 code unit 기준, start는 inclusive, end는 exclusive다.
         image·table·formula block은 atomic하므로 offset을 보내지 않는다.
-        최대 150 blocks, 선택 렌더링 content 최대 30000 characters.
+        최대 10 blocks, 선택 렌더링 content 최대 2000 characters.
       properties:
         start:
           $ref: "#/components/schemas/ChatSelectionAnchor"
