@@ -235,6 +235,7 @@ events:
               - PAPER_STRUCTURE_NOT_FOUND
               - PAPER_ASSET_NOT_FOUND
               - PAPER_STRUCTURE_INVALID
+              - PAPER_TOO_LARGE
               - MESSAGE_TOO_LARGE
               - SELECTION_BLOCK_NOT_FOUND
               - SELECTION_RANGE_INVALID
@@ -272,5 +273,6 @@ limitations:
   - stream resume은 지원하지 않는다.
   - SSE event id는 전송하지 않는다.
   - message가 2000 characters를 넘으면 MESSAGE_TOO_LARGE로 실패한다.
+  - 전체 논문 system message가 약 64000 tokens를 넘으면 모델 호출 전에 PAPER_TOO_LARGE로 실패한다.
   - selections가 5개를 넘으면 SELECTION_COUNT_EXCEEDED로 실패한다.
   - 각 selection 제한을 넘는 요청은 content를 자르지 않고 SELECTION_TOO_LARGE로 실패한다.
