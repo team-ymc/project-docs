@@ -15,5 +15,6 @@
 | [ADR-009](ADR-009-backend-database-schema-migrations.md) | Backend 데이터베이스 구조 변경은 Flyway로 관리 | Accepted | 2026-09-16 |
 | [ADR-010](ADR-010-parser-worker-sqs-backlog-autoscaling.md) | Parser Worker는 SQS backlog per task로 확장하고 queue idle에서 단계적으로 축소 | Proposed | 2026-09-20 |
 | [ADR-011](ADR-011-prerequisite-definition-redis-cache.md) | 선행지식 설명은 ElastiCache for Valkey에 Document·용어 단위로 30일 캐시 | Accepted | 2026-09-21 |
+| [ADR-012](ADR-012-prod-deploy-manual-promotion.md) | prod 배포는 infra 저장소의 수동 워크플로로 dev 산출물을 SHA 지정 승격 | Accepted | 2026-09-25 |
 
 Status: `Proposed`(합의 전) · `Accepted`(확정) · `Superseded`(다른 ADR로 대체) · `Deprecated`(폐기)
