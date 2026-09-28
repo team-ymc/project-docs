@@ -16,7 +16,7 @@ ADR-001에 따라 PDF 원본은 BE를 경유하지 않고 FE에서 S3로 직접 
 
 이번 결정의 요구사항은 다음과 같다.
 
-- 단일 PDF 원본의 최대 크기는 50 MiB(`52,428,800` bytes)다.
+- 단일 PDF 원본의 최대 크기는 10 MiB(`10,485,760` bytes)다.
 - BE가 bucket과 전체 `fileKey`를 결정하여 presigned URL을 발급한다.
 - 등록 시점에 브라우저의 `File.size`로 업로드할 정확한 바이트 수를 알 수 있다.
 - FE는 PDF를 압축ㆍ암호화ㆍ변환하지 않고 원본 바이트를 그대로 업로드한다.
@@ -46,13 +46,13 @@ S3 POST가 브라우저 업로드용으로 설계된 배경에는, 당시 JavaSc
 
 Option A인 **Presigned PUT과 서명된 정확한 `Content-Length`**를 채택한다.
 
-BE는 등록 요청으로 전달된 파일 크기가 1 byte 이상 50 MiB 이하인 경우에만 Presigned PUT URL을 발급한다. Presigned PUT 요청에는 BE가 생성한 전체 `fileKey`, `Content-Type: application/pdf`와 등록 시 전달된 정확한 `Content-Length`를 포함한다.
+BE는 등록 요청으로 전달된 파일 크기가 1 byte 이상 10 MiB 이하인 경우에만 Presigned PUT URL을 발급한다. Presigned PUT 요청에는 BE가 생성한 전체 `fileKey`, `Content-Type: application/pdf`와 등록 시 전달된 정확한 `Content-Length`를 포함한다.
 
 FE는 압축이나 변환 없이 PDF 원본을 PUT body로 전송한다. 실제 업로드 크기가 서명된 `Content-Length`와 다르면 S3가 요청을 거절해야 한다.
 
 이 결정은 허용 범위 안의 임의 크기를 받는 것이 아니라 다음 두 조건을 순서대로 강제한다.
 
-1. BE: `K <= 50 MiB`
+1. BE: `K <= 10 MiB`
 2. S3: `actual Content-Length == K`
 
 등록, 업로드 완료 통보, S3 HEAD 확인과 파싱 요청으로 이어지는 전체 처리 흐름은 ADR-001을 따른다.
@@ -126,3 +126,4 @@ FE는 압축이나 변환 없이 PDF 원본을 PUT body로 전송한다. 실제 
 - **2026-08-10** — 초안 작성. Presigned PUT의 정확한 `Content-Length` 서명 동작을 실제 Chrome과 AWS 개발 bucket에서 검증한 뒤 Accepted 여부를 결정한다.
 - **2026-08-10** — **Accepted로 전환.** dev 환경과 실제 Dev 서버에서 확인했다(검증 절차는 team-ymc/app#39). 발급된 URL의 `X-Amz-SignedHeaders`에 `content-length`가 포함되고, 등록한 크기 `K`의 PUT은 성공하는 반면 `K+1`은 `403`으로 거절된다. 거절된 PUT은 객체를 남기지 않아 이어진 `complete`가 `409 UPLOAD_NOT_FOUND`를 반환했고, 같은 URL에 `K`로 다시 올리면 성공해 재시도가 complete 흐름과 충돌하지 않는다.
 - **2026-08-10** — §6이 별도 결정으로 남긴 "versioning과 URL 재사용 정책"은 원본 버킷 versioning을 `Suspended`로 내리는 것으로 결정했다.
+- **2026-09-29** — 단일 PDF 최대 크기를 50 MiB에서 10 MiB로 낮췄다. 강제 방식은 그대로다.
