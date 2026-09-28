@@ -1,6 +1,10 @@
 # Design
 
-Paper Teacher의 화면 디자인과 디자인 시스템 산출물을 버전별로 관리한다.
+Paper Teacher의 화면 디자인과 디자인 시스템 산출물을 관리한다.
+
+## Marketing Landing
+
+- [마케팅 랜딩](landing/README.md) — 기능 소개와 시작 CTA를 담은 반응형 랜딩 시안
 
 ## Versions
 
@@ -8,7 +12,7 @@ Paper Teacher의 화면 디자인과 디자인 시스템 산출물을 버전별�
 |---|---|
 | `v1` | [Design v1](v1/README.md) |
 | `v2` | [Design v2](v2/README.md) — 로컬 vendor 자산, 플랜·사용량 상태(FT-011) 포함 |
-| `v3` | [Design v3](v3/README.md) — 선행지식 하이라이트·설명 팝오버 상태와 마케팅 랜딩 검토 시안 |
+| `v3` | [Design v3](v3/README.md) — 선행지식 하이라이트·설명 팝오버 상태 |
 
 ## Related Documentation
 
