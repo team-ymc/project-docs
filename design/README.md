@@ -6,6 +6,10 @@ Paper Teacher의 화면 디자인과 디자인 시스템 산출물을 관리한�
 
 - [마케팅 랜딩](landing/README.md) — 기능 소개와 시작 CTA를 담은 반응형 랜딩 시안
 
+## Plans
+
+- [플랜 소개](plans/README.md) — Free·Pro 사용량과 이용 안내를 담은 반응형 플랜 페이지 시안
+
 ## Versions
 
 | Version | 문서 |
