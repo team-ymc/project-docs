@@ -128,6 +128,12 @@
           <i class="ph ph-translate" style="font-size:17px"></i>
           <span>{{ translationButtonLabel }}</span>
         </button>
+        <sc-if value="{{ compileRetryVisible }}">
+          <button type="button" onClick="{{ retryCompile }}" class="pt-topbar-btn" aria-label="번역·지식 그래프 다시 만들기" title="번역·지식 그래프 다시 만들기">
+            <i class="ph ph-arrow-clockwise" style="font-size:17px"></i>
+            <span>번역·지식 그래프 다시 만들기</span>
+          </button>
+        </sc-if>
       </div>
     </div>
     <div style="{{ topBarRightStyle }}">
@@ -466,7 +472,7 @@
 </div>
 
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"translationMode":{"editor":"enum","options":["off","below","side"],"default":"off","section":"전체 번역"},"translationStatus":{"editor":"enum","options":["not_applicable","pending","ready","failed"],"default":"ready","section":"전체 번역"},"chat":{"editor":"enum","options":["open","collapsed"],"default":"open","section":"레이아웃"},"$preview":{"width":1440,"height":900}}'>
+<script type="text/x-dc" data-dc-script data-props='{"translationMode":{"editor":"enum","options":["off","below","side"],"default":"off","section":"전체 번역"},"translationStatus":{"editor":"enum","options":["not_applicable","pending","ready","failed"],"default":"ready","section":"전체 번역"},"compileRetryable":{"editor":"boolean","default":false,"section":"전체 번역"},"chat":{"editor":"enum","options":["open","collapsed"],"default":"open","section":"레이아웃"},"$preview":{"width":1440,"height":900}}'>
 const MAX_COMPOSER_CONTEXTS = 5;
 const CONTEXT_COLLAPSE_COUNT = 2;
 
@@ -544,7 +550,7 @@ class Component extends DCLogic {
   pendingRange = null;
   pendingText = '';
   pendingContextKind = 'selection';
-  state = { tocOpen:false, activeSection:'', translationMode:null, chatOpen:null, chatWidthOpen:null, historyOpen:false, messages:[], chatInput:'', isStreaming:false, history: HISTORY.slice(), composerFocused:false, paperBlocks:[], translations:{ title:'', blocks:{} }, paperLoading:true, paperError:'', selectionToolbar:{ visible:false, x:0, y:0 }, translationPopup:{ visible:false, x:0, y:0, original:'', translated:'', baseScrollTop:0, scrollDelta:0, dx:0, dy:0 }, headingStudyAction:{ visible:false, x:0, y:0, targetId:'', title:'', placement:'right' }, studySession:{ visible:false, sectionTitle:'', progress:0, stage:'' }, contentAskAction:{ visible:false, x:0, y:0, targetId:'', kind:'', text:'' }, composerContexts:[], contextTooltipIndex:-1, contextsExpanded:false, contextLimitNotice:false };
+  state = { compileRetried:false, tocOpen:false, activeSection:'', translationMode:null, chatOpen:null, chatWidthOpen:null, historyOpen:false, messages:[], chatInput:'', isStreaming:false, history: HISTORY.slice(), composerFocused:false, paperBlocks:[], translations:{ title:'', blocks:{} }, paperLoading:true, paperError:'', selectionToolbar:{ visible:false, x:0, y:0 }, translationPopup:{ visible:false, x:0, y:0, original:'', translated:'', baseScrollTop:0, scrollDelta:0, dx:0, dy:0 }, headingStudyAction:{ visible:false, x:0, y:0, targetId:'', title:'', placement:'right' }, studySession:{ visible:false, sectionTitle:'', progress:0, stage:'' }, contentAskAction:{ visible:false, x:0, y:0, targetId:'', kind:'', text:'' }, composerContexts:[], contextTooltipIndex:-1, contextsExpanded:false, contextLimitNotice:false };
 
   componentDidMount(){
     document.addEventListener('mousedown', this.handleDocMouseDown, true);
@@ -1141,6 +1147,8 @@ class Component extends DCLogic {
     return this.effectiveTranslationMode() === 'side' ? 320 : 400;
   }
 
+  retryCompile = () => this.setState({ compileRetried: true });
+
   cycleTranslationMode = () => {
     const next = { off:'below', below:'side', side:'off' }[this.translationMode()];
     this.setState({
@@ -1393,6 +1401,8 @@ class Component extends DCLogic {
       tocIcon: tocOpen ? 'x' : 'list',
       tocLabel: tocOpen ? '목차 닫기' : '목차 열기',
       toggleToc: this.toggleToc,
+      compileRetryVisible: String(this.props.compileRetryable) === 'true' && !this.state.compileRetried,
+      retryCompile: this.retryCompile,
       cycleTranslationMode: this.cycleTranslationMode,
       translationActive: showTranslation,
       translationDisabled: !hasTranslation,

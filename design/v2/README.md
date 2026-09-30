@@ -68,6 +68,15 @@ Paper Teacher v2의 화면 디자인과 디자인 시스템 산출물 인덱스�
 
 데이터는 `GET /api/papers/{paperId}/status`의 `knowledgeGraphStatus`(PENDING/READY/FAILED/null)와 `GET /api/papers/{paperId}/knowledge-graph`(`contracts/frontend-backend/openapi.yaml` 0.7.0)를 따른다. READY일 때만 URL을 받아 iframe `src`로 넣는다. 준비되지 않은 상태로 URL 진입하면 캔버스 자리에 툴팁과 같은 문구와 `본문으로` 링크를 보여준다.
 
+## Screen States — 실패한 논문 재시도 (FT-003 / YMC-422)
+
+| 상태 | 파일 | 요약 |
+|---|---|---|
+| 서재 · 실패 행 | [Paper Bookshelf Page - Retry](Paper%20Bookshelf%20Page%20-%20Retry.dc.html) | 실패한 행은 `실패` 아래에 `등록 횟수가 차감되지 않았습니다`를 작게 적고 오른쪽에 `다시 시도` 버튼을 둔다. 시도 횟수를 모두 쓴 파일은 버튼 없이 `처리할 수 없는 파일입니다`만 보인다. 버튼을 눌러도 행 클릭으로 이어지지 않는다. 업로드가 확인되지 않아 만료된 행은 지금처럼 `실패`만 보인다. 격자 카드는 폭이 좁아 같은 표시를 `실패`, 안내 문구, 버튼 순으로 세로로 쌓는다. |
+| 학습 · 번역·지식 그래프 재시도 | [Paper Study Page](Paper%20Study%20Page.dc.html) | 트윅 `compileRetryable`이 켜지면 상단 바의 `번역` 버튼 오른쪽에 `번역·지식 그래프 다시 만들기` 버튼이 나타난다. 누르면 버튼이 사라지고, 이후 `번역`과 `지식 그래프`는 상태 응답에 따라 준비 중으로 바뀐다. |
+
+데이터는 `GET /api/papers`와 `GET /api/papers/{paperId}/status`의 `failReason`(`PROCESSING_FAILED`/`RETRY_LIMIT_EXCEEDED`/null), 상태 응답의 `compileRetryable`, `POST /api/papers/{paperId}/retry`(`contracts/frontend-backend/openapi.yaml` 0.12.0)를 따른다. 재시도가 429(`PAPER_USAGE_LIMIT_EXCEEDED`)로 거절되면 BE 문구를 토스트로 보여주고 플랜 사용량을 다시 받아 위의 문서 등록 한도 소진 상태로 전환한다. 재시도 응답이 오면 토스트(`다시 분석을 시작했습니다`, 이미 분석된 파일이면 `논문이 준비되었습니다`)를 띄우고 목록을 다시 받아 행이 응답 상태를 따라가며 기존 폴링이 이어진다.
+
 ## Design System
 
 - [Paper Teacher Design System](_ds/paper-teacher-design-system-1a53a7a7-d059-48b5-b12a-0094ed1cc07b/readme.md)

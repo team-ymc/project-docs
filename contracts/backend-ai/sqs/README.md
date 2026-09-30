@@ -26,6 +26,10 @@
 5. BE는 knowledge compile 완료 결과를 반영한 뒤에만 전체 번역과 지식 번들 기능을
    활성화한다. 전체 번역 사이드카는 파싱이 아니라 이 단계의 산출물이다.
 
+파싱이 `failed`로 끝난 문서는 사용자의 재시도 또는 같은 파일의 새 등록으로 BE가
+`parse-requests`를 다시 발행할 수 있다. 메시지는 최초 요청과 같은 `paper_id`와 `file_key`를
+담는다. 다시 발행하는 횟수의 상한은 BE가 관리한다.
+
 knowledge compile 성공 결과의 `manifest_key`는 최초 파싱 성공 결과와 같은 중앙
 `manifest.json`을 가리킨다. 별도의 지식 번들 manifest는 생성하지 않는다. 모든
 compile 산출물을 저장한 뒤 중앙 manifest를 마지막으로 다시 발행하며, `artifacts`에
@@ -47,7 +51,9 @@ compile 산출물을 저장한 뒤 중앙 manifest를 마지막으로 다시 발
 
 BE는 컴파일 `failed` 결과를 받으면 컴파일 상태와 실패 코드를 기록하고 전체 번역과
 지식 번들을 비활성으로 둔다. 문서의 파싱 상태는 바꾸지 않는다. 같은 `manifest_key`로
-자동 재요청하지 않으며, 다시 시도하려면 재파싱 경로를 탄다.
+자동 재요청하지 않는다. 사용자가 재시도하면 BE가 같은 `paper_id`와 같은 `manifest_key`로
+`knowledge-compile-requests`를 다시 발행한다. 파싱은 다시 하지 않는다. 다시 발행하는
+횟수의 상한은 BE가 관리한다.
 
 ### 클라이언트와 QueueUrl
 
@@ -110,6 +116,7 @@ endpoint를 지정하지 않고 ECS task role이나 EKS workload role을 사용�
 4. 앱은 SQS 재시도 횟수나 마지막 시도를 판단하지 않는다. `ApproximateReceiveCount`, DLQ
    URL·ARN과 `maxReceiveCount`도 애플리케이션 설정으로 받지 않는다.
     - 즉 DLQ의 존재를 애플리케이션은 모른다.
+    - 사용자 재시도로 BE가 요청을 다시 발행하는 횟수의 상한은 SQS 재전달과 별개로 BE가 관리한다.
 
 ## 인프라
 
