@@ -10,6 +10,7 @@ Paper Teacher의 metric, 로그, trace와 alert가 생성되어 수집·저장·
 |---|---|
 | [Telemetry Pipelines](telemetry-pipelines.md) | metric과 로그의 생성·수집·전송·저장·조회 책임 |
 | [Backend Dashboard](backend-dashboard.md) | Backend dashboard의 패널 구성, 실험별 추가 계획과 집계 규칙 |
+| [Product Analytics](product-analytics.md) | 사용자 행동 지표, 수집 이벤트와 UTM 규칙 |
 
 내용이 실제로 커질 때만 conventions, alerting, SLO와 dashboard 문서를 분리한다. 이 README에 상세 규칙이나 상태를 복제하지 않는다.
 
