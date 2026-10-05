@@ -30,7 +30,7 @@ flowchart LR
 |---|---|---|
 | FE | PR에서 type check, test, build를 수행한다. `main`의 `fe/**` 변경 시 다시 build한다. | S3를 build 결과와 동기화한 뒤 CloudFront cache를 무효화한다. |
 | Backend | PR에서 test와 container build를 수행한다. `main`의 `be/**` 변경 시 test를 다시 실행한다. | commit SHA로 image를 ECR에 저장하고 새 Task Definition revision을 ECS Service에 배포한다. |
-| AI API·Parser Worker | PR에서 test와 build를 수행한다. `ai` 저장소 `main` push 시 image를 build한다. | commit SHA image를 ECR에 저장하고 AI API·Parser Worker 두 ECS Service에 새 revision을 배포한다(dev). |
+| AI API·Parser Worker·Compile Worker | PR에서 test와 build를 수행한다. `ai` 저장소 `main` push 시 image를 build한다. | commit SHA image를 ECR에 저장하고 AI API·Parser Worker·Compile Worker 세 ECS Service에 새 revision을 배포한다(dev). |
 | Terraform | 변경 사항의 plan을 검토한 뒤 환경 root module을 적용한다. | AWS 리소스와 애플리케이션이 사용하는 배포 기반을 구성한다. |
 
 FE와 Backend 배포는 동시에 하나만 실행한다. 진행 중인 배포를 취소하지 않고 다음 배포가 완료될
@@ -49,7 +49,7 @@ GitHub Actions는 GitHub OIDC Role을 통해 배포 시점에 임시 자격을 �
 |---|---|---|
 | FE | 지정한 이전 commit을 checkout하고 다시 build해 S3에 배포한다. | 과거 artifact를 보관하지 않으므로 최초 배포와 bit 단위로 같은 결과를 보장하지 않는다. |
 | Backend | 지정한 기존 Task Definition revision으로 ECS Service를 변경하고 안정화를 기다린다. | 기능 오류는 사람이 rollback 대상을 선택한다. 기동 실패는 ECS deployment circuit breaker가 처리한다. |
-| AI API·Parser Worker | 전용 rollback workflow를 별도로 정의한다. | 자동화 전에는 배포 대상 revision과 복구 절차를 함께 검증해야 한다. |
+| AI API·Parser Worker·Compile Worker | 전용 rollback workflow를 별도로 정의한다. | 자동화 전에는 배포 대상 revision과 복구 절차를 함께 검증해야 한다. |
 | Terraform | 변경 유형에 맞춰 이전 구성으로 수정하고 plan을 검토한 뒤 적용한다. | 상태를 임의로 되돌리지 않으며 데이터 변경이 포함되면 별도 복구 절차가 필요하다. |
 
 
