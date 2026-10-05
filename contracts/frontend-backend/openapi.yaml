@@ -17,12 +17,13 @@ info:
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
     - BE↔AI 인라인 번역 스트림: contracts/backend-ai/sse/inline-translate-agent-run-stream.yml
 
-  version: 0.12.0
+  version: 0.13.0
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
 #   GET /api/oauth2/authorization/google  → Google 동의 화면으로 리다이렉트
 #   GET /api/login/oauth2/code/google     → 콜백. 성공: {FE_ORIGIN}/auth/popup-done.html로 302
+#                                            이 로그인으로 사용자 레코드가 새로 생성됐으면 ?signup=true를 붙인다
 #                                            실패: {FE_ORIGIN}/auth/popup-done.html?error=oauth_failed
 security:
   - bearerAuth: []
