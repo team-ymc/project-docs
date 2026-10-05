@@ -17,7 +17,7 @@ AWS 리소스는 단일 리전에 구성하고 DEV와 PROD 환경으로 분리�
 
 ## 3. 현재 아키텍처
 
-![PaperTutor DEV AWS 아키텍처](assets/papertutor-dev-aws-architecture.drawio.svg)
+![PaperTutor DEV AWS 아키텍처](assets/paperteacher_aws_architecture_v2.svg)
 
 위 다이어그램은 현재 DEV 환경을 기준으로 한다. 호스트와 클러스터 운영 부담을 줄이기 위해
 Amazon ECS on AWS Fargate, Amazon RDS, Amazon SQS, Amazon S3 등 AWS 관리형 서비스를 중심으로 구성했다.
@@ -36,9 +36,11 @@ Amazon ECS on AWS Fargate, Amazon RDS, Amazon SQS, Amazon S3 등 AWS 관리형 �
 | BE API | Backend ECS Service | 인증·권한·제품 데이터, presigned URL 발급, AI 호출 중계, 파싱 요청·결과 처리 |
 | AI API  | AI API ECS Service | Backend의 내부 HTTP·SSE 요청을 받아 AI 응답 생성 |
 | Parser Worker | Parser Worker ECS Service | SQS 파싱 요청을 long polling하고 논문 파싱 결과를 발행 |
+| Compile Worker | Compile Worker ECS Service | SQS 지식 번들 생성 요청을 long polling하고 번역·선행지식 하이라이트 등 산출물을 S3에 저장한 뒤 결과를 발행 |
 | 관계형 데이터 | RDS PostgreSQL | 사용자·문서·대화 등 데이터, LangGraph의 checkpoint |
+| 캐시 | ElastiCache for Valkey | Backend 전용 파생 데이터 캐시(선행지식 설명). 상세는 7절 |
 | 파일 데이터 | Application S3 | PDF 원본, 처리 결과와 DLQ 원본 archive 보관 |
-| 비동기 처리 | SQS | `parse-requests`, `parse-results`와 각 DLQ 제공 |
+| 비동기 처리 | SQS | `parse-requests`, `parse-results`, `knowledge-compile-requests`, `knowledge-compile-results`와 각 DLQ 제공 |
 | 최종 실패 처리 | DLQ Handler Lambda | DLQ 원본을 S3에 보관하고 요청 재시도 소진을 실패 결과로 변환 |
 | Secret | Secrets Manager | DB 비밀번호와 Backend·AI runtime secret 보관 및 ECS 주입 |
 | Image | ECR | Backend와 AI 컨테이너 image 보관 |
@@ -51,7 +53,8 @@ Amazon ECS on AWS Fargate, Amazon RDS, Amazon SQS, Amazon S3 등 AWS 관리형 �
   ALB를 거쳐 Backend로 전달한다.
 - 채팅: Backend가 Service Connect를 통해 AI API를 호출하고, AI 응답을 FE에 SSE로 중계한다.
 - 문서 파싱: FE는 presigned URL로 PDF를 Application S3에 직접 업로드한다. Backend와 Parser Worker는
-  SQS를 통해 파싱 요청과 결과를 주고받는다.
+  SQS를 통해 파싱 요청과 결과를 주고받는다. 파싱이 완료되면 Backend가 지식 번들 생성 요청을 발행하고,
+  Compile Worker가 산출물을 S3에 저장한 뒤 결과를 SQS로 돌려준다.
 - DB 접근: RDS는 DEV·PROD 모두 Private subnet에 둔다. 접속이 필요한 경우, 일회성 Fargate relay Task를 띄우고 
   SSM 포트포워딩으로 로컬 포트를 RDS에 연결한다. 절차는 infra의
   [`rds-dbeaver` runbook](https://github.com/team-ymc/infra/blob/main/docs/runbooks/rds-dbeaver.md)을 따른다.
@@ -66,13 +69,13 @@ GitHub Actions가 담당한다.
 
 환경별 배포 흐름과 rollback 전략은 [`CI/CD`](ci-cd.md)에서 관리한다.
 
-## 7. FT-012 예정 캐시 계층
+## 7. 캐시 계층 (FT-012)
 
 선행지식 설명은 다시 생성할 수 있는 파생 데이터이므로 PostgreSQL에 영구 저장하지 않고
 Backend 전용 캐시 계층에 둔다. 구체적인 선택 근거와 데이터 수명은
 [`ADR-011`](../decisions/ADR-011-prerequisite-definition-redis-cache.md)을 따른다.
 
-- DEV·PROD는 각각 Amazon ElastiCache for Valkey node-based `cache.t4g.micro` 1대로 시작한다.
+- DEV·PROD는 각각 Amazon ElastiCache for Valkey node-based `cache.t4g.micro` 1대로 운영한다.
 - cluster mode는 끄고 전송 구간 TLS를 사용하며, 파생 캐시이므로 백업은 두지 않는다.
 - ElastiCache는 private subnet에서 Backend만 접근한다. AI API는 캐시에 직접 연결하지 않는다.
 - local은 Valkey-compatible container로 같은 protocol과 TTL 동작을 제공한다.
