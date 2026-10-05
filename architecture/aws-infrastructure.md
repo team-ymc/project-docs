@@ -17,7 +17,7 @@ AWS 리소스는 단일 리전에 구성하고 DEV와 PROD 환경으로 분리�
 
 ## 3. 현재 아키텍처
 
-![PaperTutor DEV AWS 아키텍처](assets/papertutor-dev-aws-architecture.drawio.svg)
+![PaperTutor DEV AWS 아키텍처](assets/paperteacher_aws_architecture_v2.svg)
 
 위 다이어그램은 현재 DEV 환경을 기준으로 한다. 호스트와 클러스터 운영 부담을 줄이기 위해
 Amazon ECS on AWS Fargate, Amazon RDS, Amazon SQS, Amazon S3 등 AWS 관리형 서비스를 중심으로 구성했다.
