@@ -10,6 +10,10 @@ Paper Teacher의 화면 디자인과 디자인 시스템 산출물을 관리한�
 
 - [플랜 소개](plans/README.md) — Free·Pro 사용량과 이용 안내를 담은 반응형 플랜 페이지 시안
 
+## Trial
+
+- [체험 페이지](trial/README.md) — 가입 없이 주제별 논문 한 편을 바로 읽어보는 데스크톱 전용 체험 페이지 시안
+
 ## Versions
 
 | Version | 문서 |

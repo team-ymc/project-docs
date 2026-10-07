@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#241c18" />
+  <meta name="description" content="로그인 없이 주제별로 골라둔 논문을 Paper Teacher 뷰어로 바로 읽어보세요." />
+  <title>체험 — Paper Teacher</title>
+  <link rel="stylesheet" href="../v2/vendor/noto-serif-kr/index.css" />
+  <style>
+    @font-face { font-family:Pretendard; src:url('../v2/vendor/fonts/PretendardVariable.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
+    :root { --ink:#26211d; --muted:#6e675e; --paper:#fffdf8; --cream:#f7f1e7; --sand:#eee4d4; --line:#d9cdbb; --navy:#243a55; --brown:#241c18; --walnut:#2b221c; --gold:#b89965; --brass:#d6b982; --serif:'Noto Serif KR',Georgia,serif; --sans:Pretendard,'Apple SD Gothic Neo',sans-serif; }
+    * { box-sizing:border-box; }
+    html,body { height:100%; }
+    body { margin:0; min-width:1024px; display:flex; flex-direction:column; background:var(--cream); color:var(--ink); font-family:var(--sans); -webkit-font-smoothing:antialiased; }
+    a { color:inherit; text-decoration:none; }
+    button { font:inherit; color:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; cursor:pointer; }
+    :focus-visible { outline:2px solid #8a6c3d; outline-offset:4px; }
+    h1,h2,h3,p { margin-top:0; }
+    .container { width:min(100% - 64px,1280px); margin-inline:auto; }
+
+    /* header */
+    .site-header { flex:none; height:72px; background:var(--brown); color:#fffaf1; border-bottom:1px solid rgba(255,255,255,.08); }
+    .site-header .container { height:100%; display:flex; align-items:center; }
+    .brand { display:inline-flex; align-items:center; gap:11px; font:600 18px var(--serif); letter-spacing:-.04em; white-space:nowrap; }
+    .brand-mark { width:26px; height:26px; color:var(--brass); flex:none; }
+    .nav { display:flex; gap:29px; margin-left:45px; height:100%; align-items:center; color:#d8cfc1; font-size:14px; }
+    .nav a { display:inline-flex; height:100%; align-items:center; border-bottom:2px solid transparent; padding-top:2px; }
+    .nav a[aria-current] { color:#fffaf1; border-bottom-color:#d5b681; }
+    .nav a:hover { color:#fffaf1; }
+    .header-cta { margin-left:auto; padding:10px 17px; border:1px solid rgba(255,255,255,.4); border-radius:100px; font-size:13px; font-weight:700; background:transparent; }
+    .header-cta:hover { background:#fffaf1; color:var(--brown); }
+
+    /* main */
+    main { flex:1; display:flex; flex-direction:column; min-height:0; }
+    .hero { flex:none; padding:40px 0 38px; text-align:center; background:radial-gradient(ellipse at 50% 110%,rgba(36,58,85,.10) 0,transparent 55%),radial-gradient(circle at 50% -40%,#f0ddbd 0,transparent 50%),var(--cream); }
+    .hero .container { display:flex; flex-direction:column; align-items:center; }
+    .eyebrow { display:inline-flex; align-items:center; gap:12px; margin:0 0 14px; color:#8a6d44; font-size:12px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+    .eyebrow:before,.eyebrow:after { content:""; display:block; width:30px; height:1px; background:#a58858; }
+    .hero h1 { margin:0 0 28px; font:600 52px/1.2 var(--serif); letter-spacing:-.06em; word-break:keep-all; white-space:nowrap; }
+    .hero h1 em { font-style:normal; color:var(--navy); }
+    .button-primary { display:inline-flex; align-items:center; justify-content:center; gap:12px; min-height:64px; padding:0 44px; background:var(--navy); border:0; border-radius:100px; color:#fff; font-size:18px; font-weight:700; white-space:nowrap; box-shadow:0 0 0 5px rgba(214,185,130,.28),0 18px 36px rgba(36,58,85,.26); transition:background .2s,box-shadow .2s; }
+    .button-primary:hover { background:#182e47; box-shadow:0 0 0 7px rgba(214,185,130,.36),0 18px 36px rgba(36,58,85,.3); }
+
+    /* shelf */
+    .shelf { flex:1; min-height:0; display:flex; flex-direction:column; background:var(--walnut); background-image:radial-gradient(ellipse at 50% 0%,rgba(214,185,130,.10) 0,transparent 60%); }
+    .shelf .container { flex:1; min-height:0; display:flex; flex-direction:column; padding-top:28px; padding-bottom:28px; }
+    .shelf-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; color:#b9aa98; font-size:12px; letter-spacing:.12em; text-transform:uppercase; font-weight:700; }
+    .shelf-head span:last-child { letter-spacing:.02em; text-transform:none; font-weight:500; color:#9c8d7b; }
+    .panels { flex:1; min-height:0; display:flex; gap:14px; }
+    .panel { position:relative; flex:1 1 0; min-width:0; display:flex; flex-direction:column; padding:0; border-radius:6px; background:#f4ecdf; border:1px solid rgba(255,255,255,.06); color:var(--ink); overflow:hidden; transition:flex .45s cubic-bezier(.2,.7,.2,1),background .3s; }
+    .panel:hover,.panel:focus-visible { flex:2.1 1 0; background:var(--paper); }
+    .panel-head { display:flex; flex-direction:column; align-items:center; text-align:center; padding:18px 20px 16px; background:#3a2e27; color:#fffaf1; border-bottom:2px solid var(--brass); white-space:nowrap; transition:background .3s; }
+    .panel:hover .panel-head { background:var(--navy); border-bottom-color:#8fa3bd; }
+    .panel-head .kicker { display:flex; align-items:center; gap:8px; color:var(--brass); font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; overflow:hidden; }
+    .panel-head .kicker .num { font:600 12px var(--serif); letter-spacing:.04em; color:#e8d9bf; }
+    .panel-head .kicker .en { overflow:hidden; text-overflow:ellipsis; }
+    .panel-head h2 { margin:0; font:600 32px/1.1 var(--serif); letter-spacing:-.04em; color:#fffaf1; }
+    .thumb { position:relative; flex:1; min-height:0; margin:20px 20px 0; overflow:hidden; border-radius:3px 3px 0 0; }
+    .thumb img { display:block; width:100%; height:auto; background:#fff; border:1px solid #e3dac9; border-bottom:0; border-radius:2px 2px 0 0; box-shadow:0 14px 30px rgba(77,56,29,.14); transition:transform .35s; }
+    .panel:hover .thumb img { transform:translateY(-6px); }
+    .thumb:after { content:""; position:absolute; left:0; right:0; bottom:0; height:70px; background:linear-gradient(180deg,rgba(244,236,223,0) 0%,#f4ecdf 100%); transition:background .3s; pointer-events:none; }
+    .panel:hover .thumb:after { background:linear-gradient(180deg,rgba(255,253,248,0) 0%,#fffdf8 100%); }
+    .panel-body { flex:none; padding:16px 20px 20px; }
+    .card-title { margin:0 0 8px; font:600 17px/1.4 var(--serif); letter-spacing:-.02em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .panel:hover .card-title { color:var(--navy); }
+    .card-hook { margin:0; color:var(--muted); font-size:13.5px; line-height:1.65; word-break:keep-all; max-height:0; opacity:0; overflow:hidden; transition:max-height .4s ease,opacity .3s ease .1s; }
+    .panel:hover .card-hook,.panel:focus-visible .card-hook { max-height:80px; opacity:1; }
+    .panel-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; color:#9b8f7e; font-size:11.5px; letter-spacing:.02em; white-space:nowrap; }
+    .panel-foot .meta { display:flex; align-items:center; gap:7px; overflow:hidden; }
+    .panel-foot .meta .venue { overflow:hidden; text-overflow:ellipsis; }
+    .panel-foot .dot { flex:none; width:3px; height:3px; border-radius:50%; background:#c2b6a2; }
+    .read { display:inline-flex; align-items:center; gap:6px; flex:none; color:var(--navy); font-size:13px; font-weight:700; opacity:0; transform:translateX(-6px); transition:opacity .25s,transform .25s; }
+    .panel:hover .read,.panel:focus-visible .read { opacity:1; transform:none; }
+
+    .footer { flex:none; padding:14px 0; background:var(--brown); color:#b9aa98; border-top:1px solid rgba(255,255,255,.06); }
+    .footer .container { display:flex; justify-content:space-between; align-items:center; gap:20px; font-size:12px; }
+    .footer .brand { font-size:14px; color:#f3e7d3; }
+    .footer .brand-mark { width:20px; height:20px; }
+
+    /* modal */
+    dialog { width:440px; max-width:calc(100% - 48px); padding:0; border:1px solid #e0d6c5; border-radius:14px; background:var(--paper); color:var(--ink); box-shadow:0 30px 70px rgba(36,28,24,.3); }
+    dialog::backdrop { background:rgba(36,28,24,.6); }
+    .modal { padding:40px 40px 32px; text-align:center; }
+    .modal .brand-mark { width:34px; height:34px; color:#9e8158; margin-bottom:18px; }
+    .modal h3 { margin:0 0 12px; font:600 26px/1.35 var(--serif); letter-spacing:-.04em; word-break:keep-all; }
+    .modal p { margin:0 0 28px; color:var(--muted); font-size:15px; line-height:1.7; word-break:keep-all; }
+    .modal .perks { display:flex; justify-content:center; gap:8px; margin:0 0 28px; padding:0; list-style:none; }
+    .modal .perks li { padding:7px 12px; border:1px solid #e3d8c4; border-radius:100px; background:#faf6ee; color:#62584d; font-size:12px; font-weight:650; }
+    .google-btn { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; min-height:52px; border:1px solid #d6cbb8; border-radius:100px; background:#fff; color:var(--ink); font-size:15px; font-weight:700; transition:border-color .2s,background .2s; }
+    .google-btn:hover { border-color:var(--navy); background:#fbfaf6; }
+    .google-btn svg { width:20px; height:20px; }
+    .modal .dismiss { margin-top:18px; border:0; background:transparent; color:#8b8173; font-size:13px; font-weight:600; border-bottom:1px solid transparent; }
+    .modal .dismiss:hover { color:var(--navy); border-bottom-color:var(--navy); }
+    @media (prefers-reduced-motion:reduce) { .panel,.thumb img,.card-hook,.read,.thumb:after { transition:none; } }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute"><symbol id="stack" viewBox="0 0 32 32"><path d="M4 9.5 16 4l12 5.5L16 15 4 9.5Zm0 6.5 12 5.5L28 16M4 22.5 16 28l12-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
+
+  <header class="site-header"><div class="container">
+    <a class="brand" href="../landing/Paper%20Landing%20Page%20-%20Marketing.html"><svg class="brand-mark"><use href="#stack"/></svg>Paper Teacher</a>
+    <nav class="nav" aria-label="주요 메뉴"><a href="#" aria-current="page">체험</a><a href="#">기능</a><a href="../plans/Paper%20Plans%20Page%20-%20Marketing.html">플랜</a></nav>
+    <button class="header-cta" type="button" data-open-login>로그인</button>
+  </div></header>
+
+  <main>
+    <section class="hero"><div class="container">
+      <p class="eyebrow">Try without sign-up</p>
+      <h1><em>논문 한 편</em> 읽어보세요.</h1>
+      <button class="button-primary" type="button" data-open-login><svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>내 논문 업로드하기</button>
+    </div></section>
+
+    <section class="shelf" aria-label="주제별 체험 논문"><div class="container">
+      <div class="shelf-head"><span>Five topics · Five papers</span><span>마우스를 올려 살펴보고, 눌러서 읽어보세요</span></div>
+      <div class="panels">
+
+        <a class="panel" href="../v2/Paper%20Study%20Page.dc.html">
+          <div class="panel-head"><h2>사랑</h2></div>
+          <div class="thumb"><img src="trial-assets/love.jpg" alt="사랑에 빠진 사람의 뇌를 휴지기 fMRI로 비교한 논문의 첫 페이지" loading="eager" /></div>
+          <div class="panel-body">
+            <h3 class="card-title">Love-related Changes in the Brain: A Resting-state fMRI Study</h3>
+            <p class="card-hook">사랑에 빠진 사람, 막 이별한 사람, 연애한 적 없는 사람. 가만히 쉬고 있을 때조차 세 집단의 뇌는 다르게 움직인다.</p>
+            <div class="panel-foot"><div class="meta"><span>2015</span><span class="dot"></span><span class="venue">Frontiers in Human Neuroscience</span></div><span class="read">읽어보기 →</span></div>
+          </div>
+        </a>
+
+        <a class="panel" href="../v2/Paper%20Study%20Page.dc.html">
+          <div class="panel-head"><h2>AI</h2></div>
+          <div class="thumb"><img src="trial-assets/attention.jpg" alt="Attention Is All You Need 논문의 첫 페이지" loading="eager" /></div>
+          <div class="panel-body">
+            <h3 class="card-title">Attention Is All You Need</h3>
+            <p class="card-hook">ChatGPT를 비롯한 오늘날 언어 모델의 뼈대, 트랜스포머가 처음 등장한 논문.</p>
+            <div class="panel-foot"><div class="meta"><span>2017</span><span class="dot"></span><span class="venue">NeurIPS</span></div><span class="read">읽어보기 →</span></div>
+          </div>
+        </a>
+
+        <a class="panel" href="../v2/Paper%20Study%20Page.dc.html">
+          <div class="panel-head"><h2>반도체</h2></div>
+          <div class="thumb"><img src="trial-assets/moore.jpg" alt="무어의 1965년 Electronics 기고문 첫 페이지" loading="eager" /></div>
+          <div class="panel-body">
+            <h3 class="card-title">Cramming More Components onto Integrated Circuits</h3>
+            <p class="card-hook">반세기 동안 반도체 산업을 이끈 '무어의 법칙'이 처음 쓰인 네 쪽짜리 글.</p>
+            <div class="panel-foot"><div class="meta"><span>1965</span><span class="dot"></span><span class="venue">Electronics</span></div><span class="read">읽어보기 →</span></div>
+          </div>
+        </a>
+
+        <a class="panel" href="../v2/Paper%20Study%20Page.dc.html">
+          <div class="panel-head"><h2>우주</h2></div>
+          <div class="thumb"><img src="trial-assets/ligo.jpg" alt="중력파 첫 관측 논문의 첫 페이지" loading="eager" /></div>
+          <div class="panel-body">
+            <h3 class="card-title">Observation of Gravitational Waves from a Binary Black Hole Merger</h3>
+            <p class="card-hook">13억 년 전 두 블랙홀이 합쳐지며 낸 시공간의 떨림을 인류가 처음 들은 날의 기록.</p>
+            <div class="panel-foot"><div class="meta"><span>2016</span><span class="dot"></span><span class="venue">Physical Review Letters</span></div><span class="read">읽어보기 →</span></div>
+          </div>
+        </a>
+
+        <a class="panel" href="../v2/Paper%20Study%20Page.dc.html">
+          <div class="panel-head"><h2>수면</h2></div>
+          <div class="thumb"><img src="trial-assets/sleep.jpg" alt="수면 부족과 외로움 논문의 첫 페이지" loading="eager" /></div>
+          <div class="panel-body">
+            <h3 class="card-title">Sleep Loss Causes Social Withdrawal and Loneliness</h3>
+            <p class="card-hook">하룻밤 잠을 설치면 사람을 피하게 되고, 그 외로움은 옆 사람에게까지 옮는다. 뇌 영상과 실험으로 보인 연구.</p>
+            <div class="panel-foot"><div class="meta"><span>2018</span><span class="dot"></span><span class="venue">Nature Communications</span></div><span class="read">읽어보기 →</span></div>
+          </div>
+        </a>
+
+      </div>
+    </div></section>
+  </main>
+
+  <footer class="footer"><div class="container"><a class="brand" href="#"><svg class="brand-mark"><use href="#stack"/></svg>Paper Teacher</a><span>논문을 이해하는 더 나은 방법</span><a href="#" data-open-login style="color:#e8d9bf;font-weight:600">읽고 싶은 논문이 따로 있나요? 내 논문 업로드하기 →</a></div></footer>
+
+  <dialog id="login-modal" aria-labelledby="login-title">
+    <div class="modal">
+      <svg class="brand-mark" aria-hidden="true"><use href="#stack"/></svg>
+      <h3 id="login-title">가입하고 무료로 이용해보세요.</h3>
+      <p>지금 보던 논문은 서재에서 이어서 읽을 수 있어요.</p>
+      <button class="google-btn" type="button">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.7-4.1-13.6-9.9l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        Google로 계속하기
+      </button>
+      <button class="dismiss" type="button" data-close-login>계속 둘러보기</button>
+    </div>
+  </dialog>
+
+  <script>
+    const modal = document.getElementById('login-modal');
+    document.querySelectorAll('[data-open-login]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); modal.showModal(); }));
+    document.querySelectorAll('[data-close-login]').forEach((b) => b.addEventListener('click', () => modal.close()));
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+  </script>
+</body>
+</html>
