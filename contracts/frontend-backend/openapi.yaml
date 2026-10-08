@@ -703,7 +703,7 @@ paths:
 
   # 체험(YMC-430): 가입 없이 체험 논문을 읽는 경로. 운영자가 `paper.trial = true`로 켠 논문만 응답하고,
   # 그 외는 존재 여부를 숨기기 위해 404다. 응답 스키마는 /api/papers/{paperId}/* 와 같아 FE 뷰어는 base path만 바꾼다.
-  # 체험 논문 목록 API는 없다 — 주제·소개 문구는 FE가 정적으로 갖고 paperId만 환경 변수로 받는다.
+  # 체험 논문 목록 API는 없다 — 주제·소개 문구와 paperId를 FE가 호스트별 정적 설정으로 갖는다.
   # 채팅·인라인 번역·다운로드·재시도는 체험 경로에 없고, 기존 경로는 인증이 필요해 비로그인은 401이다.
   /api/trial/papers/{paperId}/content:
     get:
