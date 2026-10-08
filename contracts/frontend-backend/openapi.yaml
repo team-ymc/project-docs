@@ -17,7 +17,7 @@ info:
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
     - BE↔AI 인라인 번역 스트림: contracts/backend-ai/sse/inline-translate-agent-run-stream.yml
 
-  version: 0.13.0
+  version: 0.14.0
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -691,6 +691,116 @@ paths:
               schema: { $ref: "#/components/schemas/Error" }
         "429":
           description: "사용자의 다른 선행지식 설명이 생성 중. code: PREREQUISITE_CONCURRENCY_LIMIT_EXCEEDED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "502":
+          description: "AI 설명 생성 실패. code: PREREQUISITE_DEFINITION_FAILED"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # 체험(YMC-430): 가입 없이 체험 논문을 읽는 경로. 운영자가 `paper.trial = true`로 켠 논문만 응답하고,
+  # 그 외는 존재 여부를 숨기기 위해 404다. 응답 스키마는 /api/papers/{paperId}/* 와 같아 FE 뷰어는 base path만 바꾼다.
+  # 체험 논문 목록 API는 없다 — 주제·소개 문구는 FE가 정적으로 갖고 paperId만 환경 변수로 받는다.
+  # 채팅·인라인 번역·다운로드·재시도는 체험 경로에 없고, 기존 경로는 인증이 필요해 비로그인은 401이다.
+  /api/trial/papers/{paperId}/content:
+    get:
+      operationId: getTrialPaperContent
+      summary: 체험 논문 본문 조회 (인증 없음)
+      description: |
+        `trial = true`인 논문의 파싱 본문을 인증 없이 반환한다. 응답과 조립 규칙은 `GET /api/papers/{paperId}/content`와
+        같다 — 수식·표 인라인, 이미지 presigned URL, 선행지식 범위 투영. 소유권 검사 대신 trial 플래그를 검사하며,
+        마지막 조회 시각은 기록하지 않는다.
+      tags: [trial]
+      security: []
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: 파싱 본문 (blocks는 globalOrder 오름차순)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaperContentResponse" }
+        "404":
+          description: 존재하지 않거나 체험 논문이 아닌 paperId. code PAPER_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/trial/papers/{paperId}/knowledge-graph:
+    get:
+      operationId: getTrialKnowledgeGraphView
+      summary: 체험 논문 지식 그래프 presigned GET URL 발급 (인증 없음)
+      description: |
+        `trial = true`인 논문의 지식 그래프 viz.html presigned GET URL을 인증 없이 발급한다.
+        응답과 가용 조건은 `GET /api/papers/{paperId}/knowledge-graph`와 같다.
+      tags: [trial]
+      security: []
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: presigned GET URL
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/KnowledgeGraphView" }
+        "404":
+          description: 존재하지 않거나 체험 논문이 아닌 paperId. code PAPER_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: knowledgeGraphStatus가 READY가 아님. code KNOWLEDGE_GRAPH_NOT_READY
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/trial/papers/{paperId}/prerequisite-highlights/{highlightId}/definition:
+    post:
+      operationId: createTrialPrerequisiteDefinition
+      summary: 체험 논문 선행지식 설명 조회 또는 생성 (인증 없음)
+      description: |
+        `trial = true`인 논문의 선행지식 설명을 인증 없이 반환한다. 캐시는 로그인 사용자와 같은 키를 쓰므로
+        한쪽이 생성하면 다른 쪽도 HIT다. cache MISS면 AI를 호출해 생성한다 — 사용량 차감은 없고,
+        사용자 키가 없으므로 사용자당 동시 생성 상한(429)은 적용하지 않는다. request body는 없다.
+      tags: [trial]
+      security: []
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: highlightId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 1
+          description: 현재 Document compile sidecar가 부여한 선행지식 하이라이트 식별자.
+      responses:
+        "200":
+          description: 캐시에서 조회했거나 새로 생성한 완성된 설명
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PrerequisiteDefinitionResponse" }
+        "404":
+          description: "paperId가 없거나 체험 논문이 아니면 PAPER_NOT_FOUND, 현재 Document에 highlightId가 없으면 PREREQUISITE_HIGHLIGHT_NOT_FOUND"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: "논문 본문 또는 compile sidecar가 준비되지 않음. code: PREREQUISITE_NOT_READY"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
