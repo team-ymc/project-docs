@@ -17,7 +17,7 @@ info:
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
     - BE↔AI 인라인 번역 스트림: contracts/backend-ai/sse/inline-translate-agent-run-stream.yml
 
-  version: 0.14.0
+  version: 0.14.1
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -648,6 +648,7 @@ paths:
 
         사용자당 선행지식 설명 생성은 동시에 하나만 허용한다. cache HIT는 동시 생성 상한에
         포함하지 않으며, 서로 다른 사용자의 동일 cache MISS 중복 생성은 MVP에서 허용한다.
+        논문이 `trial = true`면 설명을 만료 없이 둔다 — 체험 경로가 같은 캐시를 읽기 때문이다.
       tags: [papers]
       parameters:
         - name: paperId
@@ -769,9 +770,10 @@ paths:
       operationId: createTrialPrerequisiteDefinition
       summary: 체험 논문 선행지식 설명 조회 또는 생성 (인증 없음)
       description: |
-        `trial = true`인 논문의 선행지식 설명을 인증 없이 반환한다. 캐시는 로그인 사용자와 같은 키를 쓰므로
-        한쪽이 생성하면 다른 쪽도 HIT다. cache MISS면 AI를 호출해 생성한다 — 사용량 차감은 없고,
-        사용자 키가 없으므로 사용자당 동시 생성 상한(429)은 적용하지 않는다. request body는 없다.
+        `trial = true`인 논문의 미리 만들어 둔 선행지식 설명을 인증 없이 반환한다. AI는 부르지 않는다 —
+        캐시에 없으면 409 PREREQUISITE_NOT_READY다. 캐시 키는 로그인 경로와 같아, 운영자가 trial을 켜기 전에
+        마스터 계정으로 로그인 경로를 한 번씩 호출해 두면 된다(be/scripts/warm-trial-prerequisites.sh).
+        request body는 없다.
       tags: [trial]
       security: []
       parameters:
@@ -800,12 +802,7 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "409":
-          description: "논문 본문 또는 compile sidecar가 준비되지 않음. code: PREREQUISITE_NOT_READY"
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Error" }
-        "502":
-          description: "AI 설명 생성 실패. code: PREREQUISITE_DEFINITION_FAILED"
+          description: "논문 본문 또는 compile sidecar가 준비되지 않았거나, 이 하이라이트의 설명이 아직 만들어지지 않음. code: PREREQUISITE_NOT_READY"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
