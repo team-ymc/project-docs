@@ -63,7 +63,9 @@
     .others-head { flex:none; padding:13px 20px 11px; border-bottom:1px solid var(--line); color:#8a6d44; font-size:11.5px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
     .item { flex:1; min-height:0; display:flex; align-items:center; gap:14px; padding:0 20px; border-bottom:1px solid #e9dfcf; color:var(--ink); transition:background .2s; }
     .item:last-child { border-bottom:0; }
-    .item:hover,.item:focus-visible { background:var(--paper); }
+    .item:hover,.item:focus-visible,.item.active { background:var(--paper); }
+    .item.active .read { opacity:1; transform:none; }
+    .feature .tag[hidden] { display:none; }
     .item img { flex:none; width:38px; height:50px; object-fit:cover; object-position:top; border:1px solid var(--line); box-shadow:0 3px 8px rgba(77,56,29,.18); }
     .item .topic { flex:none; width:48px; font:600 16px var(--serif); color:var(--navy); }
     .item .title { flex:1; min-width:0; font:600 13.5px/1.35 var(--serif); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -110,27 +112,28 @@
     </div></section>
 
     <section class="shelf" aria-label="체험 논문"><div class="container">
-      <article class="feature">
+      <a class="feature" href="../v2/Paper%20Study%20Page.dc.html">
         <div class="tag">오늘의 논문</div>
-        <div class="pic"><img src="trial-assets/game.jpg" alt="Playing Atari with Deep Reinforcement Learning 논문의 첫 페이지" loading="eager" /></div>
+        <div class="pic"><img src="trial-assets/game.jpg" alt="Playing Atari with Deep Reinforcement Learning 첫 페이지" loading="eager" /></div>
         <div class="text">
           <p class="topic">게임</p>
           <h2 class="title">Playing Atari with Deep Reinforcement Learning</h2>
           <p class="hook">화면 픽셀만 보고 아타리 게임을 사람보다 잘하게 된 첫 신경망. 지금의 딥마인드가 여기서 시작됐다.</p>
-          <div class="meta"><span>2013</span><span class="dot"></span><span>arXiv</span></div>
-          <a class="button-primary" href="../v2/Paper%20Study%20Page.dc.html">읽어보기 →</a>
+          <div class="meta"><span class="year">2013</span><span class="dot"></span><span class="venue">arXiv</span></div>
+          <span class="button-primary">읽어보기 →</span>
         </div>
-      </article>
-      <nav class="others" aria-label="다른 주제의 체험 논문">
-        <div class="others-head">다른 주제도 골라보세요</div>
-        <a class="item" href="../v2/Paper%20Study%20Page.dc.html"><img src="trial-assets/sleep.jpg" alt="" /><span class="topic">수면</span><span class="title">Why Dream? A Conjecture on Dreaming</span><span class="year">2009</span><span class="read">→</span></a>
-        <a class="item" href="../v2/Paper%20Study%20Page.dc.html"><img src="trial-assets/money.jpg" alt="" /><span class="topic">돈</span><span class="title">Bitcoin: A Peer-to-Peer Electronic Cash System</span><span class="year">2008</span><span class="read">→</span></a>
-        <a class="item" href="../v2/Paper%20Study%20Page.dc.html"><img src="trial-assets/art.jpg" alt="" /><span class="topic">미술</span><span class="title">Instance Normalization: The Missing Ingredient for Fast Stylization</span><span class="year">2016</span><span class="read">→</span></a>
-        <a class="item" href="../v2/Paper%20Study%20Page.dc.html"><img src="trial-assets/love.jpg" alt="" /><span class="topic">사랑</span><span class="title">Do LLMs Give Good Romantic Relationship Advice?</span><span class="year">2025</span><span class="read">→</span></a>
-        <a class="item" href="../v2/Paper%20Study%20Page.dc.html"><img src="trial-assets/music.jpg" alt="" /><span class="topic">음악</span><span class="title">Simple and Controllable Music Generation</span><span class="year">2023</span><span class="read">→</span></a>
-        <a class="item" href="../v2/Paper%20Study%20Page.dc.html"><img src="trial-assets/language.jpg" alt="" /><span class="topic">언어</span><span class="title">Efficient Estimation of Word Representations in Vector Space</span><span class="year">2013</span><span class="read">→</span></a>
-        <a class="item" href="../v2/Paper%20Study%20Page.dc.html"><img src="trial-assets/space.jpg" alt="" /><span class="topic">우주</span><span class="title">Dissolving the Fermi Paradox</span><span class="year">2018</span><span class="read">→</span></a>
-        <a class="item" href="../v2/Paper%20Study%20Page.dc.html"><img src="trial-assets/happiness.jpg" alt="" /><span class="topic">행복</span><span class="title">Happiness Is Assortative in Online Social Networks</span><span class="year">2011</span><span class="read">→</span></a>
+      </a>
+      <nav class="others" aria-label="체험 논문 목록">
+        <div class="others-head">주제를 골라보세요</div>
+        <a class="item active" href="../v2/Paper%20Study%20Page.dc.html" data-topic="게임" data-title="Playing Atari with Deep Reinforcement Learning" data-hook="화면 픽셀만 보고 아타리 게임을 사람보다 잘하게 된 첫 신경망. 지금의 딥마인드가 여기서 시작됐다." data-year="2013" data-venue="arXiv" data-image="trial-assets/game.jpg"><img src="trial-assets/game.jpg" alt="" /><span class="topic">게임</span><span class="title">Playing Atari with Deep Reinforcement Learning</span><span class="year">2013</span><span class="read">→</span></a>
+        <a class="item" href="../v2/Paper%20Study%20Page.dc.html" data-topic="수면" data-title="Why Dream? A Conjecture on Dreaming" data-hook="잠은 왜 필요하고 꿈은 왜 꾸는가. 몸이 세포를 갈아 끼우는 동안 뇌가 새 회로를 점검한다는 가설." data-year="2009" data-venue="arXiv" data-image="trial-assets/sleep.jpg"><img src="trial-assets/sleep.jpg" alt="" /><span class="topic">수면</span><span class="title">Why Dream? A Conjecture on Dreaming</span><span class="year">2009</span><span class="read">→</span></a>
+        <a class="item" href="../v2/Paper%20Study%20Page.dc.html" data-topic="돈" data-title="Bitcoin: A Peer-to-Peer Electronic Cash System" data-hook="은행 없이 돈을 보내는 방법을 아홉 쪽에 담은, 비트코인의 출발점." data-year="2008" data-venue="bitcoin.org" data-image="trial-assets/money.jpg"><img src="trial-assets/money.jpg" alt="" /><span class="topic">돈</span><span class="title">Bitcoin: A Peer-to-Peer Electronic Cash System</span><span class="year">2008</span><span class="read">→</span></a>
+        <a class="item" href="../v2/Paper%20Study%20Page.dc.html" data-topic="미술" data-title="Instance Normalization: The Missing Ingredient for Fast Stylization" data-hook="사진을 고흐 풍으로 바꾸는 스타일 변환. 정규화 한 줄을 바꿔 품질을 끌어올린 발견." data-year="2016" data-venue="arXiv" data-image="trial-assets/art.jpg"><img src="trial-assets/art.jpg" alt="" /><span class="topic">미술</span><span class="title">Instance Normalization: The Missing Ingredient for Fast Stylization</span><span class="year">2016</span><span class="read">→</span></a>
+        <a class="item" href="../v2/Paper%20Study%20Page.dc.html" data-topic="사랑" data-title="Do LLMs Give Good Romantic Relationship Advice?" data-hook="연애 고민을 AI에게 털어놓으면 어떻게 될까. 만족도와 태도 변화를 실험으로 본 연구." data-year="2025" data-venue="preprint" data-image="trial-assets/love.jpg"><img src="trial-assets/love.jpg" alt="" /><span class="topic">사랑</span><span class="title">Do LLMs Give Good Romantic Relationship Advice?</span><span class="year">2025</span><span class="read">→</span></a>
+        <a class="item" href="../v2/Paper%20Study%20Page.dc.html" data-topic="음악" data-title="Simple and Controllable Music Generation" data-hook="문장 한 줄로 음악을 만드는 MusicGen. 멜로디까지 조건으로 줄 수 있다." data-year="2023" data-venue="arXiv" data-image="trial-assets/music.jpg"><img src="trial-assets/music.jpg" alt="" /><span class="topic">음악</span><span class="title">Simple and Controllable Music Generation</span><span class="year">2023</span><span class="read">→</span></a>
+        <a class="item" href="../v2/Paper%20Study%20Page.dc.html" data-topic="언어" data-title="Efficient Estimation of Word Representations in Vector Space" data-hook="왕 − 남자 + 여자 = 여왕. 단어를 숫자로 바꾸는 word2vec이 처음 나온 논문." data-year="2013" data-venue="arXiv" data-image="trial-assets/language.jpg"><img src="trial-assets/language.jpg" alt="" /><span class="topic">언어</span><span class="title">Efficient Estimation of Word Representations in Vector Space</span><span class="year">2013</span><span class="read">→</span></a>
+        <a class="item" href="../v2/Paper%20Study%20Page.dc.html" data-topic="우주" data-title="Dissolving the Fermi Paradox" data-hook="외계인은 왜 안 보이는가. 불확실성을 제대로 계산하면 역설이 사라진다는 주장." data-year="2018" data-venue="arXiv" data-image="trial-assets/space.jpg"><img src="trial-assets/space.jpg" alt="" /><span class="topic">우주</span><span class="title">Dissolving the Fermi Paradox</span><span class="year">2018</span><span class="read">→</span></a>
+        <a class="item" href="../v2/Paper%20Study%20Page.dc.html" data-topic="행복" data-title="Happiness Is Assortative in Online Social Networks" data-hook="트위터 글을 분석하니 행복한 사람은 행복한 사람끼리 이어져 있었다. 감정이 네트워크에서 모이는 방식." data-year="2011" data-venue="arXiv" data-image="trial-assets/happiness.jpg"><img src="trial-assets/happiness.jpg" alt="" /><span class="topic">행복</span><span class="title">Happiness Is Assortative in Online Social Networks</span><span class="year">2011</span><span class="read">→</span></a>
       </nav>
     </div></section>
   </main>
@@ -155,6 +158,25 @@
     document.querySelectorAll('[data-open-login]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); modal.showModal(); }));
     document.querySelectorAll('[data-close-login]').forEach((b) => b.addEventListener('click', () => modal.close()));
     modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+
+    // 목록에 마우스를 올리면 왼쪽 큰 자리가 그 논문으로 바뀐다. 처음은 오늘의 논문.
+    const feature = document.querySelector('.feature');
+    const items = [...document.querySelectorAll('.item')];
+    const today = items.find((i) => i.classList.contains('active'));
+    function show(item) {
+      const d = item.dataset;
+      feature.querySelector('.pic img').src = d.image;
+      feature.querySelector('.pic img').alt = d.title + ' 첫 페이지';
+      feature.querySelector('.topic').textContent = d.topic;
+      feature.querySelector('.title').textContent = d.title;
+      feature.querySelector('.hook').textContent = d.hook;
+      feature.querySelector('.year').textContent = d.year;
+      feature.querySelector('.venue').textContent = d.venue;
+      feature.querySelector('.tag').hidden = item !== today;
+      items.forEach((i) => i.classList.toggle('active', i === item));
+    }
+    items.forEach((i) => { i.addEventListener('mouseenter', () => show(i)); i.addEventListener('focus', () => show(i)); });
+
   </script>
 </body>
 </html>
