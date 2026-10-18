@@ -31,4 +31,4 @@
 ## 참고
 
 - 체험 뷰어 상단 바의 플랜 배지·프로필 자리를 비로그인 상태에서 어떻게 둘지(비움 / 로그인 버튼)는 TBD.
-- 체험 논문 데이터는 `contracts/frontend-backend/openapi.yaml` 0.14.0의 `/api/trial/papers/{paperId}/*` 세 경로(본문·지식 그래프·선행지식 설명)를 따른다. 목록 API는 없고 주제·소개 문구는 FE가 정적으로 갖는다.
+- 체험 논문 데이터는 `contracts/frontend-backend/openapi.yaml` 0.14.0의 `/api/trial/papers/{paperId}/*` 세 경로(본문·지식 그래프·선행지식 설명)를 따른다. 목록 API는 없고 주제·소개 문구와 paperId는 FE가 호스트별 정적 설정(`fe/src/trial/trialPapers.ts`)으로 갖는다.
