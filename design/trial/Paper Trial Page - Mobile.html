@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#241c18" />
+  <meta name="description" content="로그인 없이 주제별로 골라둔 논문을 Paper Teacher 뷰어로 바로 읽어보세요." />
+  <title>체험 (모바일) — Paper Teacher</title>
+  <link rel="stylesheet" href="../v2/vendor/noto-serif-kr/index.css" />
+  <style>
+    @font-face { font-family:Pretendard; src:url('../v2/vendor/fonts/PretendardVariable.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
+    :root { --ink:#26211d; --muted:#6e675e; --paper:#fffdf8; --cream:#f7f1e7; --sand:#eee4d4; --line:#d9cdbb; --navy:#243a55; --brown:#241c18; --walnut:#2b221c; --gold:#b89965; --brass:#d6b982; --serif:'Noto Serif KR',Georgia,serif; --sans:Pretendard,'Apple SD Gothic Neo',sans-serif; }
+    * { box-sizing:border-box; }
+    html,body { min-height:100%; }
+    body { margin:0; display:flex; flex-direction:column; background:var(--cream); color:var(--ink); font-family:var(--sans); -webkit-font-smoothing:antialiased; }
+    a { color:inherit; text-decoration:none; }
+    button { font:inherit; color:inherit; }
+    button,a { -webkit-tap-highlight-color:transparent; cursor:pointer; }
+    :focus-visible { outline:2px solid #8a6c3d; outline-offset:3px; }
+    h1,h2,h3,p { margin-top:0; }
+    .container { width:min(100% - 32px,560px); margin-inline:auto; }
+
+    /* header: 폰에서는 메뉴 없이 제품명과 로그인만 */
+    .site-header { position:sticky; top:0; z-index:2; flex:none; height:56px; background:var(--brown); color:#fffaf1; border-bottom:1px solid rgba(255,255,255,.08); }
+    .site-header .container { height:100%; display:flex; align-items:center; }
+    .brand { display:inline-flex; align-items:center; gap:9px; font:600 17px var(--serif); letter-spacing:-.04em; white-space:nowrap; }
+    .brand-mark { width:22px; height:22px; color:var(--brass); flex:none; }
+    .header-cta { margin-left:auto; padding:8px 14px; border:1px solid rgba(255,255,255,.4); border-radius:100px; font-size:13px; font-weight:700; background:transparent; }
+
+    /* hero */
+    .hero { flex:none; padding:30px 0 26px; text-align:center; background:radial-gradient(ellipse at 50% 110%,rgba(36,58,85,.10) 0,transparent 55%),radial-gradient(circle at 50% -40%,#f0ddbd 0,transparent 50%),var(--cream); }
+    .hero .container { display:flex; flex-direction:column; align-items:center; }
+    .eyebrow { display:inline-flex; align-items:center; gap:10px; margin:0 0 12px; color:#8a6d44; font-size:11px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+    .eyebrow:before,.eyebrow:after { content:""; display:block; width:22px; height:1px; background:#a58858; }
+    .hero h1 { margin:0 0 20px; font:600 34px/1.25 var(--serif); letter-spacing:-.05em; word-break:keep-all; }
+    .hero h1 em { font-style:normal; color:var(--navy); }
+    .button-primary { display:inline-flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:54px; padding:0 24px; background:var(--navy); border:0; border-radius:100px; color:#fff; font-size:16px; font-weight:700; white-space:nowrap; box-shadow:0 0 0 4px rgba(214,185,130,.28),0 14px 28px rgba(36,58,85,.24); }
+    .button-primary:active { background:#182e47; }
+
+    /* shelf: 큰 카드 하나 + 9편 목록, 세로로. 목록을 누르면 위 카드가 그 논문으로 바뀌고, 카드의 읽어보기가 뷰어로 간다. */
+    .shelf { flex:1; padding:20px 0 24px; background:var(--walnut); background-image:radial-gradient(ellipse at 50% 0%,rgba(214,185,130,.10) 0,transparent 60%); }
+    .shelf .container { display:flex; flex-direction:column; gap:14px; }
+    .feature { position:relative; display:block; scroll-margin-top:68px; padding:0 0 20px; border-radius:10px; background:var(--paper); color:var(--ink); overflow:hidden; }
+    .feature .tag[hidden] { display:none; }
+    .feature .tag { position:absolute; top:12px; left:12px; z-index:1; padding:6px 11px; border-radius:100px; background:var(--navy); color:#fff; font-size:11px; font-weight:800; letter-spacing:.1em; }
+    .feature .pic { height:168px; overflow:hidden; background:#efe6d7; border-bottom:1px solid var(--line); }
+    .feature .pic img { display:block; width:100%; height:100%; object-fit:cover; object-position:top; }
+    .feature .text { padding:18px 18px 0; }
+    .feature .topic { margin:0 0 6px; font:600 22px/1 var(--serif); letter-spacing:-.04em; color:var(--navy); }
+    .feature .title { margin:0 0 8px; font:600 18px/1.4 var(--serif); letter-spacing:-.02em; }
+    .feature .hook { margin:0 0 12px; color:var(--muted); font-size:14px; line-height:1.65; word-break:keep-all; }
+    .feature .meta { display:flex; align-items:center; gap:7px; margin-bottom:16px; color:#9b8f7e; font-size:12px; }
+    .feature .meta .dot { width:3px; height:3px; border-radius:50%; background:#c2b6a2; }
+    .feature .button-primary { min-height:48px; font-size:15px; box-shadow:none; }
+    .others { display:flex; flex-direction:column; border-radius:10px; background:#f4ecdf; overflow:hidden; }
+    .others-head { flex:none; padding:12px 16px 10px; border-bottom:1px solid var(--line); color:#8a6d44; font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; }
+    .item { display:flex; align-items:center; gap:12px; width:100%; min-height:64px; padding:10px 14px 10px 16px; border:0; border-bottom:1px solid #e9dfcf; border-radius:0; background:transparent; color:var(--ink); text-align:left; }
+    .item:last-child { border-bottom:0; }
+    .item:active,.item.active { background:var(--paper); }
+    .item.active .chev { color:var(--navy); }
+    .item img { flex:none; width:34px; height:44px; object-fit:cover; object-position:top; border:1px solid var(--line); box-shadow:0 2px 6px rgba(77,56,29,.18); }
+    .item .text { flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+    .item .topic { font:600 15px var(--serif); color:var(--navy); }
+    .item .title { font:600 13px/1.35 var(--serif); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .item .year { flex:none; color:#9b8f7e; font-size:11.5px; }
+    .item .chev { flex:none; color:#b1a48f; font-size:22px; line-height:1; margin-top:-2px; }
+
+    .footer { flex:none; padding:18px 0 28px; background:var(--brown); color:#b9aa98; border-top:1px solid rgba(255,255,255,.06); }
+    .footer .container { display:flex; flex-direction:column; align-items:flex-start; gap:10px; font-size:12px; }
+    .footer .brand { font-size:14px; color:#f3e7d3; }
+    .footer .brand-mark { width:18px; height:18px; }
+    .footer .upload { color:#e8d9bf; font-weight:600; }
+
+    /* modal */
+    dialog { width:min(100% - 32px,440px); padding:0; border:1px solid #e0d6c5; border-radius:14px; background:var(--paper); color:var(--ink); box-shadow:0 30px 70px rgba(36,28,24,.3); }
+    dialog::backdrop { background:rgba(36,28,24,.6); }
+    .modal { padding:32px 24px 26px; text-align:center; }
+    .modal .brand-mark { width:32px; height:32px; color:#9e8158; margin-bottom:16px; }
+    .modal h3 { margin:0 0 10px; font:600 22px/1.35 var(--serif); letter-spacing:-.04em; word-break:keep-all; }
+    .modal p { margin:0 0 22px; color:var(--muted); font-size:14px; line-height:1.7; word-break:keep-all; }
+    .google-btn { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; min-height:50px; border:1px solid #d6cbb8; border-radius:100px; background:#fff; color:var(--ink); font-size:15px; font-weight:700; }
+    .google-btn svg { width:20px; height:20px; }
+    .modal .dismiss { margin-top:16px; border:0; background:transparent; color:#8b8173; font-size:13px; font-weight:600; }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute"><symbol id="stack" viewBox="0 0 32 32"><path d="M4 9.5 16 4l12 5.5L16 15 4 9.5Zm0 6.5 12 5.5L28 16M4 22.5 16 28l12-5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol></svg>
+
+  <header class="site-header"><div class="container">
+    <a class="brand" href="../landing/Paper%20Landing%20Page%20-%20Marketing.html"><svg class="brand-mark"><use href="#stack"/></svg>Paper Teacher</a>
+    <button class="header-cta" type="button" data-open-login>로그인</button>
+  </div></header>
+
+  <main>
+    <section class="hero"><div class="container">
+      <p class="eyebrow">Try without sign-up</p>
+      <h1><em>논문 한 편</em><br />읽어보세요.</h1>
+      <button class="button-primary" type="button" data-open-login><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>내 논문 업로드하기</button>
+    </div></section>
+
+    <section class="shelf" aria-label="체험 논문"><div class="container">
+      <a class="feature" id="feature" href="../v2/Paper%20Study%20Page.dc.html">
+        <div class="tag">오늘의 논문</div>
+        <div class="pic"><img src="trial-assets/game.jpg" alt="Playing Atari with Deep Reinforcement Learning 첫 페이지" loading="eager" /></div>
+        <div class="text">
+          <p class="topic">게임</p>
+          <h2 class="title">Playing Atari with Deep Reinforcement Learning</h2>
+          <p class="hook">화면 픽셀만 보고 아타리 게임을 사람보다 잘하게 된 첫 신경망. 지금의 딥마인드가 여기서 시작됐다.</p>
+          <div class="meta"><span class="year">2013</span><span class="dot"></span><span class="venue">arXiv</span></div>
+          <span class="button-primary">읽어보기 →</span>
+        </div>
+      </a>
+      <nav class="others" aria-label="체험 논문 목록">
+        <div class="others-head">주제를 골라보세요</div>
+        <button class="item active" type="button" data-topic="게임" data-title="Playing Atari with Deep Reinforcement Learning" data-hook="화면 픽셀만 보고 아타리 게임을 사람보다 잘하게 된 첫 신경망. 지금의 딥마인드가 여기서 시작됐다." data-year="2013" data-venue="arXiv" data-image="trial-assets/game.jpg"><img src="trial-assets/game.jpg" alt="" loading="lazy" /><span class="text"><span class="topic">게임</span><span class="title">Playing Atari with Deep Reinforcement Learning</span></span><span class="year">2013</span><span class="chev" aria-hidden="true">›</span></button>
+        <button class="item" type="button" data-topic="수면" data-title="Why Dream? A Conjecture on Dreaming" data-hook="잠은 왜 필요하고 꿈은 왜 꾸는가. 몸이 세포를 갈아 끼우는 동안 뇌가 새 회로를 점검한다는 가설." data-year="2009" data-venue="arXiv" data-image="trial-assets/sleep.jpg"><img src="trial-assets/sleep.jpg" alt="" loading="lazy" /><span class="text"><span class="topic">수면</span><span class="title">Why Dream? A Conjecture on Dreaming</span></span><span class="year">2009</span><span class="chev" aria-hidden="true">›</span></button>
+        <button class="item" type="button" data-topic="돈" data-title="Bitcoin: A Peer-to-Peer Electronic Cash System" data-hook="은행 없이 돈을 보내는 방법을 아홉 쪽에 담은, 비트코인의 출발점." data-year="2008" data-venue="bitcoin.org" data-image="trial-assets/money.jpg"><img src="trial-assets/money.jpg" alt="" loading="lazy" /><span class="text"><span class="topic">돈</span><span class="title">Bitcoin: A Peer-to-Peer Electronic Cash System</span></span><span class="year">2008</span><span class="chev" aria-hidden="true">›</span></button>
+        <button class="item" type="button" data-topic="미술" data-title="Instance Normalization: The Missing Ingredient for Fast Stylization" data-hook="사진을 고흐 풍으로 바꾸는 스타일 변환. 정규화 한 줄을 바꿔 품질을 끌어올린 발견." data-year="2016" data-venue="arXiv" data-image="trial-assets/art.jpg"><img src="trial-assets/art.jpg" alt="" loading="lazy" /><span class="text"><span class="topic">미술</span><span class="title">Instance Normalization: The Missing Ingredient for Fast Stylization</span></span><span class="year">2016</span><span class="chev" aria-hidden="true">›</span></button>
+        <button class="item" type="button" data-topic="사랑" data-title="Do LLMs Give Good Romantic Relationship Advice?" data-hook="연애 고민을 AI에게 털어놓으면 어떻게 될까. 만족도와 태도 변화를 실험으로 본 연구." data-year="2025" data-venue="preprint" data-image="trial-assets/love.jpg"><img src="trial-assets/love.jpg" alt="" loading="lazy" /><span class="text"><span class="topic">사랑</span><span class="title">Do LLMs Give Good Romantic Relationship Advice?</span></span><span class="year">2025</span><span class="chev" aria-hidden="true">›</span></button>
+        <button class="item" type="button" data-topic="음악" data-title="Simple and Controllable Music Generation" data-hook="문장 한 줄로 음악을 만드는 MusicGen. 멜로디까지 조건으로 줄 수 있다." data-year="2023" data-venue="arXiv" data-image="trial-assets/music.jpg"><img src="trial-assets/music.jpg" alt="" loading="lazy" /><span class="text"><span class="topic">음악</span><span class="title">Simple and Controllable Music Generation</span></span><span class="year">2023</span><span class="chev" aria-hidden="true">›</span></button>
+        <button class="item" type="button" data-topic="언어" data-title="Efficient Estimation of Word Representations in Vector Space" data-hook="왕 − 남자 + 여자 = 여왕. 단어를 숫자로 바꾸는 word2vec이 처음 나온 논문." data-year="2013" data-venue="arXiv" data-image="trial-assets/language.jpg"><img src="trial-assets/language.jpg" alt="" loading="lazy" /><span class="text"><span class="topic">언어</span><span class="title">Efficient Estimation of Word Representations in Vector Space</span></span><span class="year">2013</span><span class="chev" aria-hidden="true">›</span></button>
+        <button class="item" type="button" data-topic="우주" data-title="Dissolving the Fermi Paradox" data-hook="외계인은 왜 안 보이는가. 불확실성을 제대로 계산하면 역설이 사라진다는 주장." data-year="2018" data-venue="arXiv" data-image="trial-assets/space.jpg"><img src="trial-assets/space.jpg" alt="" loading="lazy" /><span class="text"><span class="topic">우주</span><span class="title">Dissolving the Fermi Paradox</span></span><span class="year">2018</span><span class="chev" aria-hidden="true">›</span></button>
+        <button class="item" type="button" data-topic="행복" data-title="Happiness Is Assortative in Online Social Networks" data-hook="트위터 글을 분석하니 행복한 사람은 행복한 사람끼리 이어져 있었다. 감정이 네트워크에서 모이는 방식." data-year="2011" data-venue="arXiv" data-image="trial-assets/happiness.jpg"><img src="trial-assets/happiness.jpg" alt="" loading="lazy" /><span class="text"><span class="topic">행복</span><span class="title">Happiness Is Assortative in Online Social Networks</span></span><span class="year">2011</span><span class="chev" aria-hidden="true">›</span></button>
+      </nav>
+    </div></section>
+  </main>
+
+  <footer class="footer"><div class="container"><a class="brand" href="#"><svg class="brand-mark"><use href="#stack"/></svg>Paper Teacher</a><span>논문을 이해하는 더 나은 방법</span><a class="upload" href="#" data-open-login>읽고 싶은 논문이 따로 있나요? 내 논문 업로드하기 →</a></div></footer>
+
+  <dialog id="login-modal" aria-labelledby="login-title">
+    <div class="modal">
+      <svg class="brand-mark" aria-hidden="true"><use href="#stack"/></svg>
+      <h3 id="login-title">가입하고 무료로 이용해보세요.</h3>
+      <p>지금 보던 논문은 서재에서 이어서 읽을 수 있어요.</p>
+      <button class="google-btn" type="button">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.6 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6.1C12.3 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.8-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.7-4.1-13.6-9.9l-7.8 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        Google로 계속하기
+      </button>
+      <button class="dismiss" type="button" data-close-login>계속 둘러보기</button>
+    </div>
+  </dialog>
+
+  <script>
+    const modal = document.getElementById('login-modal');
+    document.querySelectorAll('[data-open-login]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); modal.showModal(); }));
+    document.querySelectorAll('[data-close-login]').forEach((b) => b.addEventListener('click', () => modal.close()));
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+
+    // 목록을 누르면 위 카드가 그 논문으로 바뀐다. 오늘의 논문 꼬리표는 처음 논문일 때만 남는다.
+    const feature = document.getElementById('feature');
+    const todayTitle = feature.querySelector('.title').textContent;
+    const items = document.querySelectorAll('.item');
+    items.forEach((item) => item.addEventListener('click', () => {
+      const d = item.dataset;
+      feature.querySelector('.tag').hidden = d.title !== todayTitle;
+      feature.querySelector('.pic img').src = d.image;
+      feature.querySelector('.pic img').alt = d.title + ' 첫 페이지';
+      feature.querySelector('.topic').textContent = d.topic;
+      feature.querySelector('.title').textContent = d.title;
+      feature.querySelector('.hook').textContent = d.hook;
+      feature.querySelector('.year').textContent = d.year;
+      feature.querySelector('.venue').textContent = d.venue;
+      items.forEach((i) => i.classList.toggle('active', i === item));
+      feature.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+  </script>
+</body>
+</html>
