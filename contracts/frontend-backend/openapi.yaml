@@ -17,7 +17,7 @@ info:
     - BE↔AI 채팅 스트림: contracts/backend-ai/sse/simple-agent-run-stream.yml
     - BE↔AI 인라인 번역 스트림: contracts/backend-ai/sse/inline-translate-agent-run-stream.yml
 
-  version: 0.14.1
+  version: 0.15.0
 
 # FT-001: bearer access token(JWT) + HttpOnly refresh 쿠키(ymc_refresh, BE 내부 구현).
 # 로그인 시작·콜백은 Spring Security 소유의 브라우저 네비게이션 경로라 이 문서에 스키마를 두지 않는다:
@@ -704,7 +704,8 @@ paths:
   # 체험(YMC-430): 가입 없이 체험 논문을 읽는 경로. 운영자가 `paper.trial = true`로 켠 논문만 응답하고,
   # 그 외는 존재 여부를 숨기기 위해 404다. 응답 스키마는 /api/papers/{paperId}/* 와 같아 FE 뷰어는 base path만 바꾼다.
   # 체험 논문 목록 API는 없다 — 주제·소개 문구와 paperId를 FE가 호스트별 정적 설정으로 갖는다.
-  # 채팅·인라인 번역·다운로드·재시도는 체험 경로에 없고, 기존 경로는 인증이 필요해 비로그인은 401이다.
+  # 채팅·다운로드·재시도는 체험 경로에 없고, 기존 경로는 인증이 필요해 비로그인은 401이다.
+  # 인라인 번역은 체험 경로가 있다 — 저장·사용량·상한 없이 스트림만 연다.
   /api/trial/papers/{paperId}/content:
     get:
       operationId: getTrialPaperContent
@@ -803,6 +804,71 @@ paths:
               schema: { $ref: "#/components/schemas/Error" }
         "409":
           description: "논문 본문 또는 compile sidecar가 준비되지 않았거나, 이 하이라이트의 설명이 아직 만들어지지 않음. code: PREREQUISITE_NOT_READY"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  /api/trial/papers/{paperId}/inline-translations:
+    post:
+      operationId: createTrialInlineTranslationStream
+      summary: 체험 논문 선택 영역의 한국어 번역을 SSE로 수신 (인증 없음)
+      description: |
+        `trial = true`인 COMPLETED 논문의 선택 영역 하나를 인증 없이 AI가 한국어로 번역한 결과를
+        스트리밍한다. 요청 body, SSE event 순서와 규칙, AI 오류 매핑, FE 처리 규칙은
+        `createInlineTranslationStream`과 같다.
+
+        로그인 경로와 다른 점: translation_run row와 사용량 예약을 만들지 않는다. `translationId`는
+        BE가 스트림마다 즉석에서 만드는 식별자이며 번역 결과는 저장하지 않는다. 사용자 키가 없으므로
+        사용자당 동시 번역 상한(TRANSLATION_IN_PROGRESS)과 월간 한도(CHAT_USAGE_LIMIT_EXCEEDED)는
+        적용하지 않는다. 체험 전용 남용 방어는 두지 않으며, 필요해지면 WAF rate limit 차단 전환으로 대응한다.
+      tags: [trial, translation]
+      security: []
+      parameters:
+        - name: paperId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: 번역 대상 논문의 BE 식별자. BE가 trial 플래그와 COMPLETED 상태를 검증한다.
+        - name: Accept
+          in: header
+          required: true
+          schema:
+            const: text/event-stream
+          description: SSE 응답을 요청한다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InlineTranslationStreamRequest"
+      responses:
+        "200":
+          description: |
+            SSE 스트림이 시작됨. `translation.completed` 또는 `error` event가 terminal이다.
+          headers:
+            Cache-Control:
+              description: 저장 금지(no-store)·중간 계층 변형 금지(no-transform)
+              schema:
+                type: string
+                example: no-store, no-transform
+          content:
+            text/event-stream:
+              itemSchema:
+                $ref: "#/components/schemas/TranslationSseEvent"
+        "400":
+          description: "잘못된 요청 (selection 누락·형식 오류). code: VALIDATION_ERROR"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "404":
+          description: 존재하지 않거나 체험 논문이 아닌 paperId. code PAPER_NOT_FOUND
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: "논문이 COMPLETED가 아님. code: PAPER_NOT_READY"
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
