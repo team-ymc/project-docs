@@ -30,6 +30,11 @@
 `parse-requests`를 다시 발행할 수 있다. 메시지는 최초 요청과 같은 `paper_id`와 `file_key`를
 담는다. 다시 발행하는 횟수의 상한은 BE가 관리한다.
 
+BE는 표준 큐의 파싱 요청 `SendMessage`를 SDK 수준에서 자동 재시도하지 않는다. 발행 전 오류나
+SQS의 명시적 거절은 미발행으로 처리한다. 전송 중 타임아웃 등으로 수락 여부가 불확실하면
+`Document`를 `PROCESSING`으로 유지한다. 같은 `complete`를 다시 호출하면 현재 상태를
+반환하고, 결과가 정체 deadline까지 도착하지 않으면 기존 정체 정리 정책으로 실패 처리한다.
+
 knowledge compile 성공 결과의 `manifest_key`는 최초 파싱 성공 결과와 같은 중앙
 `manifest.json`을 가리킨다. 별도의 지식 번들 manifest는 생성하지 않는다. 모든
 compile 산출물을 저장한 뒤 중앙 manifest를 마지막으로 다시 발행하며, `artifacts`에
